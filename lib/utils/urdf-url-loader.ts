@@ -172,8 +172,8 @@ export function createMeshLoadManager(
       return resolved;
     }
     
-    // If it's already an absolute URL, return as-is
-    if (url.startsWith('http://') || url.startsWith('https://')) {
+    // If it's already an absolute URL with protocol, return as-is
+    if (url.match(/^[a-z][a-z0-9+.-]*:/i)) {
       return url;
     }
 

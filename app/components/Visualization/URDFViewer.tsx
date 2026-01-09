@@ -16,6 +16,15 @@ import URDFLoadStatus from './URDFLoadStatus';
 import { loadURDFFromURL, createMeshLoadManager, formatURDFError } from '@/lib/utils/urdf-url-loader';
 import { URDFLoadError } from '@/types/urdf-loader';
 
+/**
+ * Helper function to safely concatenate URL parts without double slashes
+ */
+function joinUrlPath(baseUrl: string, path: string): string {
+  const normalizedBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  const normalizedPath = path.startsWith('/') ? path.substring(1) : path;
+  return `${normalizedBase}${normalizedPath}`;
+}
+
 interface URDFViewerProps {
   client: ROSBridge | null;
   // Mode selection
@@ -111,13 +120,13 @@ function URDFModel({
             let baseUrl = meshBaseUrl || '';
             
             // Check if loader.packages is an object and has the package name
-            if (loader.packages && typeof loader.packages === 'object' && packageName in loader.packages) {
+            if (loader.packages && typeof loader.packages === 'object' && !Array.isArray(loader.packages) && packageName in loader.packages) {
               baseUrl = loader.packages[packageName];
             } else if (typeof loader.packages === 'function') {
               baseUrl = loader.packages(packageName);
             }
             
-            resolvedPath = `${baseUrl}/${relativePath}`;
+            resolvedPath = joinUrlPath(baseUrl, relativePath);
             console.log(`📦 Resolved: ${path} → ${resolvedPath}`);
           }
         }
@@ -130,14 +139,14 @@ function URDFModel({
           const colladaLoader = new ColladaLoader(manager);
           colladaLoader.load(
             resolvedPath,
-            (collada: any) => {
+            (collada) => {
               console.log('✅ Loaded COLLADA:', resolvedPath);
               done(collada.scene);
             },
             undefined,
-            (error: any) => {
+            (error) => {
               console.error('❌ Failed to load COLLADA:', resolvedPath, error);
-              done(new THREE.Group(), error); // Return empty group with error
+              done(new THREE.Group(), error instanceof Error ? error : new Error(String(error))); // Return empty group with error
             }
           );
         } else if (extension === 'stl') {
@@ -155,9 +164,9 @@ function URDFModel({
               done(mesh);
             },
             undefined,
-            (error: any) => {
+            (error) => {
               console.error('❌ Failed to load STL:', resolvedPath, error);
-              done(new THREE.Group(), error);
+              done(new THREE.Group(), error instanceof Error ? error : new Error(String(error)));
             }
           );
         } else if (extension === 'obj') {
@@ -170,9 +179,9 @@ function URDFModel({
               done(obj);
             },
             undefined,
-            (error: any) => {
+            (error) => {
               console.error('❌ Failed to load OBJ:', resolvedPath, error);
-              done(new THREE.Group(), error);
+              done(new THREE.Group(), error instanceof Error ? error : new Error(String(error)));
             }
           );
         } else {
