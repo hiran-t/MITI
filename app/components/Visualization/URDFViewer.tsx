@@ -7,11 +7,23 @@ import Scene3D from './Scene3D';
 import { Loader2, RefreshCw, Download } from 'lucide-react';
 import * as THREE from 'three';
 import URDFLoader from 'urdf-loader';
+import { ColladaLoader } from 'three/examples/jsm/loaders/ColladaLoader.js';
+import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import URDFSourceSelector from './URDFSourceSelector';
 import URDFSettings from './URDFSettings';
 import URDFLoadStatus from './URDFLoadStatus';
 import { loadURDFFromURL, createMeshLoadManager, formatURDFError } from '@/lib/utils/urdf-url-loader';
 import { URDFLoadError } from '@/types/urdf-loader';
+
+/**
+ * Helper function to safely concatenate URL parts without double slashes
+ */
+function joinUrlPath(baseUrl: string, path: string): string {
+  const normalizedBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  const normalizedPath = path.startsWith('/') ? path.substring(1) : path;
+  return `${normalizedBase}${normalizedPath}`;
+}
 
 interface URDFViewerProps {
   client: ROSBridge | null;
@@ -71,6 +83,7 @@ function URDFModel({
             meshBaseUrl, 
             packageMapping,
             (url, loaded, total) => {
+              console.log(`Loading: ${url} (${loaded}/${total})`);
               if (onLoadProgress) {
                 onLoadProgress(loaded, total);
               }
@@ -79,22 +92,121 @@ function URDFModel({
               console.error('Failed to load mesh:', url);
             }
           )
-        : undefined;
+        : new THREE.LoadingManager();
 
       const loader = new URDFLoader(manager);
       
-      // Set package path resolver - provide empty resolver to avoid external file loading when not using URLs
-      loader.packages = packageMapping || {};
+      // FIX: Set up package paths correctly
+      if (meshBaseUrl) {
+        loader.packages = {
+          'ur_description': meshBaseUrl,
+          ...packageMapping
+        };
+        console.log('URDFLoader packages configured:', loader.packages);
+      } else {
+        loader.packages = packageMapping || {};
+      }
+      
+      // FIX: Override loadMeshCb to handle package:// URLs and different mesh formats
+      loader.loadMeshCb = function(path: string, manager: THREE.LoadingManager, done: (mesh: THREE.Object3D, err?: Error) => void) {
+        console.log('🔄 Loading mesh:', path);
+        
+        // Resolve package:// paths
+        let resolvedPath = path;
+        if (path.startsWith('package://')) {
+          const match = path.match(/^package:\/\/([^\/]+)\/(.+)$/);
+          if (match) {
+            const [, packageName, relativePath] = match;
+            let baseUrl = meshBaseUrl || '';
+            
+            // Check if loader.packages is an object and has the package name
+            if (loader.packages && typeof loader.packages === 'object' && !Array.isArray(loader.packages) && packageName in loader.packages) {
+              baseUrl = loader.packages[packageName];
+            } else if (typeof loader.packages === 'function') {
+              baseUrl = loader.packages(packageName);
+            }
+            
+            resolvedPath = joinUrlPath(baseUrl, relativePath);
+            console.log(`📦 Resolved: ${path} → ${resolvedPath}`);
+          }
+        }
+
+        // Determine file type and use appropriate loader
+        const extension = resolvedPath.split('.').pop()?.toLowerCase();
+        
+        if (extension === 'dae') {
+          // COLLADA (.dae) files
+          const colladaLoader = new ColladaLoader(manager);
+          colladaLoader.load(
+            resolvedPath,
+            (collada) => {
+              console.log('✅ Loaded COLLADA:', resolvedPath);
+              done(collada.scene);
+            },
+            undefined,
+            (error) => {
+              console.error('❌ Failed to load COLLADA:', resolvedPath, error);
+              done(new THREE.Group(), error instanceof Error ? error : new Error(String(error))); // Return empty group with error
+            }
+          );
+        } else if (extension === 'stl') {
+          // STL files
+          const stlLoader = new STLLoader(manager);
+          stlLoader.load(
+            resolvedPath,
+            (geometry: THREE.BufferGeometry) => {
+              console.log('✅ Loaded STL:', resolvedPath);
+              const material = new THREE.MeshPhongMaterial({ 
+                color: 0xaaaaaa,
+                flatShading: false
+              });
+              const mesh = new THREE.Mesh(geometry, material);
+              done(mesh);
+            },
+            undefined,
+            (error) => {
+              console.error('❌ Failed to load STL:', resolvedPath, error);
+              done(new THREE.Group(), error instanceof Error ? error : new Error(String(error)));
+            }
+          );
+        } else if (extension === 'obj') {
+          // OBJ files
+          const objLoader = new OBJLoader(manager);
+          objLoader.load(
+            resolvedPath,
+            (obj: THREE.Group) => {
+              console.log('✅ Loaded OBJ:', resolvedPath);
+              done(obj);
+            },
+            undefined,
+            (error) => {
+              console.error('❌ Failed to load OBJ:', resolvedPath, error);
+              done(new THREE.Group(), error instanceof Error ? error : new Error(String(error)));
+            }
+          );
+        } else {
+          console.warn('⚠️ Unknown mesh format:', extension, 'for', resolvedPath);
+          // Create a placeholder box for unknown formats
+          const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+          const material = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+          const mesh = new THREE.Mesh(geometry, material);
+          done(mesh);
+        }
+      };
       
       // Parse URDF from string
       const robot = loader.parse(urdfString);
-      console.log('URDFModel: Successfully parsed URDF, model:', robot);
+      console.log('URDFModel: Successfully parsed URDF');
+      console.log('  - Robot name:', (robot as any).name);
+      console.log('  - Links:', (robot as any).links ? Object.keys((robot as any).links).length : 0);
+      console.log('  - Joints:', (robot as any).joints ? Object.keys((robot as any).joints).length : 0);
       
       // Add materials to all meshes that don't have them
       let meshCount = 0;
       robot.traverse((child: any) => {
         if (child.isMesh) {
           meshCount++;
+          console.log('  - Found mesh:', child.name, 'geometry:', child.geometry);
           if (!child.material) {
             child.material = new THREE.MeshStandardMaterial({
               color: 0xcccccc,
@@ -119,7 +231,7 @@ function URDFModel({
         }
       });
       
-      console.log('URDFModel: Mesh count:', meshCount);
+      console.log('  - Total meshes:', meshCount);
       
       // Calculate bounding box to center and scale the model
       const box = new THREE.Box3().setFromObject(robot);

@@ -98,6 +98,22 @@ export async function loadURDFFromURL(
 }
 
 /**
+ * Ensures a URL has a trailing slash
+ */
+function ensureTrailingSlash(url: string): string {
+  return url.endsWith('/') ? url : `${url}/`;
+}
+
+/**
+ * Concatenates a base URL with a path, ensuring no double slashes
+ */
+function joinUrlPath(baseUrl: string, path: string): string {
+  const normalizedBase = ensureTrailingSlash(baseUrl);
+  const normalizedPath = path.startsWith('/') ? path.substring(1) : path;
+  return `${normalizedBase}${normalizedPath}`;
+}
+
+/**
  * Creates a custom THREE.LoadingManager for handling mesh paths in URDF
  * 
  * @param baseUrl - Base URL for resolving mesh paths
@@ -125,7 +141,7 @@ export function createMeshLoadManager(
   };
 
   manager.onLoad = () => {
-    console.log('All meshes loaded successfully');
+    console.log('✅ All meshes loaded successfully');
   };
 
   manager.onProgress = (url, loaded, total) => {
@@ -147,22 +163,29 @@ export function createMeshLoadManager(
   // Override URL resolution to handle package:// paths
   const originalResolveURL = manager.resolveURL.bind(manager);
   manager.resolveURL = function(url: string): string {
+    console.log('🔍 Resolving URL:', url);
+    
     // If it's a package:// path, resolve it
     if (url.startsWith('package://')) {
       const resolved = resolvePackagePath(url, baseUrl, packageMapping);
-      console.log(`Resolved package path: ${url} -> ${resolved}`);
+      console.log(`📦 Package resolved: ${url} → ${resolved}`);
       return resolved;
     }
     
-    // If it's already an absolute URL, return as-is
-    if (url.startsWith('http://') || url.startsWith('https://')) {
+    // If it's already an absolute URL with protocol, return as-is
+    if (url.match(/^[a-z][a-z0-9+.-]*:/i)) {
       return url;
     }
 
     // If it's a relative path, resolve against base URL
-    const resolved = resolvePackagePath(url, baseUrl, packageMapping);
-    console.log(`Resolved relative path: ${url} -> ${resolved}`);
-    return resolved;
+    if (!url.startsWith('/')) {
+      const resolved = joinUrlPath(baseUrl, url);
+      console.log(`📁 Relative resolved: ${url} → ${resolved}`);
+      return resolved;
+    }
+    
+    // Use original resolver for absolute paths
+    return originalResolveURL(url);
   };
 
   return manager;
