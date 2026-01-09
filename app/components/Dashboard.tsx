@@ -11,16 +11,16 @@ import { Activity } from 'lucide-react';
 
 const STORAGE_KEY = 'vizzy_rosbridge_url';
 
-export default function Dashboard() {
-  // Get initial URL from localStorage or environment variable
-  const getInitialUrl = () => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) return stored;
-    }
-    return process.env.NEXT_PUBLIC_ROSBRIDGE_URL || 'ws://localhost:9090';
-  };
+// Get initial URL from localStorage or environment variable
+const getInitialUrl = () => {
+  if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) return stored;
+  }
+  return process.env.NEXT_PUBLIC_ROSBRIDGE_URL || 'ws://localhost:9090';
+};
 
+export default function Dashboard() {
   const [rosbridgeUrl, setRosbridgeUrl] = useState(getInitialUrl);
   const { client, connected, error } = useRosbridge(rosbridgeUrl);
   const { topics, loading, refreshTopics } = useTopicList(client);
