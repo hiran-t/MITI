@@ -20,6 +20,8 @@ function URDFModel({ urdfString }: { urdfString: string }) {
   useEffect(() => {
     if (!urdfString) return;
 
+    console.log('URDFModel: Attempting to parse URDF, length:', urdfString.length);
+
     try {
       const loader = new URDFLoader();
       // Set package path resolver
@@ -27,18 +29,37 @@ function URDFModel({ urdfString }: { urdfString: string }) {
       
       // Load URDF from string
       const robot = loader.parse(urdfString);
+      console.log('URDFModel: Successfully parsed URDF, model:', robot);
       setModel(robot);
       setLoading(false);
     } catch (err) {
-      console.error('Error loading URDF:', err);
+      console.error('URDFModel: Error loading URDF:', err);
       setError('Failed to load URDF model');
       setLoading(false);
     }
   }, [urdfString]);
 
-  if (loading) return null;
-  if (error || !model) return null;
+  if (loading) {
+    console.log('URDFModel: Still loading...');
+    return null;
+  }
+  
+  if (error) {
+    console.log('URDFModel: Error state:', error);
+    return (
+      <mesh>
+        <boxGeometry args={[0.1, 0.1, 0.1]} />
+        <meshStandardMaterial color="red" />
+      </mesh>
+    );
+  }
+  
+  if (!model) {
+    console.log('URDFModel: No model available');
+    return null;
+  }
 
+  console.log('URDFModel: Rendering model');
   return <primitive object={model} />;
 }
 
@@ -51,10 +72,24 @@ export default function URDFViewer({ client }: URDFViewerProps) {
 
   const urdfString = urdfData?.data;
 
+  // Debug logging
+  useEffect(() => {
+    if (urdfData) {
+      console.log('URDF data received:', {
+        hasData: !!urdfData.data,
+        dataLength: urdfData.data?.length,
+        dataPreview: urdfData.data?.substring(0, 100)
+      });
+    }
+  }, [urdfData]);
+
   return (
     <div className="relative w-full h-full bg-gray-950 rounded-lg overflow-hidden border border-gray-800">
       <div className="absolute top-3 left-3 z-10 px-3 py-1.5 bg-gray-900/90 rounded text-xs font-medium text-gray-300 border border-gray-800">
         URDF Viewer
+        {urdfData && (
+          <span className="ml-2 text-green-400">• Data received</span>
+        )}
       </div>
 
       {!urdfString ? (
