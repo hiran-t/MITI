@@ -33,10 +33,12 @@ export const createServiceCallMessage = (service: string, args?: any) => ({
 });
 
 export const createGetTopicsMessage = () => ({
-  op: 'topics',
+  op: 'call_service',
+  service: '/rosapi/topics',
 });
 
 export const createGetTopicTypeMessage = (topic: string) => ({
-  op: 'topic_type',
-  topic,
+  op: 'call_service',
+  service: '/rosapi/topic_type',
+  args: { topic },
 });

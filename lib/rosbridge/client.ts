@@ -151,14 +151,15 @@ export class ROSBridge {
       }, 5000);
 
       const handler = (data: any) => {
-        if (data.op === 'topics') {
+        // Handle service response from /rosapi/topics
+        if (data.op === 'service_response' && data.service === '/rosapi/topics') {
           clearTimeout(timeout);
           const topics: TopicInfo[] = [];
-          if (data.topics && data.types) {
-            for (let i = 0; i < data.topics.length; i++) {
+          if (data.values && data.values.topics && data.values.types) {
+            for (let i = 0; i < data.values.topics.length; i++) {
               topics.push({
-                topic: data.topics[i],
-                type: data.types[i],
+                topic: data.values.topics[i],
+                type: data.values.types[i],
               });
             }
           }
