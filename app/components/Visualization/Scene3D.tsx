@@ -11,22 +11,26 @@ interface Scene3DProps {
 export default function Scene3D({ children }: Scene3DProps) {
   return (
     <Canvas
-      camera={{ position: [3, 3, 3], fov: 50 }}
+      camera={{ 
+        position: [3, -3, 3], 
+        fov: 50,
+        up: [0, 0, 1] // Z-up coordinate system (ROS convention)
+      }}
       className="bg-gray-950"
       shadows
     >
       <ambientLight intensity={0.7} />
       <directionalLight 
-        position={[10, 10, 5]} 
+        position={[10, -10, 10]} 
         intensity={1} 
         castShadow 
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
       />
-      <directionalLight position={[-10, -10, -5]} intensity={0.5} />
-      <pointLight position={[0, 10, 0]} intensity={0.5} />
+      <directionalLight position={[-10, 10, -10]} intensity={0.5} />
+      <pointLight position={[0, 0, 10]} intensity={0.5} />
       
-      {/* Grid helper */}
+      {/* Grid helper on XY plane (Z-up) */}
       <Grid
         args={[10, 10]}
         cellSize={0.5}
@@ -39,6 +43,7 @@ export default function Scene3D({ children }: Scene3DProps) {
         fadeStrength={1}
         followCamera={false}
         infiniteGrid={true}
+        rotation={[Math.PI / 2, 0, 0]} // Rotate grid to XY plane
       />
       
       {/* Axis helper - larger and more visible */}

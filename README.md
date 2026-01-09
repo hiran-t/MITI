@@ -198,6 +198,114 @@ Vizzy currently supports:
 - `sensor_msgs/PointCloud2` - For point cloud data
 - All standard ROS2 message types (view-only)
 
+### URDF Loading Options
+
+Vizzy supports multiple ways to load URDF robot descriptions:
+
+#### 1. From ROS Topic (Default)
+
+Subscribe to `/robot_description` topic or any custom topic:
+
+```bash
+# Publish URDF to ROS topic
+ros2 topic pub /robot_description std_msgs/msg/String "data: '$(cat robot.urdf)'" --once
+```
+
+**In Vizzy:**
+1. Ensure "ROS Topic" mode is selected
+2. Enter your topic name (default: `/robot_description`)
+3. URDF will load automatically when published
+
+#### 2. From URL
+
+Load URDF directly from HTTP/HTTPS URL without requiring ROS:
+
+**Setup:**
+1. Host your URDF and mesh files on a web server
+2. In Vizzy, switch to "URL" mode
+3. Enter URDF URL: `http://192.168.10.27:8000/robot.urdf`
+4. Enter Mesh Base URL: `http://192.168.10.27:8000`
+5. Click "Load URDF"
+
+**Example: Using Python HTTP Server**
+```bash
+# In your robot description package
+cd /path/to/robot_description
+python3 -m http.server 8000 --bind 0.0.0.0
+```
+
+**Example: Using Python HTTP Server with CORS**
+```python
+# server.py
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+
+class CORSRequestHandler(SimpleHTTPRequestHandler):
+    def end_headers(self):
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', '*')
+        super().end_headers()
+    
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.end_headers()
+
+if __name__ == '__main__':
+    print('Starting server on http://0.0.0.0:8000')
+    HTTPServer(('0.0.0.0', 8000), CORSRequestHandler).serve_forever()
+```
+
+Run with: `python3 server.py`
+
+#### 3. Package Path Resolution
+
+URDF files often reference meshes using ROS package paths. Vizzy automatically converts these to HTTP URLs:
+
+```
+Input:  package://robot_description/meshes/base_link.stl
+Base:   http://192.168.10.27:8000
+Output: http://192.168.10.27:8000/meshes/base_link.stl
+```
+
+**For Complex Setups with Multiple Packages:**
+
+You can configure package mappings for robots that use multiple packages:
+
+```json
+{
+  "robot_description": "http://192.168.10.27:8000",
+  "gripper_description": "http://192.168.10.27:8001",
+  "sensor_description": "http://192.168.10.27:8002"
+}
+```
+
+Example resolution with package mapping:
+```
+Input:  package://gripper_description/models/gripper.dae
+Mapping: { "gripper_description": "http://192.168.10.27:8001" }
+Output: http://192.168.10.27:8001/models/gripper.dae
+```
+
+#### CORS Configuration
+
+If loading URDF from a different origin, you must configure CORS on your server. The Python example above shows how to enable CORS.
+
+**For NGINX:**
+```nginx
+location / {
+    add_header 'Access-Control-Allow-Origin' '*';
+    add_header 'Access-Control-Allow-Methods' 'GET, OPTIONS';
+    add_header 'Access-Control-Allow-Headers' '*';
+}
+```
+
+**For Apache:**
+```apache
+Header set Access-Control-Allow-Origin "*"
+Header set Access-Control-Allow-Methods "GET, OPTIONS"
+Header set Access-Control-Allow-Headers "*"
+```
+
 ### Adding Custom Topic Subscriptions
 
 ```typescript
@@ -289,6 +397,71 @@ ros2 topic pub /robot_description std_msgs/msg/String "data: '$(cat robot.urdf)'
 - Check message type is `sensor_msgs/PointCloud2`
 - Ensure point cloud data is being published: `ros2 topic hz /camera/depth/points`
 - Check browser console for parsing errors
+
+### URDF Not Loading from URL
+
+**Problem**: Cannot load URDF from URL
+
+**Solutions**:
+1. **CORS Error**: Your server needs to allow cross-origin requests
+   - Use the Python CORS server example provided above
+   - Configure your web server (NGINX, Apache) to send CORS headers
+   - For development, you can use a CORS proxy
+
+2. **Network Error**: 
+   - Verify the URL is correct and accessible
+   - Test URL in browser: `curl http://192.168.10.27:8000/robot.urdf`
+   - Check if server is running and reachable
+   - Verify firewall/network settings
+
+3. **Mesh Loading Failures**:
+   - Ensure Mesh Base URL is set correctly
+   - Check that mesh files are accessible from the base URL
+   - Verify package:// paths are being resolved correctly
+   - Check browser console for specific mesh file errors
+
+4. **URDF Parse Error**:
+   - Verify URDF file is valid XML
+   - Check for syntax errors in URDF file
+   - Ensure file is complete (not truncated)
+
+**Testing URDF URL Loading:**
+```bash
+# 1. Create test directory
+mkdir -p /tmp/urdf_test/meshes
+cd /tmp/urdf_test
+
+# 2. Create simple URDF (save as robot.urdf)
+cat > robot.urdf << 'EOF'
+<?xml version="1.0"?>
+<robot name="test_robot">
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="1 1 1"/>
+      </geometry>
+    </visual>
+  </link>
+</robot>
+EOF
+
+# 3. Start server with CORS
+python3 -c "
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+
+class CORSHandler(SimpleHTTPRequestHandler):
+    def end_headers(self):
+        self.send_header('Access-Control-Allow-Origin', '*')
+        super().end_headers()
+
+HTTPServer(('0.0.0.0', 8000), CORSHandler).serve_forever()
+"
+
+# 4. In Vizzy:
+#    - Switch to URL mode
+#    - URDF URL: http://localhost:8000/robot.urdf
+#    - Click Load URDF
+```
 
 ### Build Errors
 

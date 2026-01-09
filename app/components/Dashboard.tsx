@@ -10,6 +10,7 @@ import PointCloudViewer from './Visualization/PointCloudViewer';
 import { Activity } from 'lucide-react';
 
 const STORAGE_KEY = 'vizzy_rosbridge_url';
+const STORAGE_KEY_URDF_CONFIG = 'vizzy_urdf_config';
 
 // Get initial URL from localStorage or environment variable
 const getInitialUrl = () => {
@@ -20,10 +21,40 @@ const getInitialUrl = () => {
   return process.env.NEXT_PUBLIC_ROSBRIDGE_URL || 'ws://localhost:9090';
 };
 
+// Get initial URDF config from localStorage
+const getInitialUrdfConfig = () => {
+  if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem(STORAGE_KEY_URDF_CONFIG);
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch (e) {
+        console.error('Failed to parse URDF config:', e);
+      }
+    }
+  }
+  return {
+    mode: 'topic' as const,
+    topic: '/robot_description',
+    urdfUrl: '',
+    meshBaseUrl: '',
+    packageMapping: {},
+  };
+};
+
 export default function Dashboard() {
   const [rosbridgeUrl, setRosbridgeUrl] = useState(getInitialUrl);
   const { client, connected, error } = useRosbridge(rosbridgeUrl);
   const { topics, loading, refreshTopics } = useTopicList(client);
+
+  // URDF Configuration state
+  const [urdfConfig, setUrdfConfig] = useState<{
+    mode: 'topic' | 'url';
+    topic: string;
+    urdfUrl: string;
+    meshBaseUrl: string;
+    packageMapping: Record<string, string>;
+  }>(getInitialUrdfConfig);
 
   // Update localStorage when URL changes
   const handleUrlChange = (newUrl: string) => {
@@ -32,6 +63,34 @@ export default function Dashboard() {
       localStorage.setItem(STORAGE_KEY, newUrl);
     }
     // Page will automatically reconnect due to useRosbridge dependency on rosbridgeUrl
+  };
+
+  // Update localStorage when URDF config changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY_URDF_CONFIG, JSON.stringify(urdfConfig));
+    }
+  }, [urdfConfig]);
+
+  // URDF config handlers
+  const handleUrdfModeChange = (mode: 'topic' | 'url') => {
+    setUrdfConfig(prev => ({ ...prev, mode }));
+  };
+
+  const handleUrdfTopicChange = (topic: string) => {
+    setUrdfConfig(prev => ({ ...prev, topic }));
+  };
+
+  const handleUrdfUrlChange = (urdfUrl: string) => {
+    setUrdfConfig(prev => ({ ...prev, urdfUrl }));
+  };
+
+  const handleMeshBaseUrlChange = (meshBaseUrl: string) => {
+    setUrdfConfig(prev => ({ ...prev, meshBaseUrl }));
+  };
+
+  const handlePackageMappingChange = (packageMapping: Record<string, string>) => {
+    setUrdfConfig(prev => ({ ...prev, packageMapping }));
   };
 
   return (
@@ -86,7 +145,19 @@ export default function Dashboard() {
           <div className="lg:col-span-2 grid grid-rows-2 gap-4">
             {/* URDF Viewer */}
             <div className="relative">
-              <URDFViewer client={client} />
+              <URDFViewer 
+                client={client}
+                mode={urdfConfig.mode}
+                topic={urdfConfig.topic}
+                urdfUrl={urdfConfig.urdfUrl}
+                meshBaseUrl={urdfConfig.meshBaseUrl}
+                packageMapping={urdfConfig.packageMapping}
+                onModeChange={handleUrdfModeChange}
+                onTopicChange={handleUrdfTopicChange}
+                onUrdfUrlChange={handleUrdfUrlChange}
+                onMeshBaseUrlChange={handleMeshBaseUrlChange}
+                onPackageMappingChange={handlePackageMappingChange}
+              />
             </div>
 
             {/* Point Cloud Viewer */}
