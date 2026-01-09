@@ -150,13 +150,24 @@ export class ROSBridge {
         reject(new Error('Timeout getting topics'));
       }, 5000);
 
+      // Listen for response
+      const ws = this.ws;
+      const originalOnMessage = ws?.onmessage;
+      
       const handler = (data: any) => {
         // Handle service response from /rosapi/topics
         if (data.op === 'service_response' && data.service === '/rosapi/topics') {
           clearTimeout(timeout);
+          
+          // Restore original message handler
+          if (ws) {
+            ws.onmessage = originalOnMessage || null;
+          }
+          
           const topics: TopicInfo[] = [];
           if (data.values && data.values.topics && data.values.types) {
-            for (let i = 0; i < data.values.topics.length; i++) {
+            const topicCount = Math.min(data.values.topics.length, data.values.types.length);
+            for (let i = 0; i < topicCount; i++) {
               topics.push({
                 topic: data.values.topics[i],
                 type: data.values.types[i],
@@ -167,9 +178,6 @@ export class ROSBridge {
         }
       };
 
-      // Listen for response
-      const ws = this.ws;
-      const originalOnMessage = ws?.onmessage;
       if (ws) {
         ws.onmessage = (event) => {
           if (originalOnMessage) {
