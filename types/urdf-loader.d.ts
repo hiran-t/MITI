@@ -1,9 +1,18 @@
 declare module 'urdf-loader' {
   import { Object3D, LoadingManager } from 'three';
 
+  interface MeshLoadDoneFunc {
+    (mesh: Object3D, err?: Error): void;
+  }
+
+  interface MeshLoadFunc {
+    (url: string, manager: LoadingManager, onLoad: MeshLoadDoneFunc): void;
+  }
+
   export default class URDFLoader {
     constructor(manager?: LoadingManager);
-    packages: Record<string, string>;
+    packages: string | { [key: string]: string } | ((targetPkg: string) => string);
+    loadMeshCb: MeshLoadFunc;
     parse(urdfString: string): Object3D;
     load(
       url: string,

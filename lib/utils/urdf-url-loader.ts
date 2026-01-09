@@ -125,7 +125,7 @@ export function createMeshLoadManager(
   };
 
   manager.onLoad = () => {
-    console.log('All meshes loaded successfully');
+    console.log('✅ All meshes loaded successfully');
   };
 
   manager.onProgress = (url, loaded, total) => {
@@ -147,10 +147,12 @@ export function createMeshLoadManager(
   // Override URL resolution to handle package:// paths
   const originalResolveURL = manager.resolveURL.bind(manager);
   manager.resolveURL = function(url: string): string {
+    console.log('🔍 Resolving URL:', url);
+    
     // If it's a package:// path, resolve it
     if (url.startsWith('package://')) {
       const resolved = resolvePackagePath(url, baseUrl, packageMapping);
-      console.log(`Resolved package path: ${url} -> ${resolved}`);
+      console.log(`📦 Package resolved: ${url} → ${resolved}`);
       return resolved;
     }
     
@@ -160,9 +162,14 @@ export function createMeshLoadManager(
     }
 
     // If it's a relative path, resolve against base URL
-    const resolved = resolvePackagePath(url, baseUrl, packageMapping);
-    console.log(`Resolved relative path: ${url} -> ${resolved}`);
-    return resolved;
+    if (!url.startsWith('/')) {
+      const resolved = `${baseUrl}/${url}`;
+      console.log(`📁 Relative resolved: ${url} → ${resolved}`);
+      return resolved;
+    }
+    
+    // Use original resolver for absolute paths
+    return originalResolveURL(url);
   };
 
   return manager;
