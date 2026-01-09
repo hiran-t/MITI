@@ -274,9 +274,22 @@ export default function URDFViewer({
 
       // Save to recent URLs
       if (typeof window !== 'undefined') {
-        const recent = JSON.parse(localStorage.getItem('vizzy_urdf_recent') || '[]');
-        const updated = [currentUrdfUrl, ...recent.filter((u: string) => u !== currentUrdfUrl)].slice(0, 5);
-        localStorage.setItem('vizzy_urdf_recent', JSON.stringify(updated));
+        try {
+          const storedRecent = localStorage.getItem('vizzy_urdf_recent');
+          const recent = storedRecent ? JSON.parse(storedRecent) : [];
+          
+          // Validate that recent is an array
+          if (Array.isArray(recent)) {
+            const updated = [currentUrdfUrl, ...recent.filter((u: string) => u !== currentUrdfUrl)].slice(0, 5);
+            localStorage.setItem('vizzy_urdf_recent', JSON.stringify(updated));
+          } else {
+            // If corrupted, reset with current URL
+            localStorage.setItem('vizzy_urdf_recent', JSON.stringify([currentUrdfUrl]));
+          }
+        } catch (e) {
+          console.error('Failed to save recent URLs:', e);
+          // If localStorage fails, continue without saving
+        }
       }
     } catch (err: any) {
       console.error('Failed to load URDF from URL:', err);
@@ -291,14 +304,18 @@ export default function URDFViewer({
     setCurrentUrdfUrl(preset.urdfUrl);
     setCurrentMeshBaseUrl(preset.meshBaseUrl);
     setCurrentPackageMapping(preset.packageMapping);
-    
-    // Auto-load after setting preset
-    setTimeout(() => {
-      if (currentMode === 'url') {
-        handleLoadFromUrl();
-      }
-    }, 100);
   };
+
+  // Auto-load after preset is set
+  useEffect(() => {
+    if (currentMode === 'url' && currentUrdfUrl && currentUrdfUrl.startsWith('http')) {
+      // Only auto-load if we have a valid URL in URL mode
+      const timer = setTimeout(() => {
+        handleLoadFromUrl();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [currentUrdfUrl, currentMeshBaseUrl, currentPackageMapping]);
 
   // Debug logging for topic mode
   useEffect(() => {

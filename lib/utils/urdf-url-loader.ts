@@ -66,11 +66,16 @@ export async function loadURDFFromURL(
       throw error;
     }
 
-    if (err.message && err.message.includes('CORS')) {
+    // Detect CORS errors - they typically show as TypeError with 'Failed to fetch'
+    // or network errors when the actual issue is CORS
+    if (err.name === 'TypeError' && 
+        (err.message.includes('Failed to fetch') || 
+         err.message.includes('NetworkError') ||
+         err.message.includes('Network request failed'))) {
       const error: URDFLoadError = {
         type: 'cors',
-        message: 'CORS error: Cannot access the URL',
-        details: 'The server needs to allow cross-origin requests. See documentation for CORS configuration.',
+        message: 'Failed to load URDF - possible CORS issue',
+        details: 'The server may not allow cross-origin requests. See documentation for CORS configuration.',
         url: urdfUrl,
       };
       throw error;
