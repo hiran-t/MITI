@@ -4,15 +4,52 @@ import { useEffect, useState, useRef } from 'react';
 import { ROSBridge } from '@/lib/rosbridge/client';
 import { useTopic } from '@/app/hooks/useTopic';
 import Scene3D from './Scene3D';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RefreshCw, Download } from 'lucide-react';
 import * as THREE from 'three';
 import URDFLoader from 'urdf-loader';
+import URDFSourceSelector from './URDFSourceSelector';
+import URDFSettings from './URDFSettings';
+import URDFLoadStatus from './URDFLoadStatus';
+import { loadURDFFromURL, createMeshLoadManager, formatURDFError } from '@/lib/utils/urdf-url-loader';
+import { URDFLoadError } from '@/types/urdf-loader';
 
 interface URDFViewerProps {
   client: ROSBridge | null;
+  // Mode selection
+  mode?: 'topic' | 'url';
+  // For topic mode
+  topic?: string;
+  // For URL mode
+  urdfUrl?: string;
+  meshBaseUrl?: string;
+  packageMapping?: Record<string, string>;
+  // Callbacks
+  onModeChange?: (mode: 'topic' | 'url') => void;
+  onTopicChange?: (topic: string) => void;
+  onUrdfUrlChange?: (url: string) => void;
+  onMeshBaseUrlChange?: (url: string) => void;
+  onPackageMappingChange?: (mapping: Record<string, string>) => void;
 }
 
-function URDFModel({ urdfString }: { urdfString: string }) {
+interface URDFModelProps {
+  urdfString: string;
+  meshBaseUrl?: string;
+  packageMapping?: Record<string, string>;
+  onLoadStart?: () => void;
+  onLoadComplete?: () => void;
+  onLoadError?: (error: Error) => void;
+  onLoadProgress?: (loaded: number, total: number) => void;
+}
+
+function URDFModel({ 
+  urdfString, 
+  meshBaseUrl, 
+  packageMapping,
+  onLoadStart,
+  onLoadComplete,
+  onLoadError,
+  onLoadProgress,
+}: URDFModelProps) {
   const [model, setModel] = useState<THREE.Object3D | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,12 +59,32 @@ function URDFModel({ urdfString }: { urdfString: string }) {
     if (!urdfString) return;
 
     console.log('URDFModel: Attempting to parse URDF, length:', urdfString.length);
+    
+    if (onLoadStart) {
+      onLoadStart();
+    }
 
     try {
-      const loader = new URDFLoader();
+      // Create custom loading manager if meshBaseUrl is provided
+      const manager = meshBaseUrl 
+        ? createMeshLoadManager(
+            meshBaseUrl, 
+            packageMapping,
+            (url, loaded, total) => {
+              if (onLoadProgress) {
+                onLoadProgress(loaded, total);
+              }
+            },
+            (url) => {
+              console.error('Failed to load mesh:', url);
+            }
+          )
+        : undefined;
+
+      const loader = new URDFLoader(manager);
       
-      // Set package path resolver - provide empty resolver to avoid external file loading
-      loader.packages = {};
+      // Set package path resolver - provide empty resolver to avoid external file loading when not using URLs
+      loader.packages = packageMapping || {};
       
       // Parse URDF from string
       const robot = loader.parse(urdfString);
@@ -98,12 +155,21 @@ function URDFModel({ urdfString }: { urdfString: string }) {
       
       setModel(robot);
       setLoading(false);
+      
+      if (onLoadComplete) {
+        onLoadComplete();
+      }
     } catch (err) {
       console.error('URDFModel: Error loading URDF:', err);
-      setError('Failed to load URDF model');
+      const errorMsg = 'Failed to load URDF model';
+      setError(errorMsg);
       setLoading(false);
+      
+      if (onLoadError) {
+        onLoadError(err instanceof Error ? err : new Error(errorMsg));
+      }
     }
-  }, [urdfString]);
+  }, [urdfString, meshBaseUrl, packageMapping]);
 
   // Log when ref changes
   useEffect(() => {
@@ -140,47 +206,262 @@ function URDFModel({ urdfString }: { urdfString: string }) {
   );
 }
 
-export default function URDFViewer({ client }: URDFViewerProps) {
+export default function URDFViewer({ 
+  client,
+  mode: initialMode = 'topic',
+  topic: initialTopic = '/robot_description',
+  urdfUrl: initialUrdfUrl = '',
+  meshBaseUrl: initialMeshBaseUrl = '',
+  packageMapping: initialPackageMapping = {},
+  onModeChange,
+  onTopicChange,
+  onUrdfUrlChange,
+  onMeshBaseUrlChange,
+  onPackageMappingChange,
+}: URDFViewerProps) {
+  const [currentMode, setCurrentMode] = useState<'topic' | 'url'>(initialMode);
+  const [currentTopic, setCurrentTopic] = useState(initialTopic);
+  const [currentUrdfUrl, setCurrentUrdfUrl] = useState(initialUrdfUrl);
+  const [currentMeshBaseUrl, setCurrentMeshBaseUrl] = useState(initialMeshBaseUrl);
+  const [currentPackageMapping, setCurrentPackageMapping] = useState(initialPackageMapping);
+  
+  const [urdfFromUrl, setUrdfFromUrl] = useState<string | null>(null);
+  const [isLoadingUrl, setIsLoadingUrl] = useState(false);
+  const [urlError, setUrlError] = useState<string | null>(null);
+  const [loadProgress, setLoadProgress] = useState<{ loaded: number; total: number } | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+
+  // Use topic subscription for topic mode
   const { data: urdfData } = useTopic<{ data: string }>(
-    client,
-    '/robot_description',
+    currentMode === 'topic' ? client : null,
+    currentTopic,
     'std_msgs/String'
   );
 
-  const urdfString = urdfData?.data;
+  // Get URDF string based on current mode
+  const urdfString = currentMode === 'topic' ? urdfData?.data : urdfFromUrl;
 
-  // Debug logging
+  // Handle mode change
+  const handleModeChange = (newMode: 'topic' | 'url') => {
+    setCurrentMode(newMode);
+    setUrlError(null);
+    if (onModeChange) {
+      onModeChange(newMode);
+    }
+  };
+
+  // Handle URL loading
+  const handleLoadFromUrl = async () => {
+    if (!currentUrdfUrl) {
+      setUrlError('Please enter a URDF URL');
+      return;
+    }
+
+    setIsLoadingUrl(true);
+    setUrlError(null);
+    setUrdfFromUrl(null);
+    setLoadProgress(null);
+
+    try {
+      const urdfContent = await loadURDFFromURL({
+        urdfUrl: currentUrdfUrl,
+        meshBaseUrl: currentMeshBaseUrl,
+        packageMapping: currentPackageMapping,
+      });
+
+      setUrdfFromUrl(urdfContent);
+      setIsLoadingUrl(false);
+
+      // Save to recent URLs
+      if (typeof window !== 'undefined') {
+        const recent = JSON.parse(localStorage.getItem('vizzy_urdf_recent') || '[]');
+        const updated = [currentUrdfUrl, ...recent.filter((u: string) => u !== currentUrdfUrl)].slice(0, 5);
+        localStorage.setItem('vizzy_urdf_recent', JSON.stringify(updated));
+      }
+    } catch (err: any) {
+      console.error('Failed to load URDF from URL:', err);
+      const errorMsg = err.type ? formatURDFError(err) : err.message || 'Failed to load URDF';
+      setUrlError(errorMsg);
+      setIsLoadingUrl(false);
+    }
+  };
+
+  // Handle preset loading
+  const handleLoadPreset = (preset: { urdfUrl: string; meshBaseUrl: string; packageMapping: Record<string, string> }) => {
+    setCurrentUrdfUrl(preset.urdfUrl);
+    setCurrentMeshBaseUrl(preset.meshBaseUrl);
+    setCurrentPackageMapping(preset.packageMapping);
+    
+    // Auto-load after setting preset
+    setTimeout(() => {
+      if (currentMode === 'url') {
+        handleLoadFromUrl();
+      }
+    }, 100);
+  };
+
+  // Debug logging for topic mode
   useEffect(() => {
-    if (urdfData) {
-      console.log('URDF data received:', {
+    if (urdfData && currentMode === 'topic') {
+      console.log('URDF data received from topic:', {
         hasData: !!urdfData.data,
         dataLength: urdfData.data?.length,
         dataPreview: urdfData.data?.substring(0, 100)
       });
     }
-  }, [urdfData]);
+  }, [urdfData, currentMode]);
 
   return (
     <div className="relative w-full h-full bg-gray-950 rounded-lg overflow-hidden border border-gray-800">
-      <div className="absolute top-3 left-3 z-10 px-3 py-1.5 bg-gray-900/90 rounded text-xs font-medium text-gray-300 border border-gray-800">
-        URDF Viewer
-        {urdfData && (
-          <span className="ml-2 text-green-400">• Data received</span>
+      {/* Header */}
+      <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 flex-1">
+          <div className="px-3 py-1.5 bg-gray-900/90 rounded text-xs font-medium text-gray-300 border border-gray-800">
+            URDF Viewer
+            {currentMode === 'topic' && urdfData && (
+              <span className="ml-2 text-green-400">• Connected</span>
+            )}
+            {currentMode === 'url' && urdfFromUrl && (
+              <span className="ml-2 text-purple-400">• Loaded</span>
+            )}
+          </div>
+
+          <URDFSourceSelector mode={currentMode} onModeChange={handleModeChange} />
+        </div>
+
+        <URDFSettings onLoadPreset={handleLoadPreset} />
+      </div>
+
+      {/* Mode-specific controls */}
+      <div className="absolute top-16 left-3 right-3 z-10">
+        {currentMode === 'topic' && (
+          <div className="bg-gray-900/90 border border-gray-800 rounded-lg p-3">
+            <label className="block text-xs font-medium text-gray-400 mb-2">
+              Topic Name
+            </label>
+            <input
+              type="text"
+              value={currentTopic}
+              onChange={(e) => {
+                setCurrentTopic(e.target.value);
+                if (onTopicChange) onTopicChange(e.target.value);
+              }}
+              className="w-full px-3 py-1.5 bg-gray-800 border border-gray-700 rounded text-sm text-gray-200 focus:outline-none focus:border-blue-500"
+              placeholder="/robot_description"
+            />
+            <p className="mt-2 text-xs text-gray-500">
+              Listening for URDF on this topic...
+            </p>
+          </div>
+        )}
+
+        {currentMode === 'url' && (
+          <div className="bg-gray-900/90 border border-gray-800 rounded-lg p-3 space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-2">
+                URDF URL
+              </label>
+              <input
+                type="text"
+                value={currentUrdfUrl}
+                onChange={(e) => {
+                  setCurrentUrdfUrl(e.target.value);
+                  if (onUrdfUrlChange) onUrdfUrlChange(e.target.value);
+                }}
+                className="w-full px-3 py-1.5 bg-gray-800 border border-gray-700 rounded text-sm text-gray-200 focus:outline-none focus:border-purple-500"
+                placeholder="http://192.168.10.27:8000/robot.urdf"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-2">
+                Mesh Base URL (optional)
+              </label>
+              <input
+                type="text"
+                value={currentMeshBaseUrl}
+                onChange={(e) => {
+                  setCurrentMeshBaseUrl(e.target.value);
+                  if (onMeshBaseUrlChange) onMeshBaseUrlChange(e.target.value);
+                }}
+                className="w-full px-3 py-1.5 bg-gray-800 border border-gray-700 rounded text-sm text-gray-200 focus:outline-none focus:border-purple-500"
+                placeholder="http://192.168.10.27:8000"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Base URL for resolving package:// paths
+              </p>
+            </div>
+
+            <button
+              onClick={handleLoadFromUrl}
+              disabled={isLoadingUrl || !currentUrdfUrl}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded hover:bg-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isLoadingUrl ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Loading...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4" />
+                  <span>Load URDF</span>
+                </>
+              )}
+            </button>
+          </div>
         )}
       </div>
 
+      {/* Loading/Error Status */}
+      {(isLoadingUrl || urlError) && (
+        <URDFLoadStatus
+          loading={isLoadingUrl}
+          error={urlError}
+          progress={loadProgress || undefined}
+        />
+      )}
+
+      {/* 3D Scene */}
       {!urdfString ? (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-center">
-            <Loader2 className="w-8 h-8 text-gray-600 animate-spin mx-auto mb-2" />
-            <p className="text-sm text-gray-400">
-              Waiting for /robot_description topic...
-            </p>
+            {currentMode === 'topic' ? (
+              <>
+                <Loader2 className="w-8 h-8 text-gray-600 animate-spin mx-auto mb-2" />
+                <p className="text-sm text-gray-400">
+                  Waiting for {currentTopic} topic...
+                </p>
+              </>
+            ) : (
+              <>
+                <Download className="w-8 h-8 text-gray-600 mx-auto mb-2" />
+                <p className="text-sm text-gray-400">
+                  Enter a URDF URL and click Load
+                </p>
+              </>
+            )}
           </div>
         </div>
       ) : (
         <Scene3D>
-          <URDFModel urdfString={urdfString} />
+          <URDFModel 
+            urdfString={urdfString}
+            meshBaseUrl={currentMeshBaseUrl || undefined}
+            packageMapping={currentPackageMapping}
+            onLoadStart={() => setIsLoadingUrl(true)}
+            onLoadComplete={() => {
+              setIsLoadingUrl(false);
+              setLoadProgress(null);
+            }}
+            onLoadError={(err) => {
+              setUrlError(err.message);
+              setIsLoadingUrl(false);
+            }}
+            onLoadProgress={(loaded, total) => {
+              setLoadProgress({ loaded, total });
+            }}
+          />
         </Scene3D>
       )}
     </div>
