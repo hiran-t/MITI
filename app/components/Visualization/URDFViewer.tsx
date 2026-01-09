@@ -343,91 +343,30 @@ export default function URDFViewer({
             )}
           </div>
 
-          <URDFSourceSelector mode={currentMode} onModeChange={handleModeChange} />
+          <URDFSourceSelector 
+            mode={currentMode} 
+            onModeChange={handleModeChange}
+            topic={currentTopic}
+            onTopicChange={(topic) => {
+              setCurrentTopic(topic);
+              if (onTopicChange) onTopicChange(topic);
+            }}
+            urdfUrl={currentUrdfUrl}
+            onUrdfUrlChange={(url) => {
+              setCurrentUrdfUrl(url);
+              if (onUrdfUrlChange) onUrdfUrlChange(url);
+            }}
+            meshBaseUrl={currentMeshBaseUrl}
+            onMeshBaseUrlChange={(url) => {
+              setCurrentMeshBaseUrl(url);
+              if (onMeshBaseUrlChange) onMeshBaseUrlChange(url);
+            }}
+            onLoadUrl={handleLoadFromUrl}
+            isLoadingUrl={isLoadingUrl}
+          />
         </div>
 
         <URDFSettings onLoadPreset={handleLoadPreset} />
-      </div>
-
-      {/* Mode-specific controls */}
-      <div className="absolute top-16 left-3 right-3 z-10">
-        {currentMode === 'topic' && (
-          <div className="bg-gray-900/90 border border-gray-800 rounded-lg p-3">
-            <label className="block text-xs font-medium text-gray-400 mb-2">
-              Topic Name
-            </label>
-            <input
-              type="text"
-              value={currentTopic}
-              onChange={(e) => {
-                setCurrentTopic(e.target.value);
-                if (onTopicChange) onTopicChange(e.target.value);
-              }}
-              className="w-full px-3 py-1.5 bg-gray-800 border border-gray-700 rounded text-sm text-gray-200 focus:outline-none focus:border-blue-500"
-              placeholder="/robot_description"
-            />
-            <p className="mt-2 text-xs text-gray-500">
-              Listening for URDF on this topic...
-            </p>
-          </div>
-        )}
-
-        {currentMode === 'url' && (
-          <div className="bg-gray-900/90 border border-gray-800 rounded-lg p-3 space-y-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-400 mb-2">
-                URDF URL
-              </label>
-              <input
-                type="text"
-                value={currentUrdfUrl}
-                onChange={(e) => {
-                  setCurrentUrdfUrl(e.target.value);
-                  if (onUrdfUrlChange) onUrdfUrlChange(e.target.value);
-                }}
-                className="w-full px-3 py-1.5 bg-gray-800 border border-gray-700 rounded text-sm text-gray-200 focus:outline-none focus:border-purple-500"
-                placeholder="http://192.168.10.27:8000/robot.urdf"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-gray-400 mb-2">
-                Mesh Base URL (optional)
-              </label>
-              <input
-                type="text"
-                value={currentMeshBaseUrl}
-                onChange={(e) => {
-                  setCurrentMeshBaseUrl(e.target.value);
-                  if (onMeshBaseUrlChange) onMeshBaseUrlChange(e.target.value);
-                }}
-                className="w-full px-3 py-1.5 bg-gray-800 border border-gray-700 rounded text-sm text-gray-200 focus:outline-none focus:border-purple-500"
-                placeholder="http://192.168.10.27:8000"
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Base URL for resolving package:// paths
-              </p>
-            </div>
-
-            <button
-              onClick={handleLoadFromUrl}
-              disabled={isLoadingUrl || !currentUrdfUrl}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded hover:bg-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isLoadingUrl ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Loading...</span>
-                </>
-              ) : (
-                <>
-                  <Download className="w-4 h-4" />
-                  <span>Load URDF</span>
-                </>
-              )}
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Loading/Error Status */}
