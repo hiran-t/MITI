@@ -99,7 +99,7 @@ function URDFModel({
       }
       
       // FIX: Override loadMeshCb to handle package:// URLs and different mesh formats
-      loader.loadMeshCb = function(path: string, manager: THREE.LoadingManager, done: (obj: THREE.Object3D) => void) {
+      loader.loadMeshCb = function(path: string, manager: THREE.LoadingManager, done: (mesh: THREE.Object3D, err?: Error) => void) {
         console.log('🔄 Loading mesh:', path);
         
         // Resolve package:// paths
@@ -113,6 +113,8 @@ function URDFModel({
             // Check if loader.packages is an object and has the package name
             if (loader.packages && typeof loader.packages === 'object' && packageName in loader.packages) {
               baseUrl = loader.packages[packageName];
+            } else if (typeof loader.packages === 'function') {
+              baseUrl = loader.packages(packageName);
             }
             
             resolvedPath = `${baseUrl}/${relativePath}`;
@@ -135,7 +137,7 @@ function URDFModel({
             undefined,
             (error: any) => {
               console.error('❌ Failed to load COLLADA:', resolvedPath, error);
-              done(new THREE.Group()); // Return empty group on error
+              done(new THREE.Group(), error); // Return empty group with error
             }
           );
         } else if (extension === 'stl') {
@@ -155,7 +157,7 @@ function URDFModel({
             undefined,
             (error: any) => {
               console.error('❌ Failed to load STL:', resolvedPath, error);
-              done(new THREE.Group());
+              done(new THREE.Group(), error);
             }
           );
         } else if (extension === 'obj') {
@@ -170,7 +172,7 @@ function URDFModel({
             undefined,
             (error: any) => {
               console.error('❌ Failed to load OBJ:', resolvedPath, error);
-              done(new THREE.Group());
+              done(new THREE.Group(), error);
             }
           );
         } else {

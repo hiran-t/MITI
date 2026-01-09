@@ -6,7 +6,7 @@ declare module 'urdf-loader' {
   }
 
   interface MeshLoadFunc {
-    (url: string, manager: LoadingManager, onLoad: MeshLoadDoneFunc): void;
+    (url: string, manager: LoadingManager, done: MeshLoadDoneFunc): void;
   }
 
   export default class URDFLoader {

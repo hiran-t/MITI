@@ -98,6 +98,22 @@ export async function loadURDFFromURL(
 }
 
 /**
+ * Ensures a URL has a trailing slash
+ */
+function ensureTrailingSlash(url: string): string {
+  return url.endsWith('/') ? url : `${url}/`;
+}
+
+/**
+ * Concatenates a base URL with a path, ensuring no double slashes
+ */
+function joinUrlPath(baseUrl: string, path: string): string {
+  const normalizedBase = ensureTrailingSlash(baseUrl);
+  const normalizedPath = path.startsWith('/') ? path.substring(1) : path;
+  return `${normalizedBase}${normalizedPath}`;
+}
+
+/**
  * Creates a custom THREE.LoadingManager for handling mesh paths in URDF
  * 
  * @param baseUrl - Base URL for resolving mesh paths
@@ -163,7 +179,7 @@ export function createMeshLoadManager(
 
     // If it's a relative path, resolve against base URL
     if (!url.startsWith('/')) {
-      const resolved = `${baseUrl}/${url}`;
+      const resolved = joinUrlPath(baseUrl, url);
       console.log(`📁 Relative resolved: ${url} → ${resolved}`);
       return resolved;
     }
