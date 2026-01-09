@@ -75,12 +75,30 @@ Or using npm:
 npm install
 ```
 
-3. **Configure environment variables** (optional)
+3. **Configure rosbridge connection** (optional)
 
-Create a `.env.local` file in the root directory:
-```env
-NEXT_PUBLIC_ROSBRIDGE_URL=ws://localhost:9090
+You can configure the rosbridge server URL in two ways:
+
+**Option 1: Using environment variables** (for default connection)
+
+Copy the example environment file and edit it:
+```bash
+cp .env.example .env.local
 ```
+
+Edit `.env.local` and set your rosbridge URL:
+```env
+NEXT_PUBLIC_ROSBRIDGE_URL=ws://192.168.10.27:9090
+```
+
+**Option 2: Using the UI settings** (recommended for easy switching)
+
+Once the app is running, click the settings icon (⚙️) next to the connection status to change the rosbridge URL without editing files. The URL is saved in your browser's localStorage and persists across sessions.
+
+Examples:
+- Local development: `ws://localhost:9090`
+- Remote robot: `ws://192.168.10.27:9090`
+- Docker container: `ws://ros-bridge:9090`
 
 ## 🚦 Usage
 

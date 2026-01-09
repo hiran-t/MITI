@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useRosbridge } from '../hooks/useRosbridge';
 import { useTopicList } from '../hooks/useTopicList';
 import ConnectionStatus from './ConnectionStatus';
@@ -8,9 +9,30 @@ import URDFViewer from './Visualization/URDFViewer';
 import PointCloudViewer from './Visualization/PointCloudViewer';
 import { Activity } from 'lucide-react';
 
+const STORAGE_KEY = 'vizzy_rosbridge_url';
+
 export default function Dashboard() {
-  const { client, connected, error } = useRosbridge();
+  // Get initial URL from localStorage or environment variable
+  const getInitialUrl = () => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) return stored;
+    }
+    return process.env.NEXT_PUBLIC_ROSBRIDGE_URL || 'ws://localhost:9090';
+  };
+
+  const [rosbridgeUrl, setRosbridgeUrl] = useState(getInitialUrl);
+  const { client, connected, error } = useRosbridge(rosbridgeUrl);
   const { topics, loading, refreshTopics } = useTopicList(client);
+
+  // Update localStorage when URL changes
+  const handleUrlChange = (newUrl: string) => {
+    setRosbridgeUrl(newUrl);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, newUrl);
+    }
+    // Page will automatically reconnect due to useRosbridge dependency on rosbridgeUrl
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 text-white p-4">
@@ -31,7 +53,8 @@ export default function Dashboard() {
           
           <ConnectionStatus
             connected={connected}
-            url={process.env.NEXT_PUBLIC_ROSBRIDGE_URL || 'ws://localhost:9090'}
+            url={rosbridgeUrl}
+            onUrlChange={handleUrlChange}
           />
           
           {error && (
