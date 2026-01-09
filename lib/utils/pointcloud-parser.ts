@@ -1,29 +1,4 @@
-// PointCloud2 message structure based on ROS sensor_msgs/PointCloud2
-export interface PointCloud2 {
-  header: {
-    seq?: number;
-    stamp: {
-      sec: number;
-      nsec: number;
-    };
-    frame_id: string;
-  };
-  height: number;
-  width: number;
-  fields: PointField[];
-  is_bigendian: boolean;
-  point_step: number;
-  row_step: number;
-  data: number[];
-  is_dense: boolean;
-}
-
-export interface PointField {
-  name: string;
-  offset: number;
-  datatype: number;
-  count: number;
-}
+import type { sensor_msgs } from '@/types/ros-messages';
 
 export interface ParsedPoint {
   x: number;
@@ -47,7 +22,7 @@ const POINTFIELD_DATATYPES: { [key: number]: { size: number; reader: string } } 
   8: { size: 8, reader: 'getFloat64' }, // FLOAT64
 };
 
-export function parsePointCloud2(msg: PointCloud2): ParsedPoint[] {
+export function parsePointCloud2(msg: sensor_msgs.PointCloud2): ParsedPoint[] {
   const points: ParsedPoint[] = [];
   
   if (!msg.data || msg.data.length === 0) {

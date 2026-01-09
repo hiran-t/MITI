@@ -6,7 +6,6 @@ import { useTopic } from '@/app/hooks/useTopic';
 import Scene3D from './Scene3D';
 import { Loader2 } from 'lucide-react';
 import * as THREE from 'three';
-// @ts-ignore - urdf-loader types may not be available
 import URDFLoader from 'urdf-loader';
 
 interface URDFViewerProps {
