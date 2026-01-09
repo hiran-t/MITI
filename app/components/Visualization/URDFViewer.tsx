@@ -34,8 +34,10 @@ function URDFModel({ urdfString }: { urdfString: string }) {
       console.log('URDFModel: Successfully parsed URDF, model:', robot);
       
       // Add materials to all meshes that don't have them
+      let meshCount = 0;
       robot.traverse((child: any) => {
         if (child.isMesh) {
+          meshCount++;
           if (!child.material) {
             child.material = new THREE.MeshStandardMaterial({
               color: 0xcccccc,
@@ -46,12 +48,21 @@ function URDFModel({ urdfString }: { urdfString: string }) {
           // Ensure materials are visible
           if (child.material) {
             child.material.needsUpdate = true;
+            // Make sure material is not transparent
+            if (child.material.transparent) {
+              child.material.transparent = false;
+              child.material.opacity = 1.0;
+            }
           }
           // Ensure meshes cast and receive shadows
           child.castShadow = true;
           child.receiveShadow = true;
+          // Make sure mesh is visible
+          child.visible = true;
         }
       });
+      
+      console.log('URDFModel: Mesh count:', meshCount);
       
       // Calculate bounding box to center and scale the model
       const box = new THREE.Box3().setFromObject(robot);
@@ -62,17 +73,28 @@ function URDFModel({ urdfString }: { urdfString: string }) {
       console.log('URDFModel: Center:', center);
       console.log('URDFModel: Children count:', robot.children.length);
       
-      // Center the model at origin
-      robot.position.sub(center);
-      
-      // Scale if needed (if model is too small or too large)
-      const maxDim = Math.max(size.x, size.y, size.z);
-      if (maxDim > 0) {
-        const targetSize = 2; // Target size in scene units
-        const scale = targetSize / maxDim;
-        console.log('URDFModel: Applying scale:', scale);
-        robot.scale.multiplyScalar(scale);
+      // Only apply transformations if we have valid bounds
+      if (!box.isEmpty()) {
+        // Center the model at origin
+        robot.position.sub(center);
+        
+        // Scale if needed (if model is too small or too large)
+        const maxDim = Math.max(size.x, size.y, size.z);
+        if (maxDim > 0) {
+          const targetSize = 2; // Target size in scene units
+          const scale = targetSize / maxDim;
+          console.log('URDFModel: Applying scale:', scale);
+          robot.scale.multiplyScalar(scale);
+        }
+      } else {
+        console.warn('URDFModel: Empty bounding box, skipping centering and scaling');
+        // If bounding box is empty, apply a default scale to make small models visible
+        robot.scale.set(10, 10, 10);
+        console.log('URDFModel: Applied default scale 10x');
       }
+      
+      // Ensure the robot itself is visible
+      robot.visible = true;
       
       setModel(robot);
       setLoading(false);
