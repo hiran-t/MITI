@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Settings, X, Save, Trash2, Clock } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Settings, ChevronDown, Trash2, Clock } from 'lucide-react';
 
 interface URDFPreset {
   name: string;
@@ -30,6 +30,7 @@ export default function URDFSettings({ onLoadPreset }: URDFSettingsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [presets, setPresets] = useState<URDFPreset[]>(DEFAULT_PRESETS);
   const [recentUrls, setRecentUrls] = useState<string[]>([]);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Load saved data from localStorage
   useEffect(() => {
@@ -55,6 +56,22 @@ export default function URDFSettings({ onLoadPreset }: URDFSettingsProps) {
     }
   }, []);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [isOpen]);
+
   const handleLoadPreset = (preset: URDFPreset) => {
     onLoadPreset({
       urdfUrl: preset.urdfUrl,
@@ -64,7 +81,8 @@ export default function URDFSettings({ onLoadPreset }: URDFSettingsProps) {
     setIsOpen(false);
   };
 
-  const handleDeletePreset = (index: number) => {
+  const handleDeletePreset = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
     const updated = presets.filter((_, i) => i !== index);
     setPresets(updated);
     if (typeof window !== 'undefined') {
@@ -72,101 +90,81 @@ export default function URDFSettings({ onLoadPreset }: URDFSettingsProps) {
     }
   };
 
-  const handleClearRecent = () => {
+  const handleClearRecent = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setRecentUrls([]);
     if (typeof window !== 'undefined') {
       localStorage.removeItem(STORAGE_KEY_RECENT);
     }
   };
 
-  if (!isOpen) {
-    return (
+  return (
+    <div className="relative" ref={dropdownRef}>
       <button
-        onClick={() => setIsOpen(true)}
-        className="p-2 hover:bg-gray-800/50 rounded-lg transition-colors border border-gray-800 hover:border-gray-700"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-gray-800/50 rounded-lg transition-colors border border-gray-800 hover:border-gray-700"
         title="URDF Settings"
       >
         <Settings className="w-4 h-4 text-gray-400" />
+        <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
-    );
-  }
 
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-gray-900 border border-gray-800 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-800">
-          <div className="flex items-center gap-2">
-            <Settings className="w-5 h-5 text-blue-400" />
-            <h2 className="text-lg font-semibold text-gray-200">URDF Settings</h2>
-          </div>
-          <button
-            onClick={() => setIsOpen(false)}
-            className="p-1 hover:bg-gray-800 rounded transition-colors"
-          >
-            <X className="w-5 h-5 text-gray-400" />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          {/* Presets */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
-              <Save className="w-4 h-4" />
-              Presets
-            </h3>
-            <div className="space-y-2">
+      {isOpen && (
+        <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-gray-900 border border-gray-800 rounded-lg shadow-xl z-50">
+          {/* Presets Section */}
+          <div className="p-3 border-b border-gray-800">
+            <h3 className="text-xs font-semibold text-gray-400 mb-2">Presets</h3>
+            <div className="space-y-1.5">
               {presets.map((preset, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg border border-gray-700 hover:border-gray-600 transition-colors"
+                  className="group relative"
                 >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-200">{preset.name}</p>
-                    <p className="text-xs text-gray-500 truncate">{preset.urdfUrl}</p>
-                  </div>
-                  <div className="flex items-center gap-2 ml-3">
-                    <button
-                      onClick={() => handleLoadPreset(preset)}
-                      className="px-3 py-1 text-xs bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded hover:bg-blue-500/30 transition-colors"
-                    >
-                      Load
-                    </button>
-                    {index >= DEFAULT_PRESETS.length && (
-                      <button
-                        onClick={() => handleDeletePreset(index)}
-                        className="p-1 text-red-400 hover:bg-red-500/20 rounded transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
+                  <button
+                    onClick={() => handleLoadPreset(preset)}
+                    className="w-full text-left p-2 bg-gray-800/50 hover:bg-gray-800 rounded border border-gray-700 hover:border-gray-600 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 min-w-0 pr-2">
+                        <p className="text-sm font-medium text-gray-200 truncate">{preset.name}</p>
+                        <p className="text-xs text-gray-500 truncate">{preset.urdfUrl}</p>
+                      </div>
+                      {index >= DEFAULT_PRESETS.length && (
+                        <button
+                          onClick={(e) => handleDeletePreset(index, e)}
+                          className="flex-shrink-0 p-1 text-red-400 hover:bg-red-500/20 rounded transition-colors opacity-0 group-hover:opacity-100"
+                          title="Delete preset"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </button>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Recent URLs */}
+          {/* Recent URLs Section */}
           {recentUrls.length > 0 && (
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-gray-300 flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
+            <div className="p-3 border-b border-gray-800">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs font-semibold text-gray-400 flex items-center gap-1.5">
+                  <Clock className="w-3 h-3" />
                   Recent URLs
                 </h3>
                 <button
                   onClick={handleClearRecent}
                   className="text-xs text-gray-500 hover:text-gray-400 transition-colors"
                 >
-                  Clear All
+                  Clear
                 </button>
               </div>
-              <div className="space-y-2">
-                {recentUrls.slice(0, 5).map((url, index) => (
+              <div className="space-y-1.5">
+                {recentUrls.slice(0, 3).map((url, index) => (
                   <div
                     key={index}
-                    className="p-3 bg-gray-800/50 rounded-lg border border-gray-700"
+                    className="p-2 bg-gray-800/50 rounded border border-gray-700"
                   >
                     <p className="text-xs text-gray-400 truncate">{url}</p>
                   </div>
@@ -176,14 +174,13 @@ export default function URDFSettings({ onLoadPreset }: URDFSettingsProps) {
           )}
 
           {/* Info */}
-          <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-            <p className="text-xs text-gray-400">
-              <strong className="text-blue-400">Tip:</strong> When loading URDF from URL, ensure your web server has CORS enabled.
-              See documentation for setup instructions.
+          <div className="p-3">
+            <p className="text-xs text-gray-500">
+              <strong className="text-blue-400">Tip:</strong> Enable CORS on your web server
             </p>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
