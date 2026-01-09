@@ -13,10 +13,18 @@ export default function Scene3D({ children }: Scene3DProps) {
     <Canvas
       camera={{ position: [3, 3, 3], fov: 50 }}
       className="bg-gray-950"
+      shadows
     >
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[10, 10, 5]} intensity={1} />
+      <ambientLight intensity={0.7} />
+      <directionalLight 
+        position={[10, 10, 5]} 
+        intensity={1} 
+        castShadow 
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
+      />
       <directionalLight position={[-10, -10, -5]} intensity={0.5} />
+      <pointLight position={[0, 10, 0]} intensity={0.5} />
       
       {/* Grid helper */}
       <Grid
@@ -33,8 +41,8 @@ export default function Scene3D({ children }: Scene3DProps) {
         infiniteGrid={true}
       />
       
-      {/* Axis helper - simple colored lines */}
-      <axesHelper args={[1]} />
+      {/* Axis helper - larger and more visible */}
+      <axesHelper args={[2]} />
       
       {children}
       
@@ -43,6 +51,7 @@ export default function Scene3D({ children }: Scene3DProps) {
         dampingFactor={0.05}
         minDistance={0.5}
         maxDistance={50}
+        target={[0, 0, 0]}
       />
     </Canvas>
   );
