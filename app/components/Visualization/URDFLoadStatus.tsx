@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, AlertCircle, X } from 'lucide-react';
 
 interface URDFLoadStatusProps {
   loading?: boolean;
@@ -11,9 +11,10 @@ interface URDFLoadStatusProps {
     total: number;
     currentFile?: string;
   };
+  onClose?: () => void;
 }
 
-export default function URDFLoadStatus({ loading, error, success, progress }: URDFLoadStatusProps) {
+export default function URDFLoadStatus({ loading, error, success, progress, onClose }: URDFLoadStatusProps) {
   if (!loading && !error && !success) {
     return null;
   }
@@ -59,17 +60,33 @@ export default function URDFLoadStatus({ loading, error, success, progress }: UR
         )}
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-6">
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-6 relative">
+            <button
+              onClick={onClose}
+              className="absolute top-3 right-3 p-1 hover:bg-red-500/20 rounded transition-colors"
+              title="Close"
+            >
+              <X className="w-5 h-5 text-red-400" />
+            </button>
             <div className="flex items-center gap-3 mb-3">
               <XCircle className="w-6 h-6 text-red-400 flex-shrink-0" />
               <h3 className="text-lg font-semibold text-red-400">Loading Failed</h3>
             </div>
-            <p className="text-sm text-gray-300 whitespace-pre-wrap">{error}</p>
+            <p className="text-sm text-gray-300 whitespace-pre-wrap pr-8">{error}</p>
           </div>
         )}
 
         {success && !loading && !error && (
-          <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-6">
+          <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-6 relative">
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="absolute top-3 right-3 p-1 hover:bg-green-500/20 rounded transition-colors"
+                title="Close"
+              >
+                <X className="w-5 h-5 text-green-400" />
+              </button>
+            )}
             <div className="flex items-center gap-3">
               <CheckCircle2 className="w-6 h-6 text-green-400" />
               <h3 className="text-lg font-semibold text-green-400">URDF Loaded Successfully</h3>

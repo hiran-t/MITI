@@ -375,6 +375,11 @@ export default function URDFViewer({
           loading={isLoadingUrl}
           error={urlError}
           progress={loadProgress || undefined}
+          onClose={() => {
+            setUrlError(null);
+            setIsLoadingUrl(false);
+            setLoadProgress(null);
+          }}
         />
       )}
 
