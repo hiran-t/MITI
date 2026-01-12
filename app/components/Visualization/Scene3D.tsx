@@ -16,10 +16,10 @@ export default function Scene3D({ children }: Scene3DProps) {
         fov: 50,
         up: [0, 0, 1] // Z-up coordinate system (ROS convention)
       }}
-      className="bg-gray-950"
+      className="bg-white"
       shadows
     >
-      <ambientLight intensity={0.7} />
+      <ambientLight intensity={5.0} />
       <directionalLight 
         position={[10, -10, 10]} 
         intensity={1} 
@@ -32,14 +32,14 @@ export default function Scene3D({ children }: Scene3DProps) {
       
       {/* Grid helper on XY plane (Z-up) */}
       <Grid
-        args={[10, 10]}
-        cellSize={0.5}
+        args={[100, 100]}
+        cellSize={1.0}
         cellThickness={0.5}
         cellColor="#6b7280"
         sectionSize={1}
         sectionThickness={1}
         sectionColor="#9ca3af"
-        fadeDistance={25}
+        fadeDistance={100}
         fadeStrength={1}
         followCamera={false}
         infiniteGrid={true}

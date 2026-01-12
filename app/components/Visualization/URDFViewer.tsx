@@ -273,7 +273,7 @@ function URDFModel({
       } else {
         console.warn('URDFModel: Empty bounding box, skipping centering and scaling');
         // If bounding box is empty, apply a default scale to make small models visible
-        robot.scale.set(10, 10, 10);
+        robot.scale.set(1, 1, 1);
         console.log('URDFModel: Applied default scale 10x');
       }
       
