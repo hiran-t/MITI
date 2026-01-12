@@ -17,6 +17,7 @@ A modern web application for visualizing and monitoring ROS2 topics in real-time
 
 ### Visualization
 - **URDF 3D Viewer**: Visualize robot models from `/robot_description` topic
+- **Live Robot Motion**: Robot model automatically updates with `/joint_states` topic
 - **Point Cloud Viewer**: Real-time point cloud visualization from depth cameras
 - **Interactive 3D Controls**: Pan, zoom, and rotate with mouse controls
 - **Color Mapping**: Depth-based or RGB coloring for point clouds
@@ -195,8 +196,28 @@ vizzy/
 Vizzy currently supports:
 
 - `std_msgs/String` - For URDF robot descriptions
+- `sensor_msgs/JointState` - For robot joint positions (motion monitoring)
 - `sensor_msgs/PointCloud2` - For point cloud data
 - All standard ROS2 message types (view-only)
+
+### URDF Loading and Motion Monitoring
+
+Vizzy supports loading URDF robot models and monitoring their motion in real-time.
+
+#### Joint States Motion Monitoring
+
+Once a URDF model is loaded, Vizzy automatically subscribes to the `/joint_states` topic to animate the robot:
+
+```bash
+# The robot will automatically move as joint states are published
+ros2 topic pub /joint_states sensor_msgs/msg/JointState "{name: ['joint1', 'joint2'], position: [0.5, 1.0]}"
+```
+
+**Features:**
+- Real-time joint position updates
+- Automatic joint name mapping
+- Supports all joint types (revolute, prismatic, continuous, etc.)
+- No configuration required - just publish to `/joint_states`
 
 ### URDF Loading Options
 
@@ -350,6 +371,7 @@ Edit `app/globals.css` or Tailwind configuration in `tailwind.config.ts`
 - [ ] Can subscribe/unsubscribe to topics
 - [ ] Topic data displays in real-time
 - [ ] URDF viewer loads robot models
+- [ ] Robot joints move with /joint_states topic
 - [ ] Point cloud renders correctly
 - [ ] Reconnection works after disconnect
 - [ ] Search and filter topics works
@@ -364,6 +386,9 @@ ros2 topic pub /test_topic std_msgs/msg/String "data: 'Hello Vizzy'"
 
 # Publish robot description (example)
 ros2 topic pub /robot_description std_msgs/msg/String "data: '$(cat robot.urdf)'"
+
+# Publish joint states for robot motion
+ros2 topic pub /joint_states sensor_msgs/msg/JointState "{header: {stamp: {sec: 0, nanosec: 0}, frame_id: ''}, name: ['joint1', 'joint2'], position: [0.5, 1.0], velocity: [], effort: []}"
 ```
 
 ## 🐛 Troubleshooting
