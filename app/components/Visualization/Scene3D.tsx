@@ -18,6 +18,10 @@ export default function Scene3D({ children }: Scene3DProps) {
       }}
       className="bg-white"
       shadows
+      style={{ touchAction: 'none' }}
+      onPointerDown={(e) => e.stopPropagation()}
+      onPointerMove={(e) => e.stopPropagation()}
+      onPointerUp={(e) => e.stopPropagation()}
     >
       <ambientLight intensity={5.0} />
       <directionalLight 
@@ -52,6 +56,7 @@ export default function Scene3D({ children }: Scene3DProps) {
       {children}
       
       <OrbitControls
+        makeDefault
         enableDamping
         dampingFactor={0.05}
         minDistance={0.5}
