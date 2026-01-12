@@ -32,14 +32,14 @@ export default function Scene3D({ children }: Scene3DProps) {
       
       {/* Grid helper on XY plane (Z-up) */}
       <Grid
-        args={[100, 100]}
+        args={[25, 25]}
         cellSize={1.0}
         cellThickness={0.5}
         cellColor="#6b7280"
         sectionSize={1}
         sectionThickness={1}
         sectionColor="#9ca3af"
-        fadeDistance={100}
+        fadeDistance={25}
         fadeStrength={1}
         followCamera={false}
         infiniteGrid={true}
