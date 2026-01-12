@@ -5,7 +5,7 @@ import { WidgetConfig } from '@/app/types/widget';
 import { ROSBridge } from '@/lib/rosbridge/client';
 import WidgetContainer from './WidgetContainer';
 import type { TopicInfo } from '@/lib/rosbridge/types';
-import { X } from 'lucide-react';
+import { X, GripVertical } from 'lucide-react';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
@@ -107,10 +107,13 @@ export default function DraggableGridLayout({
         >
           {/* Widget Header with drag handle and remove button */}
           <div className="drag-handle px-4 py-3 border-b border-gray-800 flex items-center justify-between cursor-move bg-gray-800/50 hover:bg-gray-800/70 transition-colors">
-            <h2 className="text-sm font-semibold flex items-center gap-2">
-              <span className="w-2 h-2 bg-blue-500 rounded-full" />
-              {widget.title}
-            </h2>
+            <div className="flex items-center gap-2">
+              <GripVertical className="w-4 h-4 text-gray-500" />
+              <h2 className="text-sm font-semibold flex items-center gap-2">
+                <span className="w-2 h-2 bg-blue-500 rounded-full" />
+                {widget.title}
+              </h2>
+            </div>
             <button
               onClick={(e) => {
                 e.stopPropagation();

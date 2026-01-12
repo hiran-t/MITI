@@ -7,6 +7,7 @@ import { useLayoutConfig } from '../hooks/useLayoutConfig';
 import ConnectionStatus from './ConnectionStatus';
 import DraggableGridLayout from './Layout/DraggableGridLayout';
 import LayoutConfigPanel from './Layout/LayoutConfig';
+import AddWidgetButton from './Layout/AddWidgetButton';
 import { Activity } from 'lucide-react';
 
 const STORAGE_KEY = 'vizzy_rosbridge_url';
@@ -134,7 +135,7 @@ export default function Dashboard() {
         </header>
 
         {/* Main Content - Draggable Widget Grid */}
-        <main className="flex-1 overflow-auto p-4">
+        <main className="flex-1 overflow-auto p-4 relative">
           <DraggableGridLayout
             widgets={layout.widgets}
             onLayoutChange={updateLayout}
@@ -152,6 +153,9 @@ export default function Dashboard() {
               onPackageMappingChange: handlePackageMappingChange,
             }}
           />
+          
+          {/* Floating Add Widget Button */}
+          <AddWidgetButton onAddWidget={addWidget} />
         </main>
       </div>
     </div>
