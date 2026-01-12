@@ -1,24 +1,19 @@
 'use client';
 
-'use client';
-
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { WidgetConfig } from '@/app/types/widget';
 import { ROSBridge } from '@/lib/rosbridge/client';
 import WidgetContainer from './WidgetContainer';
 import type { TopicInfo } from '@/lib/rosbridge/types';
 import { X } from 'lucide-react';
+import 'react-grid-layout/css/styles.css';
+import 'react-resizable/css/styles.css';
 
 // Dynamically import react-grid-layout to avoid SSR issues
 import dynamic from 'next/dynamic';
 
 const GridLayoutComponent = dynamic(
-  () => import('react-grid-layout').then((mod) => {
-    // Import CSS
-    import('react-grid-layout/css/styles.css');
-    import('react-resizable/css/styles.css');
-    return mod.default;
-  }),
+  () => import('react-grid-layout').then((mod) => mod.default),
   { ssr: false }
 );
 
@@ -103,6 +98,7 @@ export default function DraggableGridLayout({
         preventCollision={false}
         isResizable={true}
         isDraggable={true}
+        {...({} as any)}
       >
       {widgets.map((widget) => (
         <div
