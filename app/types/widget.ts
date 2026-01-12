@@ -14,6 +14,7 @@ export interface WidgetConfig {
   h: number; // Height in grid rows
   minW?: number; // Minimum width
   minH?: number; // Minimum height
+  locked?: boolean; // Whether the widget is locked (non-draggable/non-resizable)
   props?: Record<string, any>;
 }
 

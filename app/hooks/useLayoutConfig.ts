@@ -123,6 +123,15 @@ export function useLayoutConfig() {
     }));
   }, []);
 
+  const toggleLock = useCallback((widgetId: string) => {
+    setLayout(prev => ({
+      ...prev,
+      widgets: prev.widgets.map(w =>
+        w.i === widgetId ? { ...w, locked: !w.locked } : w
+      ),
+    }));
+  }, []);
+
   const resetLayout = useCallback(() => {
     setLayout(DEFAULT_LAYOUT);
   }, []);
@@ -134,5 +143,6 @@ export function useLayoutConfig() {
     removeWidget,
     updateLayout,
     resetLayout,
+    toggleLock,
   };
 }

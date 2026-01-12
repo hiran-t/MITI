@@ -47,7 +47,7 @@ export default function Dashboard() {
   const [rosbridgeUrl, setRosbridgeUrl] = useState(getInitialUrl);
   const { client, connected, error } = useRosbridge(rosbridgeUrl);
   const { topics, loading, refreshTopics } = useTopicList(client);
-  const { layout, addWidget, removeWidget, updateLayout, resetLayout } = useLayoutConfig();
+  const { layout, addWidget, removeWidget, updateLayout, resetLayout, toggleLock } = useLayoutConfig();
 
   // URDF Configuration state
   const [urdfConfig, setUrdfConfig] = useState<{
@@ -140,6 +140,7 @@ export default function Dashboard() {
             widgets={layout.widgets}
             onLayoutChange={updateLayout}
             onRemoveWidget={removeWidget}
+            onToggleLock={toggleLock}
             client={client}
             topics={topics}
             topicsLoading={loading}
