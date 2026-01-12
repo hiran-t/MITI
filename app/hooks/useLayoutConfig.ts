@@ -55,14 +55,37 @@ export function useLayoutConfig() {
       newId = `${type}-${counter}`;
     }
 
-    // Find a good position for the new widget (top-left available space)
+    // Find the rightmost position to place new widget horizontally
+    let maxX = 0;
+    let maxXY = { x: 0, y: 0, w: 0, h: 0 };
+    
+    layout.widgets.forEach(widget => {
+      const rightEdge = widget.x + widget.w;
+      if (rightEdge > maxX) {
+        maxX = rightEdge;
+        maxXY = { x: widget.x, y: widget.y, w: widget.w, h: widget.h };
+      }
+    });
+
+    // Place new widget to the right of the rightmost widget
+    // If it would exceed grid width (12 cols), wrap to next row
+    const newW = widgetInfo.defaultSize.w;
+    let newX = maxX;
+    let newY = maxXY.y;
+    
+    if (newX + newW > 12) {
+      // Would exceed grid, place at start of next row
+      newX = 0;
+      newY = maxXY.y + maxXY.h;
+    }
+
     const newWidget: WidgetConfig = {
       i: newId,
       type,
       title: widgetInfo.label,
-      x: 0,
-      y: Infinity, // react-grid-layout will place it at the bottom
-      w: widgetInfo.defaultSize.w,
+      x: newX,
+      y: newY,
+      w: newW,
       h: widgetInfo.defaultSize.h,
       minW: widgetInfo.minSize.minW,
       minH: widgetInfo.minSize.minH,

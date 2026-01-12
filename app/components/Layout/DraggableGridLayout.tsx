@@ -94,6 +94,7 @@ export default function DraggableGridLayout({
         width={containerWidth}
         onLayoutChange={onLayoutChange}
         draggableHandle=".drag-handle"
+        draggableCancel=".react-grid-item-content"
         compactType="vertical"
         preventCollision={false}
         isResizable={true}
@@ -104,9 +105,10 @@ export default function DraggableGridLayout({
         <div
           key={widget.i}
           className="bg-gray-900/30 backdrop-blur-sm rounded-lg border border-gray-800 overflow-hidden flex flex-col"
+          style={{ pointerEvents: 'auto' }}
         >
           {/* Widget Header with drag handle and remove button */}
-          <div className="drag-handle px-4 py-3 border-b border-gray-800 flex items-center justify-between cursor-move bg-gray-800/50 hover:bg-gray-800/70 transition-colors">
+          <div className="drag-handle px-4 py-3 border-b border-gray-800 flex items-center justify-between cursor-move bg-gray-800/50 hover:bg-gray-800/70 transition-colors select-none">
             <div className="flex items-center gap-2">
               <GripVertical className="w-4 h-4 text-gray-500" />
               <h2 className="text-sm font-semibold flex items-center gap-2">
@@ -126,8 +128,8 @@ export default function DraggableGridLayout({
             </button>
           </div>
           
-          {/* Widget Content */}
-          <div className="flex-1 overflow-hidden p-4">
+          {/* Widget Content - NOT draggable */}
+          <div className="flex-1 overflow-hidden p-4 react-grid-item-content" style={{ pointerEvents: 'auto' }}>
             <WidgetContainer
               widget={widget}
               client={client}
