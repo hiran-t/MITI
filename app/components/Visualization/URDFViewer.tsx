@@ -26,6 +26,13 @@ function joinUrlPath(baseUrl: string, path: string): string {
   return `${normalizedBase}${normalizedPath}`;
 }
 
+/**
+ * Type guard to check if an object has the setJointValues method
+ */
+function hasSetJointValues(obj: any): obj is { setJointValues: (values: Record<string, number>) => boolean } {
+  return obj && typeof obj.setJointValues === 'function';
+}
+
 interface URDFViewerProps {
   client: ROSBridge | null;
   // Mode selection
@@ -290,8 +297,7 @@ function URDFModel({
   useEffect(() => {
     if (!model || !jointStates) return;
 
-    const robot = model as any;
-    if (typeof robot.setJointValues === 'function') {
+    if (hasSetJointValues(model)) {
       // Build joint values dictionary
       const jointValues: Record<string, number> = {};
       jointStates.name.forEach((name, index) => {
@@ -301,7 +307,7 @@ function URDFModel({
       });
 
       // Update all joint values at once
-      const changed = robot.setJointValues(jointValues);
+      const changed = model.setJointValues(jointValues);
       if (changed) {
         console.log('URDFModel: Updated joint positions:', Object.keys(jointValues).length, 'joints');
       }
@@ -375,15 +381,15 @@ export default function URDFViewer({
     'std_msgs/String'
   );
 
-  // Subscribe to joint_states topic for robot motion
+  // Get URDF string based on current mode
+  const urdfString = currentMode === 'topic' ? urdfData?.data : urdfFromUrl;
+
+  // Subscribe to joint_states topic for robot motion (only when URDF is loaded)
   const { data: jointStatesData } = useTopic<sensor_msgs.JointState>(
-    client,
+    urdfString ? client : null,
     '/joint_states',
     'sensor_msgs/JointState'
   );
-
-  // Get URDF string based on current mode
-  const urdfString = currentMode === 'topic' ? urdfData?.data : urdfFromUrl;
 
   // Handle mode change
   const handleModeChange = (newMode: 'topic' | 'url') => {
