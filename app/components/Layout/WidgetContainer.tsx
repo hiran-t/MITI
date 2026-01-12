@@ -77,10 +77,6 @@ export default function WidgetContainer({
     }
   };
 
-  if (!widget.visible) {
-    return null;
-  }
-
   return (
     <div className="h-full w-full overflow-hidden">
       {renderWidget()}

@@ -1,18 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
-import { LayoutConfig, WidgetConfig } from '@/app/types/widget';
-import { Settings, Eye, EyeOff, RotateCcw, X } from 'lucide-react';
+import { WIDGET_TYPES, WidgetType } from '@/app/types/widget';
+import { Settings, Plus, RotateCcw, X } from 'lucide-react';
 
 interface LayoutConfigProps {
-  layout: LayoutConfig;
-  onToggleWidget: (widgetId: string) => void;
+  onAddWidget: (type: WidgetType) => void;
   onResetLayout: () => void;
 }
 
 export default function LayoutConfigPanel({
-  layout,
-  onToggleWidget,
+  onAddWidget,
   onResetLayout,
 }: LayoutConfigProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -45,25 +43,36 @@ export default function LayoutConfigPanel({
 
             {/* Content */}
             <div className="p-4 space-y-4">
-              {/* Widget Visibility Toggles */}
+              {/* Add Widget Section */}
               <div>
-                <h4 className="text-sm font-medium text-gray-300 mb-3">Widget Visibility</h4>
+                <h4 className="text-sm font-medium text-gray-300 mb-3">Add Widget</h4>
                 <div className="space-y-2">
-                  {layout.widgets.map((widget) => (
+                  {WIDGET_TYPES.map((widgetType) => (
                     <button
-                      key={widget.id}
-                      onClick={() => onToggleWidget(widget.id)}
-                      className="w-full flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-800 rounded-lg transition-colors"
+                      key={widgetType.type}
+                      onClick={() => {
+                        onAddWidget(widgetType.type);
+                      }}
+                      className="w-full flex items-center gap-3 p-3 bg-gray-800/50 hover:bg-gray-800 rounded-lg transition-colors text-left"
                     >
-                      <span className="text-sm text-gray-200">{widget.title}</span>
-                      {widget.visible ? (
-                        <Eye className="w-4 h-4 text-blue-400" />
-                      ) : (
-                        <EyeOff className="w-4 h-4 text-gray-500" />
-                      )}
+                      <span className="text-2xl">{widgetType.icon}</span>
+                      <div className="flex-1">
+                        <div className="text-sm text-gray-200">{widgetType.label}</div>
+                        <div className="text-xs text-gray-500">
+                          Default: {widgetType.defaultSize.w}x{widgetType.defaultSize.h}
+                        </div>
+                      </div>
+                      <Plus className="w-4 h-4 text-blue-400" />
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Instructions */}
+              <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                <p className="text-xs text-blue-300">
+                  💡 <strong>Tips:</strong> Drag the header to move widgets. Click and drag corners to resize. Click X to remove.
+                </p>
               </div>
 
               {/* Reset Button */}

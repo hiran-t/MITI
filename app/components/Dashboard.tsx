@@ -5,7 +5,7 @@ import { useRosbridge } from '../hooks/useRosbridge';
 import { useTopicList } from '../hooks/useTopicList';
 import { useLayoutConfig } from '../hooks/useLayoutConfig';
 import ConnectionStatus from './ConnectionStatus';
-import GridLayout from './Layout/GridLayout';
+import DraggableGridLayout from './Layout/DraggableGridLayout';
 import LayoutConfigPanel from './Layout/LayoutConfig';
 import { Activity } from 'lucide-react';
 
@@ -46,7 +46,7 @@ export default function Dashboard() {
   const [rosbridgeUrl, setRosbridgeUrl] = useState(getInitialUrl);
   const { client, connected, error } = useRosbridge(rosbridgeUrl);
   const { topics, loading, refreshTopics } = useTopicList(client);
-  const { layout, toggleWidgetVisibility, resetLayout } = useLayoutConfig();
+  const { layout, addWidget, removeWidget, updateLayout, resetLayout } = useLayoutConfig();
 
   // URDF Configuration state
   const [urdfConfig, setUrdfConfig] = useState<{
@@ -120,8 +120,7 @@ export default function Dashboard() {
                 onUrlChange={handleUrlChange}
               />
               <LayoutConfigPanel
-                layout={layout}
-                onToggleWidget={toggleWidgetVisibility}
+                onAddWidget={addWidget}
                 onResetLayout={resetLayout}
               />
             </div>
@@ -134,10 +133,12 @@ export default function Dashboard() {
           )}
         </header>
 
-        {/* Main Content - Widget Grid */}
-        <main className="flex-1 overflow-hidden p-4">
-          <GridLayout
-            layout={layout}
+        {/* Main Content - Draggable Widget Grid */}
+        <main className="flex-1 overflow-auto p-4">
+          <DraggableGridLayout
+            widgets={layout.widgets}
+            onLayoutChange={updateLayout}
+            onRemoveWidget={removeWidget}
             client={client}
             topics={topics}
             topicsLoading={loading}
