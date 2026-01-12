@@ -18,13 +18,13 @@ export default function LayoutConfigPanel({
   return (
     <>
       {/* Config Button */}
-      <button
+      {/* <button
         onClick={() => setIsOpen(!isOpen)}
         className="p-2 bg-gray-900/50 border border-gray-800 rounded-lg hover:border-gray-700 transition-colors"
         title="Layout Configuration"
       >
         <Settings className="w-4 h-4 text-gray-400" />
-      </button>
+      </button> */}
 
       {/* Config Panel */}
       {isOpen && (
