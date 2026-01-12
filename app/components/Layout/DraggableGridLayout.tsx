@@ -94,7 +94,7 @@ export default function DraggableGridLayout({
         width={containerWidth}
         onLayoutChange={onLayoutChange}
         draggableHandle=".drag-handle"
-        draggableCancel=".react-grid-item-content"
+        draggableCancel=".react-grid-item-content, .react-grid-no-drag, button"
         compactType="vertical"
         preventCollision={false}
         isResizable={true}
@@ -104,12 +104,11 @@ export default function DraggableGridLayout({
       {widgets.map((widget) => (
         <div
           key={widget.i}
-          className="bg-gray-900/30 backdrop-blur-sm rounded-lg border border-gray-800 overflow-hidden flex flex-col"
-          style={{ pointerEvents: 'auto' }}
+          className="bg-gray-900/30 backdrop-blur-sm rounded-lg border border-gray-800 overflow-hidden flex flex-col react-grid-no-drag"
         >
           {/* Widget Header with drag handle and remove button */}
           <div className="drag-handle px-4 py-3 border-b border-gray-800 flex items-center justify-between cursor-move bg-gray-800/50 hover:bg-gray-800/70 transition-colors select-none">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 pointer-events-none">
               <GripVertical className="w-4 h-4 text-gray-500" />
               <h2 className="text-sm font-semibold flex items-center gap-2">
                 <span className="w-2 h-2 bg-blue-500 rounded-full" />
@@ -121,7 +120,7 @@ export default function DraggableGridLayout({
                 e.stopPropagation();
                 onRemoveWidget(widget.i);
               }}
-              className="p-1 hover:bg-red-500/20 rounded transition-colors"
+              className="p-1 hover:bg-red-500/20 rounded transition-colors pointer-events-auto"
               title="Remove widget"
             >
               <X className="w-4 h-4 text-gray-400 hover:text-red-400" />
@@ -129,7 +128,7 @@ export default function DraggableGridLayout({
           </div>
           
           {/* Widget Content - NOT draggable */}
-          <div className="flex-1 overflow-hidden p-4 react-grid-item-content" style={{ pointerEvents: 'auto' }}>
+          <div className="flex-1 overflow-hidden p-4 react-grid-item-content">
             <WidgetContainer
               widget={widget}
               client={client}
