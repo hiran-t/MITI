@@ -15,6 +15,7 @@ import URDFSettings from './URDFSettings';
 import URDFLoadStatus from './URDFLoadStatus';
 import { loadURDFFromURL, createMeshLoadManager, formatURDFError } from '@/lib/utils/urdf-url-loader';
 import { URDFLoadError } from '@/types/urdf-loader';
+import { sensor_msgs } from '@/types/ros-messages';
 
 /**
  * Helper function to safely concatenate URL parts without double slashes
@@ -47,6 +48,7 @@ interface URDFModelProps {
   urdfString: string;
   meshBaseUrl?: string;
   packageMapping?: Record<string, string>;
+  jointStates?: sensor_msgs.JointState | null;
   onLoadStart?: () => void;
   onLoadComplete?: () => void;
   onLoadError?: (error: Error) => void;
@@ -57,6 +59,7 @@ function URDFModel({
   urdfString, 
   meshBaseUrl, 
   packageMapping,
+  jointStates,
   onLoadStart,
   onLoadComplete,
   onLoadError,
@@ -283,6 +286,28 @@ function URDFModel({
     }
   }, [urdfString, meshBaseUrl, packageMapping]);
 
+  // Update joint positions when jointStates change
+  useEffect(() => {
+    if (!model || !jointStates) return;
+
+    const robot = model as any;
+    if (typeof robot.setJointValues === 'function') {
+      // Build joint values dictionary
+      const jointValues: Record<string, number> = {};
+      jointStates.name.forEach((name, index) => {
+        if (jointStates.position[index] !== undefined) {
+          jointValues[name] = jointStates.position[index];
+        }
+      });
+
+      // Update all joint values at once
+      const changed = robot.setJointValues(jointValues);
+      if (changed) {
+        console.log('URDFModel: Updated joint positions:', Object.keys(jointValues).length, 'joints');
+      }
+    }
+  }, [model, jointStates]);
+
   // Log when ref changes
   useEffect(() => {
     if (groupRef.current && model) {
@@ -348,6 +373,13 @@ export default function URDFViewer({
     currentMode === 'topic' ? client : null,
     currentTopic,
     'std_msgs/String'
+  );
+
+  // Subscribe to joint_states topic for robot motion
+  const { data: jointStatesData } = useTopic<sensor_msgs.JointState>(
+    client,
+    '/joint_states',
+    'sensor_msgs/JointState'
   );
 
   // Get URDF string based on current mode
@@ -522,6 +554,7 @@ export default function URDFViewer({
             urdfString={urdfString}
             meshBaseUrl={currentMeshBaseUrl || undefined}
             packageMapping={currentPackageMapping}
+            jointStates={jointStatesData}
             onLoadStart={() => setIsLoadingUrl(true)}
             onLoadComplete={() => {
               setIsLoadingUrl(false);
