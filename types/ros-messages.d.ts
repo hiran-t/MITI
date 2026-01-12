@@ -44,6 +44,14 @@ export namespace sensor_msgs {
     step: number;
     data: number[];
   }
+
+  export interface JointState {
+    header: std_msgs.Header;
+    name: string[];
+    position: number[];
+    velocity: number[];
+    effort: number[];
+  }
 }
 
 export namespace geometry_msgs {

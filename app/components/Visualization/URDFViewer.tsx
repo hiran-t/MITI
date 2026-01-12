@@ -15,6 +15,7 @@ import URDFSettings from './URDFSettings';
 import URDFLoadStatus from './URDFLoadStatus';
 import { loadURDFFromURL, createMeshLoadManager, formatURDFError } from '@/lib/utils/urdf-url-loader';
 import { URDFLoadError } from '@/types/urdf-loader';
+import { sensor_msgs } from '@/types/ros-messages';
 
 /**
  * Helper function to safely concatenate URL parts without double slashes
@@ -23,6 +24,18 @@ function joinUrlPath(baseUrl: string, path: string): string {
   const normalizedBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
   const normalizedPath = path.startsWith('/') ? path.substring(1) : path;
   return `${normalizedBase}${normalizedPath}`;
+}
+
+/**
+ * Type guard to check if an object has the setJointValues method
+ */
+function hasSetJointValues(obj: unknown): obj is { setJointValues: (values: Record<string, number>) => boolean } {
+  return (
+    obj !== null && 
+    typeof obj === 'object' && 
+    'setJointValues' in obj && 
+    typeof obj.setJointValues === 'function'
+  );
 }
 
 interface URDFViewerProps {
@@ -47,6 +60,7 @@ interface URDFModelProps {
   urdfString: string;
   meshBaseUrl?: string;
   packageMapping?: Record<string, string>;
+  jointStates?: sensor_msgs.JointState | null;
   onLoadStart?: () => void;
   onLoadComplete?: () => void;
   onLoadError?: (error: Error) => void;
@@ -57,6 +71,7 @@ function URDFModel({
   urdfString, 
   meshBaseUrl, 
   packageMapping,
+  jointStates,
   onLoadStart,
   onLoadComplete,
   onLoadError,
@@ -283,6 +298,28 @@ function URDFModel({
     }
   }, [urdfString, meshBaseUrl, packageMapping]);
 
+  // Update joint positions when jointStates change
+  useEffect(() => {
+    if (!model || !jointStates) return;
+
+    if (hasSetJointValues(model)) {
+      // Build joint values dictionary
+      const jointValues: Record<string, number> = {};
+      jointStates.name.forEach((name, index) => {
+        // Ensure we have a valid position value for this joint
+        if (index < jointStates.position.length) {
+          jointValues[name] = jointStates.position[index];
+        }
+      });
+
+      // Update all joint values at once
+      const changed = model.setJointValues(jointValues);
+      if (changed) {
+        console.log('URDFModel: Updated joint positions:', Object.keys(jointValues).length, 'joints');
+      }
+    }
+  }, [model, jointStates]);
+
   // Log when ref changes
   useEffect(() => {
     if (groupRef.current && model) {
@@ -352,6 +389,13 @@ export default function URDFViewer({
 
   // Get URDF string based on current mode
   const urdfString = currentMode === 'topic' ? urdfData?.data : urdfFromUrl;
+
+  // Subscribe to joint_states topic for robot motion (only when URDF is loaded)
+  const { data: jointStatesData } = useTopic<sensor_msgs.JointState>(
+    urdfString ? client : null,
+    '/joint_states',
+    'sensor_msgs/JointState'
+  );
 
   // Handle mode change
   const handleModeChange = (newMode: 'topic' | 'url') => {
@@ -522,6 +566,7 @@ export default function URDFViewer({
             urdfString={urdfString}
             meshBaseUrl={currentMeshBaseUrl || undefined}
             packageMapping={currentPackageMapping}
+            jointStates={jointStatesData}
             onLoadStart={() => setIsLoadingUrl(true)}
             onLoadComplete={() => {
               setIsLoadingUrl(false);
