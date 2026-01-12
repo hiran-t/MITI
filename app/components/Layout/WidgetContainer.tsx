@@ -1,0 +1,85 @@
+'use client';
+
+import React from 'react';
+import { WidgetConfig } from '@/app/types/widget';
+import { ROSBridge } from '@/lib/rosbridge/client';
+import TopicList from '../TopicViewer/TopicList';
+import URDFViewer from '../Visualization/URDFViewer';
+import PointCloudViewer from '../Visualization/PointCloudViewer';
+import type { TopicInfo } from '@/lib/rosbridge/types';
+
+interface WidgetContainerProps {
+  widget: WidgetConfig;
+  client: ROSBridge | null;
+  // Additional props for specific widgets
+  topics?: TopicInfo[];
+  topicsLoading?: boolean;
+  onRefreshTopics?: () => void;
+  urdfConfig?: {
+    mode: 'topic' | 'url';
+    topic: string;
+    urdfUrl: string;
+    meshBaseUrl: string;
+    packageMapping: Record<string, string>;
+  };
+  onUrdfConfigChange?: {
+    onModeChange: (mode: 'topic' | 'url') => void;
+    onTopicChange: (topic: string) => void;
+    onUrdfUrlChange: (url: string) => void;
+    onMeshBaseUrlChange: (url: string) => void;
+    onPackageMappingChange: (mapping: Record<string, string>) => void;
+  };
+}
+
+export default function WidgetContainer({
+  widget,
+  client,
+  topics = [],
+  topicsLoading = false,
+  onRefreshTopics,
+  urdfConfig,
+  onUrdfConfigChange,
+}: WidgetContainerProps) {
+  const renderWidget = () => {
+    switch (widget.type) {
+      case 'topics':
+        return (
+          <TopicList
+            topics={topics}
+            loading={topicsLoading}
+            onRefresh={onRefreshTopics || (() => {})}
+            client={client}
+          />
+        );
+      
+      case 'urdf-viewer':
+        return urdfConfig && onUrdfConfigChange ? (
+          <URDFViewer
+            client={client}
+            mode={urdfConfig.mode}
+            topic={urdfConfig.topic}
+            urdfUrl={urdfConfig.urdfUrl}
+            meshBaseUrl={urdfConfig.meshBaseUrl}
+            packageMapping={urdfConfig.packageMapping}
+            onModeChange={onUrdfConfigChange.onModeChange}
+            onTopicChange={onUrdfConfigChange.onTopicChange}
+            onUrdfUrlChange={onUrdfConfigChange.onUrdfUrlChange}
+            onMeshBaseUrlChange={onUrdfConfigChange.onMeshBaseUrlChange}
+            onPackageMappingChange={onUrdfConfigChange.onPackageMappingChange}
+          />
+        ) : null;
+      
+      case 'pointcloud-viewer':
+        return <PointCloudViewer client={client} />;
+      
+      default:
+        return <div className="text-gray-400">Unknown widget type</div>;
+    }
+  };
+
+  return (
+    <div className="h-full w-full overflow-hidden">
+      {renderWidget()}
+    </div>
+  );
+}
