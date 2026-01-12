@@ -30,7 +30,12 @@ function joinUrlPath(baseUrl: string, path: string): string {
  * Type guard to check if an object has the setJointValues method
  */
 function hasSetJointValues(obj: unknown): obj is { setJointValues: (values: Record<string, number>) => boolean } {
-  return obj !== null && typeof obj === 'object' && 'setJointValues' in obj && typeof (obj as any).setJointValues === 'function';
+  return (
+    obj !== null && 
+    typeof obj === 'object' && 
+    'setJointValues' in obj && 
+    typeof obj.setJointValues === 'function'
+  );
 }
 
 interface URDFViewerProps {
@@ -302,7 +307,7 @@ function URDFModel({
       const jointValues: Record<string, number> = {};
       jointStates.name.forEach((name, index) => {
         // Ensure we have a valid position value for this joint
-        if (index < jointStates.position.length && jointStates.position[index] !== undefined) {
+        if (index < jointStates.position.length) {
           jointValues[name] = jointStates.position[index];
         }
       });
