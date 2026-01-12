@@ -5,7 +5,7 @@ import { WidgetConfig } from '@/app/types/widget';
 import { ROSBridge } from '@/lib/rosbridge/client';
 import WidgetContainer from './WidgetContainer';
 import type { TopicInfo } from '@/lib/rosbridge/types';
-import { X, GripVertical } from 'lucide-react';
+import { X, GripVertical, Lock, Unlock } from 'lucide-react';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
@@ -21,6 +21,7 @@ interface DraggableGridLayoutProps {
   widgets: WidgetConfig[];
   onLayoutChange: (layout: readonly any[]) => void;
   onRemoveWidget: (widgetId: string) => void;
+  onToggleLock: (widgetId: string) => void;
   client: ROSBridge | null;
   topics: TopicInfo[];
   topicsLoading: boolean;
@@ -45,6 +46,7 @@ export default function DraggableGridLayout({
   widgets,
   onLayoutChange,
   onRemoveWidget,
+  onToggleLock,
   client,
   topics,
   topicsLoading,
@@ -81,6 +83,7 @@ export default function DraggableGridLayout({
       h: w.h,
       minW: w.minW,
       minH: w.minH,
+      static: w.locked, // Make locked widgets non-draggable and non-resizable
     }));
   }, [widgets]);
 
@@ -115,16 +118,36 @@ export default function DraggableGridLayout({
                 {widget.title}
               </h2>
             </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onRemoveWidget(widget.i);
-              }}
-              className="p-1 hover:bg-red-500/20 rounded transition-colors pointer-events-auto"
-              title="Remove widget"
-            >
-              <X className="w-4 h-4 text-gray-400 hover:text-red-400" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleLock(widget.i);
+                }}
+                className={`p-1 rounded transition-colors pointer-events-auto ${
+                  widget.locked 
+                    ? 'bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400' 
+                    : 'hover:bg-gray-700/50 text-gray-400'
+                }`}
+                title={widget.locked ? 'Unlock widget' : 'Lock widget'}
+              >
+                {widget.locked ? (
+                  <Lock className="w-4 h-4" />
+                ) : (
+                  <Unlock className="w-4 h-4" />
+                )}
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemoveWidget(widget.i);
+                }}
+                className="p-1 hover:bg-red-500/20 rounded transition-colors pointer-events-auto"
+                title="Remove widget"
+              >
+                <X className="w-4 h-4 text-gray-400 hover:text-red-400" />
+              </button>
+            </div>
           </div>
           
           {/* Widget Content - NOT draggable */}
