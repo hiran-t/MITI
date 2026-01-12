@@ -6,6 +6,7 @@ import { ROSBridge } from '@/lib/rosbridge/client';
 import WidgetContainer from './WidgetContainer';
 import type { TopicInfo } from '@/lib/rosbridge/types';
 import { X, GripVertical, Lock, Unlock } from 'lucide-react';
+import clsx from 'clsx';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
@@ -124,11 +125,12 @@ export default function DraggableGridLayout({
                   e.stopPropagation();
                   onToggleLock(widget.i);
                 }}
-                className={`p-1 rounded transition-colors pointer-events-auto ${
+                className={clsx(
+                  'p-1 rounded transition-colors pointer-events-auto',
                   widget.locked 
                     ? 'bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400' 
                     : 'hover:bg-gray-700/50 text-gray-400'
-                }`}
+                )}
                 title={widget.locked ? 'Unlock widget' : 'Lock widget'}
               >
                 {widget.locked ? (
