@@ -65,7 +65,7 @@ export default function URDFSourceSelector({
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-800 rounded-lg border border-gray-700 hover:border-gray-600 transition-all text-sm font-medium"
+        className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-800 rounded-lg border border-gray-700 hover:border-gray-600 transition-all text-sm font-medium"
       >
         <span className={getModeColor()}>{getModeIcon()}</span>
         <span className="text-gray-300">{getModeLabel()}</span>

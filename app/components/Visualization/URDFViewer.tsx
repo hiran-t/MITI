@@ -91,30 +91,72 @@ function URDFModel({
       onLoadStart();
     }
 
-    try {
-      // Create custom loading manager if meshBaseUrl is provided
-      const manager = meshBaseUrl 
-        ? createMeshLoadManager(
-            meshBaseUrl, 
-            packageMapping,
-            (url, loaded, total) => {
-              console.log(`Loading: ${url} (${loaded}/${total})`);
-              if (onLoadProgress) {
-                onLoadProgress(loaded, total);
+    // Async function to load URDF with meshes
+    const loadURDF = async () => {
+      try {
+        // Create custom loading manager if meshBaseUrl is provided
+        const manager = meshBaseUrl 
+          ? createMeshLoadManager(
+              meshBaseUrl, 
+              packageMapping,
+              (url, loaded, total) => {
+                console.log(`Loading: ${url} (${loaded}/${total})`);
+                if (onLoadProgress) {
+                  onLoadProgress(loaded, total);
+                }
+              },
+              (url) => {
+                console.error('Failed to load mesh:', url);
               }
-            },
-            (url) => {
-              console.error('Failed to load mesh:', url);
-            }
-          )
-        : new THREE.LoadingManager();
+            )
+          : new THREE.LoadingManager();
 
-      const loader = new URDFLoader(manager);
+        // Set up a promise to wait for all meshes to load (with timeout)
+        let loadingResolved = false;
+        const loadingComplete = new Promise<void>((resolve, reject) => {
+          manager.onLoad = () => {
+            if (!loadingResolved) {
+              loadingResolved = true;
+              console.log('✅ All meshes loaded successfully');
+              resolve();
+            }
+          };
+          manager.onError = (url) => {
+            console.error('❌ Error loading:', url);
+            // Don't reject, just continue with what we have
+          };
+          
+          // Timeout after 30 seconds if loading takes too long
+          setTimeout(() => {
+            if (!loadingResolved) {
+              loadingResolved = true;
+              console.warn('⚠️ Loading timeout - proceeding with partial model');
+              resolve();
+            }
+          }, 30000);
+        });
+
+        const loader = new URDFLoader(manager);
       
       // FIX: Set up package paths correctly
       if (meshBaseUrl) {
+        // Extract package name from URDF content if possible
+        const packageMatches = urdfString.match(/package:\/\/([^\/\s"']+)/g);
+        const detectedPackages: Record<string, string> = {};
+        
+        if (packageMatches) {
+          packageMatches.forEach(match => {
+            const packageName = match.replace('package://', '');
+            if (!detectedPackages[packageName]) {
+              detectedPackages[packageName] = meshBaseUrl;
+              console.log(`Auto-detected package: ${packageName} -> ${meshBaseUrl}`);
+            }
+          });
+        }
+        
         loader.packages = {
           'ur_description': meshBaseUrl,
+          ...detectedPackages,
           ...packageMapping
         };
         console.log('URDFLoader packages configured:', loader.packages);
@@ -216,6 +258,11 @@ function URDFModel({
       console.log('  - Links:', (robot as any).links ? Object.keys((robot as any).links).length : 0);
       console.log('  - Joints:', (robot as any).joints ? Object.keys((robot as any).joints).length : 0);
       
+      // Wait for all meshes to load before proceeding
+      console.log('⏳ Waiting for meshes to load...');
+      await loadingComplete;
+      console.log('✅ Mesh loading complete, processing model...');
+      
       // Add materials to all meshes that don't have them
       let meshCount = 0;
       robot.traverse((child: any) => {
@@ -296,6 +343,9 @@ function URDFModel({
         onLoadError(err instanceof Error ? err : new Error(errorMsg));
       }
     }
+  };
+
+  loadURDF();
   }, [urdfString, meshBaseUrl, packageMapping]);
 
   // Update joint positions when jointStates change

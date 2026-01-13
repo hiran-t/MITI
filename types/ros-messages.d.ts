@@ -42,7 +42,7 @@ export namespace sensor_msgs {
     encoding: string;
     is_bigendian: number;
     step: number;
-    data: number[];
+    data: number[] | string; // Can be array or base64 string from rosbridge
   }
 
   export interface JointState {

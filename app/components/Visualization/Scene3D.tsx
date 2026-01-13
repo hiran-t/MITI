@@ -23,7 +23,7 @@ export default function Scene3D({ children }: Scene3DProps) {
       onPointerMove={(e) => e.stopPropagation()}
       onPointerUp={(e) => e.stopPropagation()}
     >
-      <ambientLight intensity={5.0} />
+      <ambientLight intensity={1.0} />
       <directionalLight 
         position={[10, -10, 10]} 
         intensity={1} 

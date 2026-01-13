@@ -6,6 +6,7 @@ import { ROSBridge } from '@/lib/rosbridge/client';
 import TopicList from '../TopicViewer/TopicList';
 import URDFViewer from '../Visualization/URDFViewer';
 import PointCloudViewer from '../Visualization/PointCloudViewer';
+import CameraViewer from '../Visualization/CameraViewer';
 import type { TopicInfo } from '@/lib/rosbridge/types';
 
 interface WidgetContainerProps {
@@ -71,6 +72,9 @@ export default function WidgetContainer({
       
       case 'pointcloud-viewer':
         return <PointCloudViewer client={client} />;
+      
+      case 'camera-viewer':
+        return <CameraViewer client={client} topic={widget.props?.topic} />;
       
       default:
         return <div className="text-gray-400">Unknown widget type</div>;

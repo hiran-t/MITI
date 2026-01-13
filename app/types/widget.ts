@@ -2,7 +2,7 @@
  * Widget system types for flexible UI layout with drag-and-drop support
  */
 
-export type WidgetType = 'topics' | 'urdf-viewer' | 'pointcloud-viewer';
+export type WidgetType = 'topics' | 'urdf-viewer' | 'pointcloud-viewer' | 'camera-viewer';
 
 export interface WidgetConfig {
   i: string; // Unique identifier (required by react-grid-layout)
@@ -49,6 +49,13 @@ export const WIDGET_TYPES: WidgetTypeInfo[] = [
     type: 'pointcloud-viewer',
     label: 'Point Cloud',
     icon: '☁️',
+    defaultSize: { w: 2, h: 2 },
+    minSize: { minW: 1, minH: 1 },
+  },
+  {
+    type: 'camera-viewer',
+    label: 'Camera',
+    icon: '📷',
     defaultSize: { w: 2, h: 2 },
     minSize: { minW: 1, minH: 1 },
   },
