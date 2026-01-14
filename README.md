@@ -2,7 +2,7 @@
   <img src="public/main_logo.svg" alt="MITI Logo" width="800"/>
 </div>
 
-# MITI - ROS2 Web Dashboard
+# MITI - ROS2 Web Visualization
 
 A modern web application for visualizing and monitoring ROS2 topics in real-time. Built with Next.js 14, React 18, and Three.js for high-performance 3D visualization.
 
