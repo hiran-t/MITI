@@ -13,6 +13,7 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import URDFSourceSelector from './URDFSourceSelector';
 import URDFSettings from './URDFSettings';
 import URDFLoadStatus from './URDFLoadStatus';
+import PointCloudRenderer from './PointCloudRenderer';
 import { loadURDFFromURL, createMeshLoadManager, formatURDFError } from '@/lib/utils/urdf-url-loader';
 import { URDFLoadError } from '@/types/urdf-loader';
 import { sensor_msgs } from '@/types/ros-messages';
@@ -48,12 +49,15 @@ interface URDFViewerProps {
   urdfUrl?: string;
   meshBaseUrl?: string;
   packageMapping?: Record<string, string>;
+  // Point cloud topics
+  pointCloudTopics?: string[];
   // Callbacks
   onModeChange?: (mode: 'topic' | 'url') => void;
   onTopicChange?: (topic: string) => void;
   onUrdfUrlChange?: (url: string) => void;
   onMeshBaseUrlChange?: (url: string) => void;
   onPackageMappingChange?: (mapping: Record<string, string>) => void;
+  onPointCloudTopicsChange?: (topics: string[]) => void;
 }
 
 interface URDFModelProps {
@@ -412,17 +416,20 @@ export default function URDFViewer({
   urdfUrl: initialUrdfUrl = '',
   meshBaseUrl: initialMeshBaseUrl = '',
   packageMapping: initialPackageMapping = {},
+  pointCloudTopics: initialPointCloudTopics = [],
   onModeChange,
   onTopicChange,
   onUrdfUrlChange,
   onMeshBaseUrlChange,
   onPackageMappingChange,
+  onPointCloudTopicsChange,
 }: URDFViewerProps) {
   const [currentMode, setCurrentMode] = useState<'topic' | 'url'>(initialMode);
   const [currentTopic, setCurrentTopic] = useState(initialTopic);
   const [currentUrdfUrl, setCurrentUrdfUrl] = useState(initialUrdfUrl);
   const [currentMeshBaseUrl, setCurrentMeshBaseUrl] = useState(initialMeshBaseUrl);
   const [currentPackageMapping, setCurrentPackageMapping] = useState(initialPackageMapping);
+  const [currentPointCloudTopics, setCurrentPointCloudTopics] = useState<string[]>(initialPointCloudTopics);
   
   const [urdfFromUrl, setUrdfFromUrl] = useState<string | null>(null);
   const [isLoadingUrl, setIsLoadingUrl] = useState(false);
@@ -572,7 +579,14 @@ export default function URDFViewer({
           />
         </div>
 
-        <URDFSettings onLoadPreset={handleLoadPreset} />
+        <URDFSettings 
+          onLoadPreset={handleLoadPreset}
+          pointCloudTopics={currentPointCloudTopics}
+          onPointCloudTopicsChange={(topics) => {
+            setCurrentPointCloudTopics(topics);
+            if (onPointCloudTopicsChange) onPointCloudTopicsChange(topics);
+          }}
+        />
       </div>
 
       {/* Loading/Error Status */}
@@ -630,6 +644,15 @@ export default function URDFViewer({
               setLoadProgress({ loaded, total });
             }}
           />
+          
+          {/* Render point clouds from configured topics */}
+          {currentPointCloudTopics.map((topic) => (
+            <PointCloudRenderer 
+              key={topic}
+              client={client}
+              topic={topic}
+            />
+          ))}
         </Scene3D>
       )}
     </div>

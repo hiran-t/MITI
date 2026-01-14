@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Settings, ChevronDown, Trash2, Clock } from 'lucide-react';
+import { Settings, ChevronDown, Trash2, Clock, Plus, X } from 'lucide-react';
 
 interface URDFPreset {
   name: string;
@@ -12,6 +12,8 @@ interface URDFPreset {
 
 interface URDFSettingsProps {
   onLoadPreset: (preset: Omit<URDFPreset, 'name'>) => void;
+  pointCloudTopics?: string[];
+  onPointCloudTopicsChange?: (topics: string[]) => void;
 }
 
 const DEFAULT_PRESETS: URDFPreset[] = [
@@ -26,10 +28,15 @@ const DEFAULT_PRESETS: URDFPreset[] = [
 const STORAGE_KEY_PRESETS = 'vizzy_urdf_presets';
 const STORAGE_KEY_RECENT = 'vizzy_urdf_recent';
 
-export default function URDFSettings({ onLoadPreset }: URDFSettingsProps) {
+export default function URDFSettings({ 
+  onLoadPreset, 
+  pointCloudTopics = [],
+  onPointCloudTopicsChange 
+}: URDFSettingsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [presets, setPresets] = useState<URDFPreset[]>(DEFAULT_PRESETS);
   const [recentUrls, setRecentUrls] = useState<string[]>([]);
+  const [newTopicInput, setNewTopicInput] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Load saved data from localStorage
@@ -98,6 +105,28 @@ export default function URDFSettings({ onLoadPreset }: URDFSettingsProps) {
     }
   };
 
+  const handleAddPointCloudTopic = () => {
+    if (newTopicInput.trim() && onPointCloudTopicsChange) {
+      const trimmed = newTopicInput.trim();
+      if (!pointCloudTopics.includes(trimmed)) {
+        onPointCloudTopicsChange([...pointCloudTopics, trimmed]);
+      }
+      setNewTopicInput('');
+    }
+  };
+
+  const handleRemovePointCloudTopic = (topicToRemove: string) => {
+    if (onPointCloudTopicsChange) {
+      onPointCloudTopicsChange(pointCloudTopics.filter(t => t !== topicToRemove));
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleAddPointCloudTopic();
+    }
+  };
+
   return (
     <div className="relative" ref={dropdownRef}>
       <button
@@ -110,7 +139,54 @@ export default function URDFSettings({ onLoadPreset }: URDFSettingsProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-gray-900 border border-gray-800 rounded-lg shadow-xl z-50">
+        <div className="absolute right-0 top-full mt-2 w-80 max-h-[32rem] overflow-y-auto bg-gray-900 border border-gray-800 rounded-lg shadow-xl z-50">
+          {/* Point Cloud Topics Section */}
+          <div className="p-3 border-b border-gray-800">
+            <h3 className="text-xs font-semibold text-gray-400 mb-2">Point Cloud Topics</h3>
+            
+            {/* Add new topic input */}
+            <div className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={newTopicInput}
+                onChange={(e) => setNewTopicInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="e.g., /camera/depth/points"
+                className="flex-1 px-2 py-1.5 bg-gray-800 text-gray-200 text-xs rounded border border-gray-700 focus:border-blue-500 focus:outline-none"
+              />
+              <button
+                onClick={handleAddPointCloudTopic}
+                className="px-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                title="Add topic"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Active topics list */}
+            {pointCloudTopics.length > 0 ? (
+              <div className="space-y-1.5">
+                {pointCloudTopics.map((topic, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-2 bg-gray-800/50 rounded border border-gray-700"
+                  >
+                    <span className="text-xs text-gray-300 truncate flex-1">{topic}</span>
+                    <button
+                      onClick={() => handleRemovePointCloudTopic(topic)}
+                      className="ml-2 p-1 text-red-400 hover:bg-red-500/20 rounded transition-colors flex-shrink-0"
+                      title="Remove topic"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-500 italic">No point cloud topics added</p>
+            )}
+          </div>
+
           {/* Presets Section */}
           <div className="p-3 border-b border-gray-800">
             <h3 className="text-xs font-semibold text-gray-400 mb-2">Presets</h3>
