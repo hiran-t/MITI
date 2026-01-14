@@ -10,8 +10,8 @@ import LayoutConfigPanel from './Layout/LayoutConfig';
 import AddWidgetButton from './Layout/AddWidgetButton';
 import { Activity } from 'lucide-react';
 
-const STORAGE_KEY = 'vizzy_rosbridge_url';
-const STORAGE_KEY_URDF_CONFIG = 'vizzy_urdf_config';
+const STORAGE_KEY = 'miti_rosbridge_url';
+const STORAGE_KEY_URDF_CONFIG = 'miti_urdf_config';
 
 // Get initial URL from localStorage or environment variable
 const getInitialUrl = () => {
@@ -108,7 +108,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <h1 className="text-lg font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                  Vizzy
+                  MITI
                 </h1>
               </div>
             </div>

@@ -25,8 +25,8 @@ const DEFAULT_PRESETS: URDFPreset[] = [
   },
 ];
 
-const STORAGE_KEY_PRESETS = 'vizzy_urdf_presets';
-const STORAGE_KEY_RECENT = 'vizzy_urdf_recent';
+const STORAGE_KEY_PRESETS = 'miti_urdf_presets';
+const STORAGE_KEY_RECENT = 'miti_urdf_recent';
 
 export default function URDFSettings({ 
   onLoadPreset, 

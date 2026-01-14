@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { LayoutConfig, WidgetConfig, DEFAULT_LAYOUT, WIDGET_TYPES, WidgetType } from '../types/widget';
 
-const STORAGE_KEY = 'vizzy_layout_config';
+const STORAGE_KEY = 'miti_layout_config';
 
 /**
  * Hook for managing widget layout configuration with add/remove support

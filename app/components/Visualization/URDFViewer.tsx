@@ -488,16 +488,16 @@ export default function URDFViewer({
       // Save to recent URLs
       if (typeof window !== 'undefined') {
         try {
-          const storedRecent = localStorage.getItem('vizzy_urdf_recent');
+          const storedRecent = localStorage.getItem('miti_urdf_recent');
           const recent = storedRecent ? JSON.parse(storedRecent) : [];
           
           // Validate that recent is an array
           if (Array.isArray(recent)) {
             const updated = [currentUrdfUrl, ...recent.filter((u: string) => u !== currentUrdfUrl)].slice(0, 5);
-            localStorage.setItem('vizzy_urdf_recent', JSON.stringify(updated));
+            localStorage.setItem('miti_urdf_recent', JSON.stringify(updated));
           } else {
             // If corrupted, reset with current URL
-            localStorage.setItem('vizzy_urdf_recent', JSON.stringify([currentUrdfUrl]));
+            localStorage.setItem('miti_urdf_recent', JSON.stringify([currentUrdfUrl]));
           }
         } catch (e) {
           console.error('Failed to save recent URLs:', e);

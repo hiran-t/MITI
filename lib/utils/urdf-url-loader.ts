@@ -249,7 +249,7 @@ export function formatURDFError(error: URDFLoadError): string {
     message += '\n\nTo fix CORS issues:\n';
     message += '1. Configure your web server to allow CORS\n';
     message += '2. Use a CORS proxy for development\n';
-    message += '3. Host Vizzy on the same domain as your URDF files';
+    message += '3. Host MITI on the same domain as your URDF files';
   }
 
   if (error.type === 'network') {

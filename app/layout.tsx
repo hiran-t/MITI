@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Vizzy - ROS2 Web Dashboard",
+  title: "MITI - ROS2 Web Dashboard",
   description: "Web application for visualizing and monitoring ROS2 topics",
 };
 

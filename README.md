@@ -1,8 +1,8 @@
-# Vizzy - ROS2 Web Dashboard
+# MITI - ROS2 Web Dashboard
 
 A modern web application for visualizing and monitoring ROS2 topics in real-time. Built with Next.js 14, React 18, and Three.js for high-performance 3D visualization.
 
-![Vizzy Dashboard](https://img.shields.io/badge/ROS2-Humble%20%7C%20Iron-blue)
+![MITI Dashboard](https://img.shields.io/badge/ROS2-Humble%20%7C%20Iron-blue)
 ![Next.js](https://img.shields.io/badge/Next.js-14+-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -30,7 +30,7 @@ A modern web application for visualizing and monitoring ROS2 topics in real-time
 
 ## 📋 Prerequisites
 
-Before running Vizzy, ensure you have the following installed:
+Before running MITI, ensure you have the following installed:
 
 ### ROS2
 - **ROS2 Distribution**: Humble Hawksbill or later
@@ -60,8 +60,8 @@ curl -fsSL https://bun.sh/install | bash
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/thongpanchang/vizzy.git
-cd vizzy
+git clone https://github.com/thongpanchang/miti.git
+cd miti
 ```
 
 2. **Install dependencies**
@@ -117,7 +117,7 @@ ros2 launch rosbridge_server rosbridge_websocket_launch.xml
 
 The rosbridge server will start on `ws://localhost:9090` by default.
 
-### 2. Run the Vizzy Dashboard
+### 2. Run the MITI Dashboard
 
 In a new terminal, start the Next.js development server:
 
@@ -145,7 +145,7 @@ You should see:
 ### Project Structure
 
 ```
-vizzy/
+miti/
 ├── app/                          # Next.js App Router
 │   ├── components/              # React components
 │   │   ├── Dashboard.tsx        # Main dashboard layout
@@ -193,7 +193,7 @@ vizzy/
 
 ### Supported Message Types
 
-Vizzy currently supports:
+MITI currently supports:
 
 - `std_msgs/String` - For URDF robot descriptions
 - `sensor_msgs/JointState` - For robot joint positions (motion monitoring)
@@ -202,11 +202,11 @@ Vizzy currently supports:
 
 ### URDF Loading and Motion Monitoring
 
-Vizzy supports loading URDF robot models and monitoring their motion in real-time.
+MITI supports loading URDF robot models and monitoring their motion in real-time.
 
 #### Joint States Motion Monitoring
 
-Once a URDF model is loaded, Vizzy automatically subscribes to the `/joint_states` topic to animate the robot:
+Once a URDF model is loaded, MITI automatically subscribes to the `/joint_states` topic to animate the robot:
 
 ```bash
 # The robot will automatically move as joint states are published
@@ -221,7 +221,7 @@ ros2 topic pub /joint_states sensor_msgs/msg/JointState "{name: ['joint1', 'join
 
 ### URDF Loading Options
 
-Vizzy supports multiple ways to load URDF robot descriptions:
+MITI supports multiple ways to load URDF robot descriptions:
 
 #### 1. From ROS Topic (Default)
 
@@ -232,7 +232,7 @@ Subscribe to `/robot_description` topic or any custom topic:
 ros2 topic pub /robot_description std_msgs/msg/String "data: '$(cat robot.urdf)'" --once
 ```
 
-**In Vizzy:**
+**In MITI:**
 1. Ensure "ROS Topic" mode is selected
 2. Enter your topic name (default: `/robot_description`)
 3. URDF will load automatically when published
@@ -243,7 +243,7 @@ Load URDF directly from HTTP/HTTPS URL without requiring ROS:
 
 **Setup:**
 1. Host your URDF and mesh files on a web server
-2. In Vizzy, switch to "URL" mode
+2. In MITI, switch to "URL" mode
 3. Enter URDF URL: `http://192.168.10.27:8000/robot.urdf`
 4. Enter Mesh Base URL: `http://192.168.10.27:8000`
 5. Click "Load URDF"
@@ -280,7 +280,7 @@ Run with: `python3 server.py`
 
 #### 3. Package Path Resolution
 
-URDF files often reference meshes using ROS package paths. Vizzy automatically converts these to HTTP URLs:
+URDF files often reference meshes using ROS package paths. MITI automatically converts these to HTTP URLs:
 
 ```
 Input:  package://robot_description/meshes/base_link.stl
@@ -382,7 +382,7 @@ Edit `app/globals.css` or Tailwind configuration in `tailwind.config.ts`
 
 ```bash
 # Publish test string
-ros2 topic pub /test_topic std_msgs/msg/String "data: 'Hello Vizzy'"
+ros2 topic pub /test_topic std_msgs/msg/String "data: 'Hello MITI'"
 
 # Publish robot description (example)
 ros2 topic pub /robot_description std_msgs/msg/String "data: '$(cat robot.urdf)'"
@@ -482,7 +482,7 @@ class CORSHandler(SimpleHTTPRequestHandler):
 HTTPServer(('0.0.0.0', 8000), CORSHandler).serve_forever()
 "
 
-# 4. In Vizzy:
+# 4. In MITI:
 #    - Switch to URL mode
 #    - URDF URL: http://localhost:8000/robot.urdf
 #    - Click Load URDF
