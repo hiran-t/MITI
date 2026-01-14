@@ -4,6 +4,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "MITI - ROS2 Web Dashboard",
   description: "Web application for visualizing and monitoring ROS2 topics",
+  icons: {
+    icon: "/robot_logo.svg",
+  },
 };
 
 export default function RootLayout({

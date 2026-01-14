@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useRosbridge } from '../hooks/useRosbridge';
 import { useTopicList } from '../hooks/useTopicList';
 import { useLayoutConfig } from '../hooks/useLayoutConfig';
@@ -8,7 +9,6 @@ import ConnectionStatus from './ConnectionStatus';
 import DraggableGridLayout from './Layout/DraggableGridLayout';
 import LayoutConfigPanel from './Layout/LayoutConfig';
 import AddWidgetButton from './Layout/AddWidgetButton';
-import { Activity } from 'lucide-react';
 
 const STORAGE_KEY = 'miti_rosbridge_url';
 const STORAGE_KEY_URDF_CONFIG = 'miti_urdf_config';
@@ -102,15 +102,15 @@ export default function Dashboard() {
         <header className="flex-shrink-0 p-3 border-b border-gray-800">
           <div className="flex items-center justify-between gap-4">
             {/* Logo and Title */}
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-blue-500/20 rounded">
-                <Activity className="w-4 h-4 text-blue-400" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                  MITI
-                </h1>
-              </div>
+            <div className="flex items-center gap-2 ml-3">
+              <Image
+                src="/main_logo.svg"
+                alt="MITI Logo"
+                width={120}
+                height={40}
+                priority
+                className="h-9 w-auto"
+              />
             </div>
             
             {/* Connection Status and Layout Config */}
