@@ -1,98 +1,31 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRosbridge } from '../hooks/useRosbridge';
 import { useTopicList } from '../hooks/useTopicList';
 import { useLayoutConfig } from '../hooks/useLayoutConfig';
+import { useUrdfConfig } from '../hooks/useUrdfConfig';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 import ConnectionStatus from './ConnectionStatus';
 import DraggableGridLayout from './Layout/DraggableGridLayout';
 import LayoutConfigPanel from './Layout/LayoutConfig';
 import AddWidgetButton from './Layout/AddWidgetButton';
 
-const STORAGE_KEY = 'miti_rosbridge_url';
-const STORAGE_KEY_URDF_CONFIG = 'miti_urdf_config';
-
-// Get initial URL from localStorage or environment variable
-const getInitialUrl = () => {
-  if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return stored;
-  }
-  return process.env.NEXT_PUBLIC_ROSBRIDGE_URL || 'ws://localhost:9090';
-};
-
-// Get initial URDF config from localStorage
-const getInitialUrdfConfig = () => {
-  if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem(STORAGE_KEY_URDF_CONFIG);
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch (e) {
-        console.error('Failed to parse URDF config:', e);
-      }
-    }
-  }
-  return {
-    mode: 'topic' as const,
-    topic: '/robot_description',
-    urdfUrl: '',
-    meshBaseUrl: '',
-    packageMapping: {},
-  };
-};
+const STORAGE_KEY_ROSBRIDGE_URL = 'miti_rosbridge_url';
+const DEFAULT_ROSBRIDGE_URL = process.env.NEXT_PUBLIC_ROSBRIDGE_URL || 'ws://localhost:9090';
 
 export default function Dashboard() {
-  const [rosbridgeUrl, setRosbridgeUrl] = useState(getInitialUrl);
+  const [rosbridgeUrl, setRosbridgeUrl] = useLocalStorage(
+    STORAGE_KEY_ROSBRIDGE_URL,
+    DEFAULT_ROSBRIDGE_URL
+  );
   const { client, connected, error } = useRosbridge(rosbridgeUrl);
   const { topics, loading, refreshTopics } = useTopicList(client);
   const { layout, addWidget, removeWidget, updateLayout, resetLayout, toggleLock } = useLayoutConfig();
+  const urdfConfig = useUrdfConfig();
 
-  // URDF Configuration state
-  const [urdfConfig, setUrdfConfig] = useState<{
-    mode: 'topic' | 'url';
-    topic: string;
-    urdfUrl: string;
-    meshBaseUrl: string;
-    packageMapping: Record<string, string>;
-  }>(getInitialUrdfConfig);
-
-  // Update localStorage when URL changes
   const handleUrlChange = (newUrl: string) => {
     setRosbridgeUrl(newUrl);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, newUrl);
-    }
-    // Page will automatically reconnect due to useRosbridge dependency on rosbridgeUrl
-  };
-
-  // Update localStorage when URDF config changes
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY_URDF_CONFIG, JSON.stringify(urdfConfig));
-    }
-  }, [urdfConfig]);
-
-  // URDF config handlers
-  const handleUrdfModeChange = (mode: 'topic' | 'url') => {
-    setUrdfConfig(prev => ({ ...prev, mode }));
-  };
-
-  const handleUrdfTopicChange = (topic: string) => {
-    setUrdfConfig(prev => ({ ...prev, topic }));
-  };
-
-  const handleUrdfUrlChange = (urdfUrl: string) => {
-    setUrdfConfig(prev => ({ ...prev, urdfUrl }));
-  };
-
-  const handleMeshBaseUrlChange = (meshBaseUrl: string) => {
-    setUrdfConfig(prev => ({ ...prev, meshBaseUrl }));
-  };
-
-  const handlePackageMappingChange = (packageMapping: Record<string, string>) => {
-    setUrdfConfig(prev => ({ ...prev, packageMapping }));
   };
 
   return (
@@ -145,13 +78,13 @@ export default function Dashboard() {
             topics={topics}
             topicsLoading={loading}
             onRefreshTopics={refreshTopics}
-            urdfConfig={urdfConfig}
+            urdfConfig={urdfConfig.config}
             onUrdfConfigChange={{
-              onModeChange: handleUrdfModeChange,
-              onTopicChange: handleUrdfTopicChange,
-              onUrdfUrlChange: handleUrdfUrlChange,
-              onMeshBaseUrlChange: handleMeshBaseUrlChange,
-              onPackageMappingChange: handlePackageMappingChange,
+              onModeChange: urdfConfig.setMode,
+              onTopicChange: urdfConfig.setTopic,
+              onUrdfUrlChange: urdfConfig.setUrdfUrl,
+              onMeshBaseUrlChange: urdfConfig.setMeshBaseUrl,
+              onPackageMappingChange: urdfConfig.setPackageMapping,
             }}
           />
           

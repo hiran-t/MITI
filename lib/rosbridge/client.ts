@@ -146,54 +146,93 @@ export class ROSBridge {
 
   getTopics(): Promise<TopicInfo[]> {
     return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error('Timeout getting topics'));
-      }, 5000);
-
-      // Listen for response
+      const TIMEOUT_MS = 5000;
       const ws = this.ws;
-      const originalOnMessage = ws?.onmessage;
-      
-      const handler = (data: any) => {
-        // Handle service response from /rosapi/topics
-        if (data.op === 'service_response' && data.service === '/rosapi/topics') {
-          clearTimeout(timeout);
-          
-          // Restore original message handler
-          if (ws) {
-            ws.onmessage = originalOnMessage || null;
-          }
-          
-          const topics: TopicInfo[] = [];
-          if (data.values && data.values.topics && data.values.types) {
-            const topicCount = Math.min(data.values.topics.length, data.values.types.length);
-            for (let i = 0; i < topicCount; i++) {
-              topics.push({
-                topic: data.values.topics[i],
-                type: data.values.types[i],
-              });
-            }
-          }
-          resolve(topics);
+      if (!ws) {
+        reject(new Error('WebSocket not connected'));
+        return;
+      }
+
+      const originalOnMessage = ws.onmessage;
+      let timeoutId: NodeJS.Timeout | null = null;
+      let isResolved = false; // Track if promise has been resolved/rejected
+
+      // Define cleanup function before it's used
+      const cleanup = () => {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
+        if (ws) {
+          ws.onmessage = originalOnMessage || null;
         }
       };
 
-      if (ws) {
-        ws.onmessage = (event) => {
-          if (originalOnMessage) {
-            originalOnMessage.call(ws, event);
-          }
+      // Safe resolve wrapper that checks if already resolved
+      const safeResolve = (value: TopicInfo[]) => {
+        if (!isResolved) {
+          isResolved = true;
+          cleanup();
+          resolve(value);
+        }
+      };
+
+      // Safe reject wrapper that checks if already resolved
+      const safeReject = (error: Error) => {
+        if (!isResolved) {
+          isResolved = true;
+          cleanup();
+          reject(error);
+        }
+      };
+
+      timeoutId = setTimeout(() => {
+        safeReject(new Error('Timeout getting topics'));
+      }, TIMEOUT_MS);
+
+      const handleTopicsResponse = (data: any) => {
+        if (data.op === 'service_response' && data.service === '/rosapi/topics') {
+          const topics = this.parseTopicsResponse(data);
+          safeResolve(topics);
+        }
+      };
+
+      ws.onmessage = (event) => {
+        // Call original handler first
+        if (originalOnMessage) {
+          originalOnMessage.call(ws, event);
+        }
+
+        // Only process if promise hasn't been resolved/rejected
+        if (!isResolved) {
           try {
             const data = JSON.parse(event.data);
-            handler(data);
+            handleTopicsResponse(data);
           } catch (error) {
             console.error('Error parsing topics response:', error);
           }
-        };
-      }
+        }
+      };
 
       this.send(createGetTopicsMessage());
     });
+  }
+
+  /**
+   * Parses topics response from rosbridge service call
+   */
+  private parseTopicsResponse(data: any): TopicInfo[] {
+    const topics: TopicInfo[] = [];
+    if (data.values?.topics && data.values?.types) {
+      const topicCount = Math.min(data.values.topics.length, data.values.types.length);
+      for (let i = 0; i < topicCount; i++) {
+        topics.push({
+          topic: data.values.topics[i],
+          type: data.values.types[i],
+        });
+      }
+    }
+    return topics;
   }
 
   onConnection(callback: ConnectionCallback): () => void {

@@ -8,6 +8,7 @@ import URDFViewer from '../Visualization/URDFViewer';
 import PointCloudViewer from '../Visualization/PointCloudViewer';
 import CameraViewer from '../Visualization/CameraViewer';
 import type { TopicInfo } from '@/lib/rosbridge/types';
+import type { URDFConfig } from '@/app/types/urdf-config';
 
 interface WidgetContainerProps {
   widget: WidgetConfig;
@@ -16,13 +17,7 @@ interface WidgetContainerProps {
   topics?: TopicInfo[];
   topicsLoading?: boolean;
   onRefreshTopics?: () => void;
-  urdfConfig?: {
-    mode: 'topic' | 'url';
-    topic: string;
-    urdfUrl: string;
-    meshBaseUrl: string;
-    packageMapping: Record<string, string>;
-  };
+  urdfConfig?: URDFConfig;
   onUrdfConfigChange?: {
     onModeChange: (mode: 'topic' | 'url') => void;
     onTopicChange: (topic: string) => void;
