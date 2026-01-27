@@ -19,8 +19,8 @@ interface URDFSettingsProps {
 const DEFAULT_PRESETS: URDFPreset[] = [
   {
     name: 'Local Robot Server',
-    urdfUrl: 'http://192.168.10.27:8000/robot.urdf',
-    meshBaseUrl: 'http://192.168.10.27:8000',
+    urdfUrl: 'http://192.168.31.200:8000/robot.urdf',
+    meshBaseUrl: 'http://192.168.31.200:8000',
     packageMapping: {},
   },
 ];

@@ -75,7 +75,7 @@ export default function URDFViewer({
   // Subscribe to joint_states topic for robot motion (only when URDF is loaded)
   const { data: jointStatesData } = useTopic<sensor_msgs.JointState>(
     urdfString ? client : null,
-    '/joint_states',
+    '/robot_inbound/joint_states',
     'sensor_msgs/JointState'
   );
 

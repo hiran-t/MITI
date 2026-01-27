@@ -6,6 +6,47 @@
 import type { sensor_msgs } from '@/types/ros-messages';
 
 /**
+ * Apply RViz-style rainbow colormap (Axis color)
+ * Maps a value from 0-1 to a rainbow color similar to RViz visualization
+ * Red (far) -> Yellow -> Green -> Cyan -> Blue (near)
+ */
+function applyRainbowColormap(value: number): { r: number; g: number; b: number } {
+  // Clamp value to 0-1 range
+  value = Math.max(0, Math.min(1, value));
+  
+  // RViz rainbow colormap uses HSV with hue ranging from 0 (red) to 240 (blue)
+  // We reverse it so blue is near (0) and red is far (1)
+  const hue = (1 - value) * 240; // 240 to 0 (blue to red)
+  
+  // Convert HSV to RGB (with full saturation and value)
+  const h = hue / 60;
+  const c = 1; // chroma (saturation * value)
+  const x = c * (1 - Math.abs((h % 2) - 1));
+  
+  let r = 0, g = 0, b = 0;
+  
+  if (h >= 0 && h < 1) {
+    r = c; g = x; b = 0;
+  } else if (h >= 1 && h < 2) {
+    r = x; g = c; b = 0;
+  } else if (h >= 2 && h < 3) {
+    r = 0; g = c; b = x;
+  } else if (h >= 3 && h < 4) {
+    r = 0; g = x; b = c;
+  } else if (h >= 4 && h < 5) {
+    r = x; g = 0; b = c;
+  } else {
+    r = c; g = 0; b = x;
+  }
+  
+  return {
+    r: Math.round(r * 255),
+    g: Math.round(g * 255),
+    b: Math.round(b * 255)
+  };
+}
+
+/**
  * Parse a ROS Image message and convert it to a data URL
  * @param imageMsg - ROS sensor_msgs/Image message
  * @returns Data URL string that can be used as img src
@@ -13,7 +54,7 @@ import type { sensor_msgs } from '@/types/ros-messages';
 export function parseImageMessage(imageMsg: sensor_msgs.Image): string {
   const { width, height, encoding, data } = imageMsg;
 
-  console.log('Parsing image:', { width, height, encoding, dataLength: data?.length });
+  // console.log('Parsing image:', { width, height, encoding, dataLength: data?.length });
 
   if (!data || data.length === 0) {
     throw new Error('Image data is empty');
@@ -23,7 +64,7 @@ export function parseImageMessage(imageMsg: sensor_msgs.Image): string {
   let imageDataArray: Uint8Array;
   if (typeof data === 'string') {
     // Data is base64 encoded
-    console.log('Decoding base64 data...');
+    // console.log('Decoding base64 data...')
     const binaryString = atob(data);
     imageDataArray = new Uint8Array(binaryString.length);
     for (let i = 0; i < binaryString.length; i++) {
@@ -36,7 +77,7 @@ export function parseImageMessage(imageMsg: sensor_msgs.Image): string {
     throw new Error('Unsupported data format');
   }
 
-  console.log('Image data array length:', imageDataArray.length);
+  // console.log('Image data array length:', imageDataArray.length);
 
   // Create a canvas to render the image
   const canvas = document.createElement('canvas');
@@ -98,31 +139,105 @@ export function parseImageMessage(imageMsg: sensor_msgs.Image): string {
       break;
 
     case 'mono8':
-      // MONO8: 8-bit grayscale
+      // MONO8: 8-bit grayscale with auto brightness/contrast enhancement
+      let minVal8 = 255;
+      let maxVal8 = 0;
+      
+      // Find min and max values for histogram stretching
       for (let i = 0; i < width * height; i++) {
         const value = imageDataArray[i];
+        if (value < minVal8) minVal8 = value;
+        if (value > maxVal8) maxVal8 = value;
+      }
+      
+      // Calculate stretch parameters
+      const range8 = maxVal8 - minVal8 || 1;
+      
+      // Apply histogram stretching for better contrast
+      for (let i = 0; i < width * height; i++) {
+        const value = imageDataArray[i];
+        // Stretch and enhance
+        const stretched = Math.min(255, Math.floor(((value - minVal8) / range8) * 255));
         const dstIdx = i * 4;
-        pixels[dstIdx] = value;     // R
-        pixels[dstIdx + 1] = value; // G
-        pixels[dstIdx + 2] = value; // B
-        pixels[dstIdx + 3] = 255;   // A
+        pixels[dstIdx] = stretched;     // R
+        pixels[dstIdx + 1] = stretched; // G
+        pixels[dstIdx + 2] = stretched; // B
+        pixels[dstIdx + 3] = 255;       // A
       }
       break;
 
     case 'mono16':
-    case '16uc1':
-      // MONO16: 16-bit grayscale - scale down to 8-bit
+      // MONO16: 16-bit grayscale with auto brightness/contrast enhancement
+      let minVal16 = 65535;
+      let maxVal16 = 0;
+      const values16: number[] = [];
+      
+      // Read all 16-bit values and find min/max for histogram stretching
       for (let i = 0; i < width * height; i++) {
         const srcIdx = i * 2;
-        // Read 16-bit value (little-endian)
         const value16 = imageDataArray[srcIdx] | (imageDataArray[srcIdx + 1] << 8);
-        // Scale down to 8-bit (divide by 256)
-        const value8 = Math.min(255, value16 >> 8);
+        values16.push(value16);
+        if (value16 < minVal16) minVal16 = value16;
+        if (value16 > maxVal16) maxVal16 = value16;
+      }
+      
+      // Calculate stretch parameters
+      const range16 = maxVal16 - minVal16 || 1;
+      
+      // Apply histogram stretching for better contrast
+      for (let i = 0; i < width * height; i++) {
+        const value16 = values16[i];
+        // Stretch to full 0-255 range
+        const stretched = Math.min(255, Math.floor(((value16 - minVal16) / range16) * 255));
         const dstIdx = i * 4;
-        pixels[dstIdx] = value8;     // R
-        pixels[dstIdx + 1] = value8; // G
-        pixels[dstIdx + 2] = value8; // B
-        pixels[dstIdx + 3] = 255;    // A
+        pixels[dstIdx] = stretched;     // R
+        pixels[dstIdx + 1] = stretched; // G
+        pixels[dstIdx + 2] = stretched; // B
+        pixels[dstIdx + 3] = 255;       // A
+      }
+      break;
+
+    case '16uc1':
+      // 16UC1: 16-bit depth data (typical ROS depth camera format)
+      // Values are in millimeters, apply rainbow colormap
+      let minDepth16 = Infinity;
+      let maxDepth16 = -Infinity;
+      const depthValues16: number[] = [];
+
+      // Read all 16-bit depth values and find min/max
+      for (let i = 0; i < width * height; i++) {
+        const srcIdx = i * 2;
+        const depth = imageDataArray[srcIdx] | (imageDataArray[srcIdx + 1] << 8);
+        depthValues16.push(depth);
+        
+        if (depth > 0) {
+          minDepth16 = Math.min(minDepth16, depth);
+          maxDepth16 = Math.max(maxDepth16, depth);
+        }
+      }
+
+      // Apply rainbow colormap to depth data
+      const depthRange16 = maxDepth16 - minDepth16 || 1;
+      for (let i = 0; i < width * height; i++) {
+        const depth = depthValues16[i];
+        const dstIdx = i * 4;
+
+        if (depth === 0) {
+          // Invalid depth (0 or too far) - show as black
+          pixels[dstIdx] = 0;
+          pixels[dstIdx + 1] = 0;
+          pixels[dstIdx + 2] = 0;
+          pixels[dstIdx + 3] = 255;
+        } else {
+          // Normalize depth to 0-1 range
+          const normalized = (depth - minDepth16) / depthRange16;
+          // Apply RViz-style rainbow colormap
+          const color = applyRainbowColormap(normalized);
+          pixels[dstIdx] = color.r;
+          pixels[dstIdx + 1] = color.g;
+          pixels[dstIdx + 2] = color.b;
+          pixels[dstIdx + 3] = 255;
+        }
       }
       break;
 
@@ -142,7 +257,7 @@ export function parseImageMessage(imageMsg: sensor_msgs.Image): string {
         }
       }
 
-      // Normalize and colorize depth data
+      // Normalize and colorize depth data with RViz-style rainbow colormap
       const depthRange = maxDepth - minDepth || 1;
       for (let i = 0; i < width * height; i++) {
         const depth = depthData[i];
@@ -157,12 +272,12 @@ export function parseImageMessage(imageMsg: sensor_msgs.Image): string {
         } else {
           // Normalize depth to 0-1 range
           const normalized = (depth - minDepth) / depthRange;
-          // Apply colormap (blue for near, red for far)
-          const value = Math.floor(normalized * 255);
-          pixels[dstIdx] = value;           // R increases with distance
-          pixels[dstIdx + 1] = 128;         // G constant
-          pixels[dstIdx + 2] = 255 - value; // B decreases with distance
-          pixels[dstIdx + 3] = 255;         // A
+          // Apply RViz-style rainbow colormap (Axis color)
+          const color = applyRainbowColormap(normalized);
+          pixels[dstIdx] = color.r;
+          pixels[dstIdx + 1] = color.g;
+          pixels[dstIdx + 2] = color.b;
+          pixels[dstIdx + 3] = 255;
         }
       }
       break;

@@ -14,6 +14,7 @@ interface CameraViewerProps {
 
 const CAMERA_TOPICS = [
   { value: '/camera/color/image_raw', label: 'Color Image' },
+  { value: '/pacen_decon_vision/detection_image', label: 'Detection Image' },
   { value: '/camera/depth/image_raw', label: 'Depth Image' },
   { value: '/camera/ir/image_raw', label: 'IR Image' },
 ];
@@ -35,14 +36,14 @@ export default function CameraViewer({ client, topic: initialTopic }: CameraView
   useEffect(() => {
     if (!imageData) return;
 
-    console.log('Received image data:', {
-      width: imageData.width,
-      height: imageData.height,
-      encoding: imageData.encoding,
-      dataLength: imageData.data?.length,
-      dataType: typeof imageData.data,
-      isArray: Array.isArray(imageData.data)
-    });
+    // console.log('Received image data:', {
+    //   width: imageData.width,
+    //   height: imageData.height,
+    //   encoding: imageData.encoding,
+    //   dataLength: imageData.data?.length,
+    //   dataType: typeof imageData.data,
+    //   isArray: Array.isArray(imageData.data)
+    // });
 
     setProcessing(true);
     setError(null);
@@ -58,9 +59,9 @@ export default function CameraViewer({ client, topic: initialTopic }: CameraView
         }
         
         setImageUrl(url);
-        console.log('Image URL created successfully');
+        // console.log('Image URL created successfully');
       } catch (error) {
-        console.error('Error parsing image:', error);
+        // console.error('Error parsing image:', error);
         setError(error instanceof Error ? error.message : 'Failed to parse image');
       } finally {
         setProcessing(false);
