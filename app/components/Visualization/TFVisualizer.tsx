@@ -138,6 +138,9 @@ export default function TFVisualizer({
         const parentPosition = new THREE.Vector3();
         parentMatrix.decompose(parentPosition, new THREE.Quaternion(), new THREE.Vector3());
         frameInfo.parentPosition = parentPosition;
+      } else if (frameName === baseFrame) {
+        // For base frame with no parent, connect to world origin
+        frameInfo.parentPosition = new THREE.Vector3(0, 0, 0);
       }
 
       data.push(frameInfo);
@@ -156,37 +159,82 @@ export default function TFVisualizer({
     : undefined;
 
   return (
-    <group ref={groupRef} position={groupPosition} quaternion={groupQuaternion}>
-      {frameData.map((frame) => (
+    <>
+      {/* World frame at origin (outside the transformed group) */}
+      <group position={[0, 0, 0]}>
+        {/* World X axis (red) */}
+        <Line
+          points={[[0, 0, 0], [axisLength * 2, 0, 0]]}
+          color="red"
+          lineWidth={lineWidth * 2}
+        />
+        {/* World Y axis (green) */}
+        <Line
+          points={[[0, 0, 0], [0, axisLength * 2, 0]]}
+          color="lime"
+          lineWidth={lineWidth * 2}
+        />
+        {/* World Z axis (blue) */}
+        <Line
+          points={[[0, 0, 0], [0, 0, axisLength * 2]]}
+          color="blue"
+          lineWidth={lineWidth * 2}
+        />
+        {/* World frame label */}
+        {showLabels && (
+          <Text
+            position={[0, 0, axisLength * 3]}
+            fontSize={labelSize * 1.2}
+            color="white"
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={labelSize * 0.15}
+            outlineColor="black"
+          >
+            world
+          </Text>
+        )}
+      </group>
+
+      {/* Connection line from world to base_link */}
+      {baseLinkPosition && (
+        <Line
+          points={[
+            [0, 0, 0],
+            [baseLinkPosition.x, baseLinkPosition.y, baseLinkPosition.z],
+          ]}
+          color="yellow"
+          lineWidth={lineWidth * 1.0}
+          dashed
+          dashScale={50}
+          dashSize={1}
+          gapSize={0}
+        />
+      )}
+
+      {/* TF frames (transformed by base_link) */}
+      <group ref={groupRef} position={groupPosition} quaternion={groupQuaternion}>
+        {frameData.map((frame) => (
         <group key={frame.name}>
           {/* Frame coordinate axes */}
           {showAxes && (
             <group position={frame.position} quaternion={frame.rotation}>
-              {/* X axis (red with gradient) */}
+              {/* X axis (red) */}
               <Line
                 points={[[0, 0, 0], [axisLength, 0, 0]]}
-                vertexColors={[
-                  [1, 0.2, 0.2], // Bright red at origin
-                  [1, 0, 0],     // Pure red at tip
-                ]}
+                color="red"
                 lineWidth={lineWidth * 1.5}
               />
-              {/* Y axis (green with gradient) */}
+              {/* Y axis (green) */}
               <Line
                 points={[[0, 0, 0], [0, axisLength, 0]]}
-                vertexColors={[
-                  [0.2, 1, 0.2], // Bright green at origin
-                  [0, 1, 0],     // Pure green at tip
-                ]}
+                color="lime"
                 lineWidth={lineWidth * 1.5}
               />
-              {/* Z axis (blue with gradient) */}
+              {/* Z axis (blue) */}
               <Line
                 points={[[0, 0, 0], [0, 0, axisLength]]}
-                vertexColors={[
-                  [0.3, 0.6, 1], // Bright cyan-blue at origin
-                  [0, 0, 1],   // Vivid blue at tip
-                ]}
+                color="blue"
                 lineWidth={lineWidth * 1.5}
               />
             </group>
@@ -200,11 +248,11 @@ export default function TFVisualizer({
                 [frame.position.x, frame.position.y, frame.position.z],
               ]}
               color="yellow"
-              lineWidth={lineWidth * 0.8}
+              lineWidth={lineWidth * 1.0}
               dashed
               dashScale={50}
-              dashSize={0.02}
-              gapSize={0.01}
+              dashSize={1}
+              gapSize={0}
             />
           )}
 
@@ -228,6 +276,7 @@ export default function TFVisualizer({
           )}
         </group>
       ))}
-    </group>
+      </group>
+    </>
   );
 }

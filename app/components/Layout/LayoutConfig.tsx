@@ -69,7 +69,7 @@ export default function LayoutConfigPanel({
               </div>
 
               {/* Instructions */}
-              <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+              <div className="p-3 bg-gradient-to-r from-lime-400/10 to-cyan-400/10 border border-cyan-400/30 rounded-lg">
                 <p className="text-xs text-blue-300">
                   💡 <strong>Tips:</strong> Drag the header to move widgets. Click and drag corners to resize. Click X to remove.
                 </p>
@@ -81,7 +81,7 @@ export default function LayoutConfigPanel({
                   onResetLayout();
                   setIsOpen(false);
                 }}
-                className="w-full flex items-center justify-center gap-2 p-3 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 rounded-lg transition-colors"
+                className="w-full flex items-center justify-center gap-2 p-3 bg-gradient-to-r from-lime-400/20 to-cyan-400/20 hover:from-lime-400/30 hover:to-cyan-400/30 border border-cyan-400/30 rounded-lg transition-all"
               >
                 <RotateCcw className="w-4 h-4 text-blue-400" />
                 <span className="text-sm text-blue-400">Reset to Default Layout</span>

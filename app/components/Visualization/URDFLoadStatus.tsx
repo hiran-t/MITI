@@ -45,7 +45,7 @@ export default function URDFLoadStatus({ loading, error, success, progress, onCl
                 
                 <div className="w-full bg-gray-800 rounded-full h-2 mb-2">
                   <div 
-                    className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                    className="bg-gradient-to-r from-lime-400 to-cyan-400 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${(progress.loaded / progress.total) * 100}%` }}
                   />
                 </div>

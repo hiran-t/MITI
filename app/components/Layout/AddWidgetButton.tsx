@@ -16,7 +16,7 @@ export default function AddWidgetButton({ onAddWidget }: AddWidgetButtonProps) {
       {/* Floating Add Widget Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-40 p-4 bg-blue-500 hover:bg-blue-600 rounded-full shadow-lg transition-all duration-200 hover:scale-110 group"
+        className="fixed bottom-6 right-6 z-40 p-4 bg-gradient-to-r from-lime-400 to-cyan-400 hover:from-lime-500 hover:to-cyan-500 rounded-full shadow-lg transition-all duration-200 hover:scale-110 group"
         title="Add Widget"
       >
         {isOpen ? (

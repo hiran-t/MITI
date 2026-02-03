@@ -115,7 +115,7 @@ export default function DraggableGridLayout({
             <div className="flex items-center gap-2 pointer-events-none">
               <GripVertical className="w-4 h-4 text-gray-500" />
               <h2 className="text-sm font-semibold flex items-center gap-2">
-                <span className="w-2 h-2 bg-blue-500 rounded-full" />
+                <span className="w-2 h-2 bg-gradient-to-r from-lime-400 to-cyan-400 rounded-full" />
                 {widget.title}
               </h2>
             </div>

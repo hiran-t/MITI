@@ -41,7 +41,7 @@ export default function TopicCard({ topic, type, client }: TopicCardProps) {
           className={`ml-2 px-3 py-1 text-xs font-medium rounded transition-colors ${
             subscribed
               ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
-              : 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30'
+              : 'bg-gradient-to-r from-lime-400/20 to-cyan-400/20 text-cyan-300 hover:from-lime-400/30 hover:to-cyan-400/30'
           }`}
         >
           {subscribed ? 'Unsubscribe' : 'Subscribe'}

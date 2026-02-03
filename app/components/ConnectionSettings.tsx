@@ -64,7 +64,7 @@ export default function ConnectionSettings({ currentUrl, onUrlChange }: Connecti
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="ws://192.168.10.27:9090"
-              className="w-full px-3 py-2 bg-gray-950 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
+              className="w-full px-3 py-2 bg-gray-950 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 transition-colors"
             />
             <p className="mt-1 text-xs text-gray-500">
               Enter the WebSocket URL of your rosbridge server
@@ -77,13 +77,13 @@ export default function ConnectionSettings({ currentUrl, onUrlChange }: Connecti
             <div className="space-y-1">
               <button
                 onClick={() => setUrl('ws://localhost:9090')}
-                className="block text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                className="block text-xs text-transparent bg-clip-text bg-gradient-to-r from-lime-400 to-cyan-400 hover:from-lime-300 hover:to-cyan-300 transition-all"
               >
                 ws://localhost:9090
               </button>
               <button
                 onClick={() => setUrl('ws://192.168.10.27:9090')}
-                className="block text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                className="block text-xs text-transparent bg-clip-text bg-gradient-to-r from-lime-400 to-cyan-400 hover:from-lime-300 hover:to-cyan-300 transition-all"
               >
                 ws://192.168.10.27:9090
               </button>
@@ -108,7 +108,7 @@ export default function ConnectionSettings({ currentUrl, onUrlChange }: Connecti
             </button>
             <button
               onClick={handleSave}
-              className="px-4 py-1.5 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+              className="px-4 py-1.5 text-sm bg-gradient-to-r from-lime-400 to-cyan-400 hover:from-lime-500 hover:to-cyan-500 text-gray-900 font-medium rounded-lg transition-all"
             >
               Save & Reconnect
             </button>
