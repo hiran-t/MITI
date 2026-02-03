@@ -1,17 +1,20 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { ROSBridge } from '@/lib/rosbridge/client';
 import { useTopic } from '@/app/hooks/useTopic';
+import { useTF } from '@/app/hooks/useTF';
 import Scene3D from './Scene3D';
 import { Loader2, Download } from 'lucide-react';
 import URDFSourceSelector from './URDFSourceSelector';
 import URDFSettings from './URDFSettings';
 import URDFLoadStatus from './URDFLoadStatus';
 import PointCloudRenderer from './PointCloudRenderer';
+import TFVisualizer from './TFVisualizer';
 import URDFModel from './URDFModel';
 import { useUrdfUrlLoader } from './hooks/useUrdfUrlLoader';
 import { sensor_msgs } from '@/types/ros-messages';
+import * as THREE from 'three';
 
 interface URDFViewerProps {
   client: ROSBridge | null;
@@ -57,10 +60,29 @@ export default function URDFViewer({
   const [currentPackageMapping, setCurrentPackageMapping] = useState(initialPackageMapping);
   const [currentPointCloudTopics, setCurrentPointCloudTopics] = useState<string[]>(initialPointCloudTopics);
   const [modelLoading, setModelLoading] = useState(false);
+  const [showTF, setShowTF] = useState(true); // Toggle TF visualization
+  const [baseLinkTransform, setBaseLinkTransform] = useState<{
+    position: THREE.Vector3;
+    quaternion: THREE.Quaternion;
+  } | null>(null);
+  const [tfSettings, setTfSettings] = useState({
+    showAxes: true,
+    showConnections: true,
+    showLabels: false,
+    axisLength: 0.15, // ขนาดของ coordinate axes
+  });
 
   const urlLoader = useUrdfUrlLoader();
   // Extract stable functions to use in dependency arrays
   const { loadFromUrl, reset, setLoadProgress } = urlLoader;
+
+  // Subscribe to TF topics
+  const { tfTree } = useTF({
+    rosbridgeClient: client,
+    enabled: showTF,
+  });
+
+
 
   // Use topic subscription for topic mode
   const { data: urdfData } = useTopic<{ data: string }>(
@@ -131,15 +153,14 @@ export default function URDFViewer({
     [setLoadProgress]
   );
 
-  // Auto-load after preset is set
-  useEffect(() => {
-    if (currentMode === 'url' && currentUrdfUrl && currentUrdfUrl.startsWith('http')) {
-      const timer = setTimeout(() => {
-        handleLoadFromUrl();
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [currentMode, currentUrdfUrl, currentMeshBaseUrl, currentPackageMapping, handleLoadFromUrl]);
+  const handleBaseLinkTransform = useCallback(
+    (position: THREE.Vector3, quaternion: THREE.Quaternion) => {
+      setBaseLinkTransform({ position, quaternion });
+    },
+    []
+  );
+
+  // Removed auto-load - now requires manual "Load URDF" button press
 
   return (
     <div className="relative w-full h-full bg-gray-950 rounded-lg overflow-hidden border border-gray-800">
@@ -187,6 +208,19 @@ export default function URDFViewer({
             if (onPointCloudTopicsChange) onPointCloudTopicsChange(topics);
           }}
         />
+
+        {/* TF Visualization Toggle */}
+        <button
+          onClick={() => setShowTF(!showTF)}
+          className={`px-3 py-1.5 rounded text-xs font-medium border transition-colors ${
+            showTF
+              ? 'bg-blue-500/20 text-blue-400 border-blue-500/50 hover:bg-blue-500/30'
+              : 'bg-gray-800/90 text-gray-400 border-gray-700 hover:bg-gray-700/90'
+          }`}
+          title="Toggle TF visualization"
+        >
+          🔗 TF
+        </button>
       </div>
 
       {/* Loading/Error Status */}
@@ -234,6 +268,7 @@ export default function URDFViewer({
             onLoadComplete={handleModelLoadComplete}
             onLoadError={handleModelLoadError}
             onLoadProgress={handleModelLoadProgress}
+            onBaseLinkTransform={handleBaseLinkTransform}
           />
           
           {/* Render point clouds from configured topics */}
@@ -244,6 +279,20 @@ export default function URDFViewer({
               topic={topic}
             />
           ))}
+          
+          {/* TF Visualization */}
+          {showTF && baseLinkTransform && (
+            <TFVisualizer
+              tfTree={tfTree}
+              showAxes={tfSettings.showAxes}
+              showConnections={tfSettings.showConnections}
+              showLabels={tfSettings.showLabels}
+              axisLength={tfSettings.axisLength}
+              baseFrame="base_link"
+              baseLinkPosition={baseLinkTransform.position}
+              baseLinkQuaternion={baseLinkTransform.quaternion}
+            />
+          )}
         </Scene3D>
       )}
     </div>

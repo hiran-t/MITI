@@ -77,4 +77,16 @@ export namespace geometry_msgs {
     translation: Vector3;
     rotation: Quaternion;
   }
+
+  export interface TransformStamped {
+    header: std_msgs.Header;
+    child_frame_id: string;
+    transform: Transform;
+  }
+}
+
+export namespace tf2_msgs {
+  export interface TFMessage {
+    transforms: geometry_msgs.TransformStamped[];
+  }
 }

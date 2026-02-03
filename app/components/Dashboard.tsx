@@ -29,7 +29,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="h-screen overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 text-white flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 text-white flex flex-col">
       <div className="flex-1 flex flex-col max-w-[1920px] mx-auto w-full">
         {/* Compact Header */}
         <header className="flex-shrink-0 p-3 border-b border-gray-800">
@@ -68,7 +68,7 @@ export default function Dashboard() {
         </header>
 
         {/* Main Content - Draggable Widget Grid */}
-        <main className="flex-1 overflow-auto p-4 relative">
+        <main className="flex-1 p-4 relative">
           <DraggableGridLayout
             widgets={layout.widgets}
             onLayoutChange={updateLayout}

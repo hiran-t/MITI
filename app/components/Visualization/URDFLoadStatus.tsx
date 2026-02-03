@@ -23,7 +23,14 @@ export default function URDFLoadStatus({ loading, error, success, progress, onCl
     <div className="absolute inset-0 flex items-center justify-center bg-gray-950/90 backdrop-blur-sm z-20">
       <div className="max-w-md w-full mx-4">
         {loading && (
-          <div className="bg-gray-900/90 border border-gray-800 rounded-lg p-6">
+          <div className="bg-gray-900/90 border border-gray-800 rounded-lg p-6 relative">
+            <button
+              onClick={onClose}
+              className="absolute top-3 right-3 p-1 hover:bg-gray-700 rounded transition-colors"
+              title="Cancel"
+            >
+              <X className="w-5 h-5 text-gray-400" />
+            </button>
             <div className="flex items-center gap-3 mb-4">
               <Loader2 className="w-6 h-6 text-blue-400 animate-spin" />
               <h3 className="text-lg font-semibold text-gray-200">Loading URDF</h3>

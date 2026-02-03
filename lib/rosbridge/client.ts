@@ -120,10 +120,15 @@ export class ROSBridge {
     }
   }
 
-  subscribe(topic: string, callback: MessageCallback, type?: string): void {
+  subscribe(
+    topic: string,
+    callback: MessageCallback,
+    type?: string,
+    options?: { throttle_rate?: number }
+  ): void {
     if (!this.subscriptions.has(topic)) {
       this.subscriptions.set(topic, new Set());
-      this.send(createSubscribeMessage(topic, type));
+      this.send(createSubscribeMessage(topic, type, options?.throttle_rate));
     }
     this.subscriptions.get(topic)?.add(callback);
   }

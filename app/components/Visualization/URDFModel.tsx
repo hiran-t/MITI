@@ -41,6 +41,7 @@ interface URDFModelProps {
   onLoadComplete?: () => void;
   onLoadError?: (error: Error) => void;
   onLoadProgress?: (loaded: number, total: number) => void;
+  onBaseLinkTransform?: (position: THREE.Vector3, quaternion: THREE.Quaternion) => void;
 }
 
 /**
@@ -199,26 +200,10 @@ function processRobotModel(robot: THREE.Object3D): void {
 
   console.log('  - Total meshes:', meshCount);
 
-  // Calculate bounding box to center and scale the model
-  const box = new THREE.Box3().setFromObject(robot);
-  const size = box.getSize(new THREE.Vector3());
-  const center = box.getCenter(new THREE.Vector3());
-
-  if (!box.isEmpty()) {
-    // Center the model at origin
-    robot.position.sub(center);
-
-    // Scale if needed
-    const maxDim = Math.max(size.x, size.y, size.z);
-    if (maxDim > 0) {
-      const targetSize = 2; // Target size in scene units
-      const scale = targetSize / maxDim;
-      robot.scale.multiplyScalar(scale);
-    }
-  } else {
-    console.warn('URDFModel: Empty bounding box, skipping centering and scaling');
-    robot.scale.set(1, 1, 1);
-  }
+  // Keep model at original position to match TF frames
+  // No centering or scaling to maintain alignment with TF visualization
+  robot.position.set(0, 0, 0);
+  robot.scale.set(1, 1, 1);
 
   robot.visible = true;
 }
@@ -232,6 +217,7 @@ export default function URDFModel({
   onLoadComplete,
   onLoadError,
   onLoadProgress,
+  onBaseLinkTransform,
 }: URDFModelProps) {
   const [model, setModel] = useState<THREE.Object3D | null>(null);
   const [loading, setLoading] = useState(true);
@@ -248,8 +234,6 @@ export default function URDFModel({
   useEffect(() => {
     if (!urdfString) return;
 
-    console.log('URDFModel: Attempting to parse URDF, length:', urdfString.length);
-
     if (callbacksRef.current.onLoadStart) {
       callbacksRef.current.onLoadStart();
     }
@@ -262,7 +246,6 @@ export default function URDFModel({
               meshBaseUrl,
               packageMapping,
               (url, loaded, total) => {
-                console.log(`Loading: ${url} (${loaded}/${total})`);
                 if (callbacksRef.current.onLoadProgress) {
                   callbacksRef.current.onLoadProgress(loaded, total);
                 }
@@ -279,7 +262,6 @@ export default function URDFModel({
           manager.onLoad = () => {
             if (!loadingResolved) {
               loadingResolved = true;
-              console.log('✅ All meshes loaded successfully');
               resolve();
             }
           };
@@ -303,12 +285,9 @@ export default function URDFModel({
 
         // Parse URDF from string
         const robot = loader.parse(urdfString);
-        console.log('URDFModel: Successfully parsed URDF');
 
         // Wait for all meshes to load before proceeding
-        console.log('⏳ Waiting for meshes to load...');
         await loadingComplete;
-        console.log('✅ Mesh loading complete, processing model...');
 
         // Process and center the model
         processRobotModel(robot);
@@ -348,12 +327,23 @@ export default function URDFModel({
         }
       });
 
-      const changed = model.setJointValues(jointValues);
-      if (changed) {
-        console.log('URDFModel: Updated joint positions:', Object.keys(jointValues).length, 'joints');
-      }
+      model.setJointValues(jointValues);
     }
   }, [model, jointStates]);
+
+  // Send base_link transform to parent when model changes
+  useEffect(() => {
+    if (model && onBaseLinkTransform) {
+      const baseLink = model.getObjectByName('base_link');
+      if (baseLink) {
+        const worldPos = new THREE.Vector3();
+        const worldQuat = new THREE.Quaternion();
+        baseLink.getWorldPosition(worldPos);
+        baseLink.getWorldQuaternion(worldQuat);
+        onBaseLinkTransform(worldPos, worldQuat);
+      }
+    }
+  }, [model, onBaseLinkTransform]);
 
   if (loading) {
     return null;
