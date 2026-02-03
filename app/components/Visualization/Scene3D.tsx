@@ -12,8 +12,8 @@ export default function Scene3D({ children }: Scene3DProps) {
   return (
     <Canvas
       camera={{ 
-        position: [3, -3, 3], 
-        fov: 50,
+        position: [5, -4, 4], 
+        fov: 25,
         up: [0, 0, 1] // Z-up coordinate system (ROS convention)
       }}
       className="bg-white"
@@ -61,7 +61,7 @@ export default function Scene3D({ children }: Scene3DProps) {
         dampingFactor={0.05}
         minDistance={0.5}
         maxDistance={50}
-        target={[0, 0, 0]}
+        target={[0, 1, 1]}
       />
     </Canvas>
   );

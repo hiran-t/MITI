@@ -73,6 +73,7 @@ export const DEFAULT_LAYOUT: LayoutConfig = {
       h: 2,
       minW: 1,
       minH: 2,
+      locked: true,
     },
     {
       i: 'urdf-viewer-1',
@@ -84,6 +85,7 @@ export const DEFAULT_LAYOUT: LayoutConfig = {
       h: 4,
       minW: 1,
       minH: 2,
+      locked: true,
     },
     {
       i: 'camera-viewer-1',
