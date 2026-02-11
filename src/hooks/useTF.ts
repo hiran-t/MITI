@@ -84,12 +84,12 @@ export function useTF({ rosbridgeClient, maxAge = 10000, enabled = true }: UseTF
       }
     }
 
-    framesToDelete.forEach(frameName => {
+    framesToDelete.forEach((frameName) => {
       const frame = framesRef.current.get(frameName);
       if (frame && frame.parent) {
         const parentFrame = framesRef.current.get(frame.parent);
         if (parentFrame) {
-          parentFrame.children = parentFrame.children.filter(child => child !== frameName);
+          parentFrame.children = parentFrame.children.filter((child) => child !== frameName);
         }
       }
       framesRef.current.delete(frameName);
@@ -109,7 +109,11 @@ export function useTF({ rosbridgeClient, maxAge = 10000, enabled = true }: UseTF
   useEffect(() => {
     if (!enabled || !rosbridgeClient || !rosbridgeClient.isConnected()) {
       setIsLoading(true);
-      console.log('[TF] Not connecting:', { enabled, hasClient: !!rosbridgeClient, isConnected: rosbridgeClient?.isConnected() });
+      console.log('[TF] Not connecting:', {
+        enabled,
+        hasClient: !!rosbridgeClient,
+        isConnected: rosbridgeClient?.isConnected(),
+      });
       return;
     }
 
@@ -124,7 +128,7 @@ export function useTF({ rosbridgeClient, maxAge = 10000, enabled = true }: UseTF
     };
 
     console.log('[TF] Subscribing to /tf and /tf_static topics...');
-    
+
     // Subscribe to /tf topic (dynamic transforms)
     rosbridgeClient.subscribe(
       '/tf',
@@ -134,11 +138,7 @@ export function useTF({ rosbridgeClient, maxAge = 10000, enabled = true }: UseTF
     );
 
     // Subscribe to /tf_static topic (static transforms)
-    rosbridgeClient.subscribe(
-      '/tf_static',
-      handleTFMessage,
-      'tf2_msgs/TFMessage'
-    );
+    rosbridgeClient.subscribe('/tf_static', handleTFMessage, 'tf2_msgs/TFMessage');
 
     // Update state periodically
     updateInterval = setInterval(() => {

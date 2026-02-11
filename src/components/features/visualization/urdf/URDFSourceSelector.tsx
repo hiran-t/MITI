@@ -19,8 +19,8 @@ interface URDFSourceSelectorProps {
   isLoadingUrl: boolean;
 }
 
-export default function URDFSourceSelector({ 
-  mode, 
+export default function URDFSourceSelector({
+  mode,
   onModeChange,
   topic,
   onTopicChange,
@@ -51,7 +51,11 @@ export default function URDFSourceSelector({
   }, [isOpen]);
 
   const getModeIcon = () => {
-    return mode === 'topic' ? <Radio className={visualizationStyles.urdf.dropdown.icon} /> : <Globe className={visualizationStyles.urdf.dropdown.icon} />;
+    return mode === 'topic' ? (
+      <Radio className={visualizationStyles.urdf.dropdown.icon} />
+    ) : (
+      <Globe className={visualizationStyles.urdf.dropdown.icon} />
+    );
   };
 
   const getModeLabel = () => {
@@ -59,7 +63,9 @@ export default function URDFSourceSelector({
   };
 
   const getModeColor = () => {
-    return mode === 'topic' ? visualizationStyles.urdf.dropdown.iconTopic : visualizationStyles.urdf.dropdown.iconUrl;
+    return mode === 'topic'
+      ? visualizationStyles.urdf.dropdown.iconTopic
+      : visualizationStyles.urdf.dropdown.iconUrl;
   };
 
   return (
@@ -70,7 +76,13 @@ export default function URDFSourceSelector({
       >
         <span className={getModeColor()}>{getModeIcon()}</span>
         <span className={visualizationStyles.urdf.dropdown.label}>{getModeLabel()}</span>
-        <ChevronDown className={cn(isOpen ? visualizationStyles.urdf.dropdown.chevronOpen : visualizationStyles.urdf.dropdown.chevron)} />
+        <ChevronDown
+          className={cn(
+            isOpen
+              ? visualizationStyles.urdf.dropdown.chevronOpen
+              : visualizationStyles.urdf.dropdown.chevron
+          )}
+        />
       </button>
 
       {isOpen && (
@@ -82,20 +94,26 @@ export default function URDFSourceSelector({
               className={cn(
                 visualizationStyles.urdf.tabs.button,
                 mode === 'topic'
-                  ? cn(visualizationStyles.urdf.tabs.buttonActive, visualizationStyles.urdf.tabs.borderTopic)
+                  ? cn(
+                      visualizationStyles.urdf.tabs.buttonActive,
+                      visualizationStyles.urdf.tabs.borderTopic
+                    )
                   : visualizationStyles.urdf.tabs.buttonInactive
               )}
             >
               <Radio className={visualizationStyles.urdf.tabs.icon} />
               <span>ROS Topic</span>
             </button>
-            
+
             <button
               onClick={() => onModeChange('url')}
               className={cn(
                 visualizationStyles.urdf.tabs.button,
                 mode === 'url'
-                  ? cn(visualizationStyles.urdf.tabs.buttonActive, visualizationStyles.urdf.tabs.borderUrl)
+                  ? cn(
+                      visualizationStyles.urdf.tabs.buttonActive,
+                      visualizationStyles.urdf.tabs.borderUrl
+                    )
                   : visualizationStyles.urdf.tabs.buttonInactive
               )}
             >
@@ -109,9 +127,7 @@ export default function URDFSourceSelector({
             {mode === 'topic' && (
               <div className={visualizationStyles.urdf.form.fieldset}>
                 <div>
-                  <label className={visualizationStyles.urdf.form.label}>
-                    Topic Name
-                  </label>
+                  <label className={visualizationStyles.urdf.form.label}>Topic Name</label>
                   <input
                     type="text"
                     value={topic}
@@ -130,9 +146,7 @@ export default function URDFSourceSelector({
             {mode === 'url' && (
               <div className={visualizationStyles.urdf.form.fieldset}>
                 <div>
-                  <label className={visualizationStyles.urdf.form.label}>
-                    URDF URL
-                  </label>
+                  <label className={visualizationStyles.urdf.form.label}>URDF URL</label>
                   <input
                     type="text"
                     value={urdfUrl}

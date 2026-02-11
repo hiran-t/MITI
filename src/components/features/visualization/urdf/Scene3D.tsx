@@ -12,10 +12,10 @@ interface Scene3DProps {
 export default function Scene3D({ children }: Scene3DProps) {
   return (
     <Canvas
-      camera={{ 
-        position: [5, -4, 4], 
+      camera={{
+        position: [5, -4, 4],
         fov: 25,
-        up: [0, 0, 1] // Z-up coordinate system (ROS convention)
+        up: [0, 0, 1], // Z-up coordinate system (ROS convention)
       }}
       className={visualizationStyles.scene.canvas}
       shadows
@@ -25,16 +25,16 @@ export default function Scene3D({ children }: Scene3DProps) {
       onPointerUp={(e) => e.stopPropagation()}
     >
       <ambientLight intensity={1.0} />
-      <directionalLight 
-        position={[10, -10, 10]} 
-        intensity={1} 
-        castShadow 
+      <directionalLight
+        position={[10, -10, 10]}
+        intensity={1}
+        castShadow
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
       />
       <directionalLight position={[-10, 10, -10]} intensity={0.5} />
       <pointLight position={[0, 0, 10]} intensity={0.5} />
-      
+
       {/* Grid helper on XY plane (Z-up) */}
       <Grid
         args={[25, 25]}
@@ -50,12 +50,12 @@ export default function Scene3D({ children }: Scene3DProps) {
         infiniteGrid={true}
         rotation={[Math.PI / 2, 0, 0]} // Rotate grid to XY plane
       />
-      
+
       {/* Axis helper - larger and more visible */}
       <axesHelper args={[2]} />
-      
+
       {children}
-      
+
       <OrbitControls
         makeDefault
         enableDamping

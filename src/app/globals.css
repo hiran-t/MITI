@@ -10,9 +10,9 @@
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+    'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   min-height: 100vh;
 }
 
@@ -130,7 +130,7 @@ html {
 
 /* Custom resize handle styling */
 .react-resizable-handle::after {
-  content: "";
+  content: '';
   position: absolute;
   right: 3px;
   bottom: 3px;

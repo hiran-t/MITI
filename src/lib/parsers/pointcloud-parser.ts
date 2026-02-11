@@ -12,19 +12,19 @@ export interface ParsedPoint {
 
 // PointField datatypes
 const POINTFIELD_DATATYPES: { [key: number]: { size: number; reader: string } } = {
-  1: { size: 1, reader: 'getInt8' },    // INT8
-  2: { size: 1, reader: 'getUint8' },   // UINT8
-  3: { size: 2, reader: 'getInt16' },   // INT16
-  4: { size: 2, reader: 'getUint16' },  // UINT16
-  5: { size: 4, reader: 'getInt32' },   // INT32
-  6: { size: 4, reader: 'getUint32' },  // UINT32
+  1: { size: 1, reader: 'getInt8' }, // INT8
+  2: { size: 1, reader: 'getUint8' }, // UINT8
+  3: { size: 2, reader: 'getInt16' }, // INT16
+  4: { size: 2, reader: 'getUint16' }, // UINT16
+  5: { size: 4, reader: 'getInt32' }, // INT32
+  6: { size: 4, reader: 'getUint32' }, // UINT32
   7: { size: 4, reader: 'getFloat32' }, // FLOAT32
   8: { size: 8, reader: 'getFloat64' }, // FLOAT64
 };
 
 export function parsePointCloud2(msg: sensor_msgs.PointCloud2): ParsedPoint[] {
   const points: ParsedPoint[] = [];
-  
+
   if (!msg.data || msg.data.length === 0) {
     return points;
   }
@@ -51,18 +51,38 @@ export function parsePointCloud2(msg: sensor_msgs.PointCloud2): ParsedPoint[] {
 
     // Read X, Y, Z
     if (fields['x']) {
-      point.x = readField(dataView, pointOffset + fields['x'].offset, fields['x'].datatype, msg.is_bigendian);
+      point.x = readField(
+        dataView,
+        pointOffset + fields['x'].offset,
+        fields['x'].datatype,
+        msg.is_bigendian
+      );
     }
     if (fields['y']) {
-      point.y = readField(dataView, pointOffset + fields['y'].offset, fields['y'].datatype, msg.is_bigendian);
+      point.y = readField(
+        dataView,
+        pointOffset + fields['y'].offset,
+        fields['y'].datatype,
+        msg.is_bigendian
+      );
     }
     if (fields['z']) {
-      point.z = readField(dataView, pointOffset + fields['z'].offset, fields['z'].datatype, msg.is_bigendian);
+      point.z = readField(
+        dataView,
+        pointOffset + fields['z'].offset,
+        fields['z'].datatype,
+        msg.is_bigendian
+      );
     }
 
     // Read RGB if available
     if (fields['rgb']) {
-      const rgb = readField(dataView, pointOffset + fields['rgb'].offset, fields['rgb'].datatype, msg.is_bigendian);
+      const rgb = readField(
+        dataView,
+        pointOffset + fields['rgb'].offset,
+        fields['rgb'].datatype,
+        msg.is_bigendian
+      );
       point.rgb = rgb;
       // Extract R, G, B from packed RGB
       point.r = ((rgb >> 16) & 0xff) / 255;
@@ -71,13 +91,28 @@ export function parsePointCloud2(msg: sensor_msgs.PointCloud2): ParsedPoint[] {
     } else {
       // Try individual r, g, b fields
       if (fields['r']) {
-        point.r = readField(dataView, pointOffset + fields['r'].offset, fields['r'].datatype, msg.is_bigendian);
+        point.r = readField(
+          dataView,
+          pointOffset + fields['r'].offset,
+          fields['r'].datatype,
+          msg.is_bigendian
+        );
       }
       if (fields['g']) {
-        point.g = readField(dataView, pointOffset + fields['g'].offset, fields['g'].datatype, msg.is_bigendian);
+        point.g = readField(
+          dataView,
+          pointOffset + fields['g'].offset,
+          fields['g'].datatype,
+          msg.is_bigendian
+        );
       }
       if (fields['b']) {
-        point.b = readField(dataView, pointOffset + fields['b'].offset, fields['b'].datatype, msg.is_bigendian);
+        point.b = readField(
+          dataView,
+          pointOffset + fields['b'].offset,
+          fields['b'].datatype,
+          msg.is_bigendian
+        );
       }
     }
 

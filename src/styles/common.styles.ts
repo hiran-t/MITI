@@ -5,7 +5,8 @@
 export const commonStyles = {
   // Button styles
   button: {
-    primary: 'px-4 py-2 bg-gradient-to-r from-lime-400 to-cyan-400 hover:from-lime-500 hover:to-cyan-500 text-white rounded-lg transition-all duration-200',
+    primary:
+      'px-4 py-2 bg-gradient-to-r from-lime-400 to-cyan-400 hover:from-lime-500 hover:to-cyan-500 text-white rounded-lg transition-all duration-200',
     secondary: 'px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors',
     ghost: 'px-4 py-2 hover:bg-gray-800/50 text-gray-300 rounded-lg transition-colors',
     danger: 'px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors',
@@ -51,7 +52,8 @@ export const commonStyles = {
   modal: {
     backdrop: 'fixed inset-0 z-50 bg-black/50 backdrop-blur-sm',
     container: 'fixed inset-0 z-50 flex items-center justify-center p-4',
-    content: 'bg-gray-900 rounded-lg border border-gray-800 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden',
+    content:
+      'bg-gray-900 rounded-lg border border-gray-800 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden',
     header: 'px-6 py-4 border-b border-gray-800 flex items-center justify-between',
     body: 'p-6 overflow-y-auto',
     footer: 'px-6 py-4 border-t border-gray-800 flex items-center justify-end gap-2',

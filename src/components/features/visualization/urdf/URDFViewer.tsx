@@ -38,7 +38,6 @@ interface URDFViewerProps {
   onPointCloudTopicsChange?: (topics: string[]) => void;
 }
 
-
 export default function URDFViewer({
   client,
   mode: initialMode = 'topic',
@@ -59,7 +58,8 @@ export default function URDFViewer({
   const [currentUrdfUrl, setCurrentUrdfUrl] = useState(initialUrdfUrl);
   const [currentMeshBaseUrl, setCurrentMeshBaseUrl] = useState(initialMeshBaseUrl);
   const [currentPackageMapping, setCurrentPackageMapping] = useState(initialPackageMapping);
-  const [currentPointCloudTopics, setCurrentPointCloudTopics] = useState<string[]>(initialPointCloudTopics);
+  const [currentPointCloudTopics, setCurrentPointCloudTopics] =
+    useState<string[]>(initialPointCloudTopics);
   const [modelLoading, setModelLoading] = useState(false);
   const [showTF, setShowTF] = useState(true); // Toggle TF visualization
   const [baseLinkTransform, setBaseLinkTransform] = useState<{
@@ -82,8 +82,6 @@ export default function URDFViewer({
     rosbridgeClient: client,
     enabled: showTF,
   });
-
-
 
   // Use topic subscription for topic mode
   const { data: urdfData } = useTopic<{ data: string }>(
@@ -178,8 +176,8 @@ export default function URDFViewer({
             )}
           </div>
 
-          <URDFSourceSelector 
-            mode={currentMode} 
+          <URDFSourceSelector
+            mode={currentMode}
             onModeChange={handleModeChange}
             topic={currentTopic}
             onTopicChange={(topic) => {
@@ -201,7 +199,7 @@ export default function URDFViewer({
           />
         </div>
 
-        <URDFSettings 
+        <URDFSettings
           onLoadPreset={handleLoadPreset}
           pointCloudTopics={currentPointCloudTopics}
           onPointCloudTopicsChange={(topics) => {
@@ -260,7 +258,7 @@ export default function URDFViewer({
         </div>
       ) : (
         <Scene3D>
-          <URDFModel 
+          <URDFModel
             urdfString={urdfString}
             meshBaseUrl={currentMeshBaseUrl || undefined}
             packageMapping={currentPackageMapping}
@@ -271,16 +269,12 @@ export default function URDFViewer({
             onLoadProgress={handleModelLoadProgress}
             onBaseLinkTransform={handleBaseLinkTransform}
           />
-          
+
           {/* Render point clouds from configured topics */}
           {currentPointCloudTopics.map((topic) => (
-            <PointCloudRenderer 
-              key={topic}
-              client={client}
-              topic={topic}
-            />
+            <PointCloudRenderer key={topic} client={client} topic={topic} />
           ))}
-          
+
           {/* TF Visualization */}
           {showTF && baseLinkTransform && (
             <TFVisualizer

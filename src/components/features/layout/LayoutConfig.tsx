@@ -10,10 +10,7 @@ interface LayoutConfigProps {
   onResetLayout: () => void;
 }
 
-export default function LayoutConfigPanel({
-  onAddWidget,
-  onResetLayout,
-}: LayoutConfigProps) {
+export default function LayoutConfigPanel({ onAddWidget, onResetLayout }: LayoutConfigProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -56,9 +53,13 @@ export default function LayoutConfigPanel({
                       }}
                       className={layoutConfigStyles.widgetList.item}
                     >
-                      <span className={layoutConfigStyles.widgetList.itemIcon}>{widgetType.icon}</span>
+                      <span className={layoutConfigStyles.widgetList.itemIcon}>
+                        {widgetType.icon}
+                      </span>
                       <div className={layoutConfigStyles.widgetList.itemContent}>
-                        <div className={layoutConfigStyles.widgetList.itemTitle}>{widgetType.label}</div>
+                        <div className={layoutConfigStyles.widgetList.itemTitle}>
+                          {widgetType.label}
+                        </div>
                         <div className={layoutConfigStyles.widgetList.itemSize}>
                           Default: {widgetType.defaultSize.w}x{widgetType.defaultSize.h}
                         </div>
@@ -72,7 +73,8 @@ export default function LayoutConfigPanel({
               {/* Instructions */}
               <div className={layoutConfigStyles.tips.container}>
                 <p className={layoutConfigStyles.tips.text}>
-                  💡 <strong>Tips:</strong> Drag the header to move widgets. Click and drag corners to resize. Click X to remove.
+                  💡 <strong>Tips:</strong> Drag the header to move widgets. Click and drag corners
+                  to resize. Click X to remove.
                 </p>
               </div>
 

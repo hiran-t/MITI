@@ -4,12 +4,12 @@
 
 /**
  * Resolves a package:// path to an HTTP URL
- * 
+ *
  * @param meshPath - The path to resolve (e.g., "package://robot_description/meshes/base.stl")
  * @param baseUrl - The base URL to use for resolution (e.g., "http://192.168.10.27:8000")
  * @param packageMapping - Optional mapping of package names to specific URLs
  * @returns The resolved HTTP URL
- * 
+ *
  * @example
  * // Basic resolution
  * resolvePackagePath(
@@ -17,7 +17,7 @@
  *   "http://192.168.10.27:8000"
  * )
  * // Returns: "http://192.168.10.27:8000/meshes/base.stl"
- * 
+ *
  * @example
  * // With package mapping
  * resolvePackagePath(
@@ -46,7 +46,7 @@ export function resolvePackagePath(
   // Format: package://package_name/path/to/file
   const withoutProtocol = meshPath.substring('package://'.length);
   const firstSlashIndex = withoutProtocol.indexOf('/');
-  
+
   if (firstSlashIndex === -1) {
     console.warn(`Invalid package path format: ${meshPath}`);
     return meshPath;
@@ -117,7 +117,7 @@ export function extractPackageName(meshPath: string): string | null {
 
   const withoutProtocol = meshPath.substring('package://'.length);
   const firstSlashIndex = withoutProtocol.indexOf('/');
-  
+
   if (firstSlashIndex === -1) {
     return null;
   }

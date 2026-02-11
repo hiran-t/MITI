@@ -1,19 +1,15 @@
-import type { Metadata } from "next";
-import "./globals.css";
+import type { Metadata } from 'next';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: "MITI - ROS2 Web Dashboard",
-  description: "Web application for visualizing and monitoring ROS2 topics",
+  title: 'MITI - ROS2 Web Dashboard',
+  description: 'Web application for visualizing and monitoring ROS2 topics',
   icons: {
-    icon: "/robot_logo.svg",
+    icon: '/robot_logo.svg',
   },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>{children}</body>

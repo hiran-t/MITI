@@ -13,36 +13,50 @@ import type { sensor_msgs } from '@/types/ros-messages';
 function applyRainbowColormap(value: number): { r: number; g: number; b: number } {
   // Clamp value to 0-1 range
   value = Math.max(0, Math.min(1, value));
-  
+
   // RViz rainbow colormap uses HSV with hue ranging from 0 (red) to 240 (blue)
   // We reverse it so blue is near (0) and red is far (1)
   const hue = (1 - value) * 240; // 240 to 0 (blue to red)
-  
+
   // Convert HSV to RGB (with full saturation and value)
   const h = hue / 60;
   const c = 1; // chroma (saturation * value)
   const x = c * (1 - Math.abs((h % 2) - 1));
-  
-  let r = 0, g = 0, b = 0;
-  
+
+  let r = 0,
+    g = 0,
+    b = 0;
+
   if (h >= 0 && h < 1) {
-    r = c; g = x; b = 0;
+    r = c;
+    g = x;
+    b = 0;
   } else if (h >= 1 && h < 2) {
-    r = x; g = c; b = 0;
+    r = x;
+    g = c;
+    b = 0;
   } else if (h >= 2 && h < 3) {
-    r = 0; g = c; b = x;
+    r = 0;
+    g = c;
+    b = x;
   } else if (h >= 3 && h < 4) {
-    r = 0; g = x; b = c;
+    r = 0;
+    g = x;
+    b = c;
   } else if (h >= 4 && h < 5) {
-    r = x; g = 0; b = c;
+    r = x;
+    g = 0;
+    b = c;
   } else {
-    r = c; g = 0; b = x;
+    r = c;
+    g = 0;
+    b = x;
   }
-  
+
   return {
     r: Math.round(r * 255),
     g: Math.round(g * 255),
-    b: Math.round(b * 255)
+    b: Math.round(b * 255),
   };
 }
 
@@ -100,10 +114,10 @@ export function parseImageMessage(imageMsg: sensor_msgs.Image): string {
       for (let i = 0; i < width * height; i++) {
         const srcIdx = i * 3;
         const dstIdx = i * 4;
-        pixels[dstIdx] = imageDataArray[srcIdx];         // R
+        pixels[dstIdx] = imageDataArray[srcIdx]; // R
         pixels[dstIdx + 1] = imageDataArray[srcIdx + 1]; // G
         pixels[dstIdx + 2] = imageDataArray[srcIdx + 2]; // B
-        pixels[dstIdx + 3] = 255;              // A
+        pixels[dstIdx + 3] = 255; // A
       }
       break;
 
@@ -112,10 +126,10 @@ export function parseImageMessage(imageMsg: sensor_msgs.Image): string {
       for (let i = 0; i < width * height; i++) {
         const srcIdx = i * 3;
         const dstIdx = i * 4;
-        pixels[dstIdx] = imageDataArray[srcIdx + 2];     // R (from B)
+        pixels[dstIdx] = imageDataArray[srcIdx + 2]; // R (from B)
         pixels[dstIdx + 1] = imageDataArray[srcIdx + 1]; // G
-        pixels[dstIdx + 2] = imageDataArray[srcIdx];     // B (from R)
-        pixels[dstIdx + 3] = 255;              // A
+        pixels[dstIdx + 2] = imageDataArray[srcIdx]; // B (from R)
+        pixels[dstIdx + 3] = 255; // A
       }
       break;
 
@@ -131,9 +145,9 @@ export function parseImageMessage(imageMsg: sensor_msgs.Image): string {
       for (let i = 0; i < width * height; i++) {
         const srcIdx = i * 4;
         const dstIdx = i * 4;
-        pixels[dstIdx] = imageDataArray[srcIdx + 2];     // R (from B)
+        pixels[dstIdx] = imageDataArray[srcIdx + 2]; // R (from B)
         pixels[dstIdx + 1] = imageDataArray[srcIdx + 1]; // G
-        pixels[dstIdx + 2] = imageDataArray[srcIdx];     // B (from R)
+        pixels[dstIdx + 2] = imageDataArray[srcIdx]; // B (from R)
         pixels[dstIdx + 3] = imageDataArray[srcIdx + 3]; // A
       }
       break;
@@ -142,27 +156,27 @@ export function parseImageMessage(imageMsg: sensor_msgs.Image): string {
       // MONO8: 8-bit grayscale with auto brightness/contrast enhancement
       let minVal8 = 255;
       let maxVal8 = 0;
-      
+
       // Find min and max values for histogram stretching
       for (let i = 0; i < width * height; i++) {
         const value = imageDataArray[i];
         if (value < minVal8) minVal8 = value;
         if (value > maxVal8) maxVal8 = value;
       }
-      
+
       // Calculate stretch parameters
       const range8 = maxVal8 - minVal8 || 1;
-      
+
       // Apply histogram stretching for better contrast
       for (let i = 0; i < width * height; i++) {
         const value = imageDataArray[i];
         // Stretch and enhance
         const stretched = Math.min(255, Math.floor(((value - minVal8) / range8) * 255));
         const dstIdx = i * 4;
-        pixels[dstIdx] = stretched;     // R
+        pixels[dstIdx] = stretched; // R
         pixels[dstIdx + 1] = stretched; // G
         pixels[dstIdx + 2] = stretched; // B
-        pixels[dstIdx + 3] = 255;       // A
+        pixels[dstIdx + 3] = 255; // A
       }
       break;
 
@@ -171,7 +185,7 @@ export function parseImageMessage(imageMsg: sensor_msgs.Image): string {
       let minVal16 = 65535;
       let maxVal16 = 0;
       const values16: number[] = [];
-      
+
       // Read all 16-bit values and find min/max for histogram stretching
       for (let i = 0; i < width * height; i++) {
         const srcIdx = i * 2;
@@ -180,20 +194,20 @@ export function parseImageMessage(imageMsg: sensor_msgs.Image): string {
         if (value16 < minVal16) minVal16 = value16;
         if (value16 > maxVal16) maxVal16 = value16;
       }
-      
+
       // Calculate stretch parameters
       const range16 = maxVal16 - minVal16 || 1;
-      
+
       // Apply histogram stretching for better contrast
       for (let i = 0; i < width * height; i++) {
         const value16 = values16[i];
         // Stretch to full 0-255 range
         const stretched = Math.min(255, Math.floor(((value16 - minVal16) / range16) * 255));
         const dstIdx = i * 4;
-        pixels[dstIdx] = stretched;     // R
+        pixels[dstIdx] = stretched; // R
         pixels[dstIdx + 1] = stretched; // G
         pixels[dstIdx + 2] = stretched; // B
-        pixels[dstIdx + 3] = 255;       // A
+        pixels[dstIdx + 3] = 255; // A
       }
       break;
 
@@ -209,7 +223,7 @@ export function parseImageMessage(imageMsg: sensor_msgs.Image): string {
         const srcIdx = i * 2;
         const depth = imageDataArray[srcIdx] | (imageDataArray[srcIdx + 1] << 8);
         depthValues16.push(depth);
-        
+
         if (depth > 0) {
           minDepth16 = Math.min(minDepth16, depth);
           maxDepth16 = Math.max(maxDepth16, depth);

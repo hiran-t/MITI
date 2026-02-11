@@ -31,16 +31,11 @@ export default function AddWidgetButton({ onAddWidget }: AddWidgetButtonProps) {
       {isOpen && (
         <>
           {/* Backdrop */}
-          <div 
-            className={widgetStyles.menu.backdrop}
-            onClick={() => setIsOpen(false)}
-          />
-          
+          <div className={widgetStyles.menu.backdrop} onClick={() => setIsOpen(false)} />
+
           {/* Menu */}
           <div className={widgetStyles.menu.container}>
-            <div className={widgetStyles.menu.header}>
-              Add Widget
-            </div>
+            <div className={widgetStyles.menu.header}>Add Widget</div>
             {WIDGET_TYPES.map((widgetType) => (
               <button
                 key={widgetType.type}

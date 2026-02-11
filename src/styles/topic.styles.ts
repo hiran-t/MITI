@@ -9,8 +9,10 @@ export const topicStyles = {
     toolbar: 'flex items-center gap-3 mb-4',
     searchWrapper: 'relative flex-1',
     searchIcon: 'absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400',
-    searchInput: 'w-full pl-10 pr-4 py-2 bg-gray-900/50 border border-gray-800 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors',
-    refreshButton: 'p-2 bg-gray-900/50 border border-gray-800 rounded-lg hover:border-gray-700 transition-colors disabled:opacity-50',
+    searchInput:
+      'w-full pl-10 pr-4 py-2 bg-gray-900/50 border border-gray-800 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors',
+    refreshButton:
+      'p-2 bg-gray-900/50 border border-gray-800 rounded-lg hover:border-gray-700 transition-colors disabled:opacity-50',
     refreshIcon: 'w-4 h-4 text-gray-400',
     refreshIconSpinning: 'w-4 h-4 text-gray-400 animate-spin',
     stats: 'flex items-center justify-between mb-3',
@@ -36,7 +38,8 @@ export const topicStyles = {
   button: {
     base: 'ml-2 px-3 py-1 text-xs font-medium rounded transition-colors',
     subscribed: 'bg-red-500/20 text-red-400 hover:bg-red-500/30',
-    unsubscribed: 'bg-gradient-to-r from-lime-400/20 to-cyan-400/20 text-cyan-300 hover:from-lime-400/30 hover:to-cyan-400/30',
+    unsubscribed:
+      'bg-gradient-to-r from-lime-400/20 to-cyan-400/20 text-cyan-300 hover:from-lime-400/30 hover:to-cyan-400/30',
   },
 
   // Message display section

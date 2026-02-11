@@ -1,6 +1,6 @@
-import dynamic from "next/dynamic";
+import dynamic from 'next/dynamic';
 
-const Dashboard = dynamic(() => import("@/components/features/dashboard/Dashboard"), {
+const Dashboard = dynamic(() => import('@/components/features/dashboard/Dashboard'), {
   ssr: false,
 });
 

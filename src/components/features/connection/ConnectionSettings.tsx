@@ -45,10 +45,7 @@ export default function ConnectionSettings({ currentUrl, onUrlChange }: Connecti
         {/* Header */}
         <div className={connectionStyles.modal.header}>
           <h3 className={connectionStyles.modal.title}>Connection Settings</h3>
-          <button
-            onClick={() => setIsOpen(false)}
-            className={connectionStyles.modal.closeButton}
-          >
+          <button onClick={() => setIsOpen(false)} className={connectionStyles.modal.closeButton}>
             <X className={connectionStyles.modal.closeIcon} />
           </button>
         </div>
@@ -94,23 +91,14 @@ export default function ConnectionSettings({ currentUrl, onUrlChange }: Connecti
 
         {/* Footer */}
         <div className={connectionStyles.modal.footer}>
-          <button
-            onClick={handleReset}
-            className={connectionStyles.buttons.reset}
-          >
+          <button onClick={handleReset} className={connectionStyles.buttons.reset}>
             Reset to Default
           </button>
           <div className={connectionStyles.buttons.group}>
-            <button
-              onClick={() => setIsOpen(false)}
-              className={connectionStyles.buttons.cancel}
-            >
+            <button onClick={() => setIsOpen(false)} className={connectionStyles.buttons.cancel}>
               Cancel
             </button>
-            <button
-              onClick={handleSave}
-              className={connectionStyles.buttons.save}
-            >
+            <button onClick={handleSave} className={connectionStyles.buttons.save}>
               Save & Reconnect
             </button>
           </div>

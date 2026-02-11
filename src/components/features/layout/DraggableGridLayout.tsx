@@ -14,10 +14,9 @@ import 'react-resizable/css/styles.css';
 // Dynamically import react-grid-layout to avoid SSR issues
 import dynamic from 'next/dynamic';
 
-const GridLayoutComponent = dynamic(
-  () => import('react-grid-layout').then((mod) => mod.default),
-  { ssr: false }
-);
+const GridLayoutComponent = dynamic(() => import('react-grid-layout').then((mod) => mod.default), {
+  ssr: false,
+});
 
 interface DraggableGridLayoutProps {
   widgets: WidgetConfig[];
@@ -62,22 +61,22 @@ export default function DraggableGridLayout({
   // Measure container width
   useEffect(() => {
     if (!containerRef.current) return;
-    
+
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         setContainerWidth(entry.contentRect.width);
       }
     });
-    
+
     resizeObserver.observe(containerRef.current);
     setContainerWidth(containerRef.current.offsetWidth);
-    
+
     return () => resizeObserver.disconnect();
   }, []);
 
   // Convert widgets to react-grid-layout format
   const layout = useMemo(() => {
-    return widgets.map(w => ({
+    return widgets.map((w) => ({
       i: w.i,
       x: w.x,
       y: w.y,
@@ -106,65 +105,62 @@ export default function DraggableGridLayout({
         isDraggable={true}
         {...({} as any)}
       >
-      {widgets.map((widget) => (
-        <div
-          key={widget.i}
-          className={widgetStyles.container}
-        >
-          {/* Widget Header with drag handle and remove button */}
-          <div className={widgetStyles.header.base}>
-            <div className={widgetStyles.header.titleWrapper}>
-              <GripVertical className={widgetStyles.buttons.icon} />
-              <h2 className={widgetStyles.header.title}>
-                <span className={widgetStyles.header.indicator} />
-                {widget.title}
-              </h2>
+        {widgets.map((widget) => (
+          <div key={widget.i} className={widgetStyles.container}>
+            {/* Widget Header with drag handle and remove button */}
+            <div className={widgetStyles.header.base}>
+              <div className={widgetStyles.header.titleWrapper}>
+                <GripVertical className={widgetStyles.buttons.icon} />
+                <h2 className={widgetStyles.header.title}>
+                  <span className={widgetStyles.header.indicator} />
+                  {widget.title}
+                </h2>
+              </div>
+              <div className={widgetStyles.header.actions}>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleLock(widget.i);
+                  }}
+                  className={cn(
+                    widgetStyles.buttons.base,
+                    widget.locked ? widgetStyles.buttons.lock : widgetStyles.buttons.unlock
+                  )}
+                  title={widget.locked ? 'Unlock widget' : 'Lock widget'}
+                >
+                  {widget.locked ? (
+                    <Lock className={widgetStyles.buttons.icon} />
+                  ) : (
+                    <Unlock className={widgetStyles.buttons.icon} />
+                  )}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemoveWidget(widget.i);
+                  }}
+                  className={cn(widgetStyles.buttons.base, widgetStyles.buttons.remove)}
+                  title="Remove widget"
+                >
+                  <X className={widgetStyles.buttons.icon} />
+                </button>
+              </div>
             </div>
-            <div className={widgetStyles.header.actions}>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleLock(widget.i);
-                }}
-                className={cn(
-                  widgetStyles.buttons.base,
-                  widget.locked ? widgetStyles.buttons.lock : widgetStyles.buttons.unlock
-                )}
-                title={widget.locked ? 'Unlock widget' : 'Lock widget'}
-              >
-                {widget.locked ? (
-                  <Lock className={widgetStyles.buttons.icon} />
-                ) : (
-                  <Unlock className={widgetStyles.buttons.icon} />
-                )}
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRemoveWidget(widget.i);
-                }}
-                className={cn(widgetStyles.buttons.base, widgetStyles.buttons.remove)}
-                title="Remove widget"
-              >
-                <X className={widgetStyles.buttons.icon} />
-              </button>
+
+            {/* Widget Content - NOT draggable */}
+            <div className={widgetStyles.content.wrapper}>
+              <WidgetContainer
+                widget={widget}
+                client={client}
+                topics={topics}
+                topicsLoading={topicsLoading}
+                onRefreshTopics={onRefreshTopics}
+                urdfConfig={urdfConfig}
+                onUrdfConfigChange={onUrdfConfigChange}
+              />
             </div>
           </div>
-          
-          {/* Widget Content - NOT draggable */}
-          <div className={widgetStyles.content.wrapper}>
-            <WidgetContainer
-              widget={widget}
-              client={client}
-              topics={topics}
-              topicsLoading={topicsLoading}
-              onRefreshTopics={onRefreshTopics}
-              urdfConfig={urdfConfig}
-              onUrdfConfigChange={onUrdfConfigChange}
-            />
-          </div>
-        </div>
-      ))}
+        ))}
       </GridLayoutComponent>
     </div>
   );

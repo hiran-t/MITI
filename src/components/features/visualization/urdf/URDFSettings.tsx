@@ -29,10 +29,10 @@ const DEFAULT_PRESETS: URDFPreset[] = [
 const STORAGE_KEY_PRESETS = 'miti_urdf_presets';
 const STORAGE_KEY_RECENT = 'miti_urdf_recent';
 
-export default function URDFSettings({ 
-  onLoadPreset, 
+export default function URDFSettings({
+  onLoadPreset,
   pointCloudTopics = [],
-  onPointCloudTopicsChange 
+  onPointCloudTopicsChange,
 }: URDFSettingsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [presets, setPresets] = useState<URDFPreset[]>(DEFAULT_PRESETS);
@@ -45,7 +45,7 @@ export default function URDFSettings({
     if (typeof window !== 'undefined') {
       const savedPresets = localStorage.getItem(STORAGE_KEY_PRESETS);
       const savedRecent = localStorage.getItem(STORAGE_KEY_RECENT);
-      
+
       if (savedPresets) {
         try {
           setPresets(JSON.parse(savedPresets));
@@ -53,7 +53,7 @@ export default function URDFSettings({
           console.error('Failed to load presets:', e);
         }
       }
-      
+
       if (savedRecent) {
         try {
           setRecentUrls(JSON.parse(savedRecent));
@@ -118,7 +118,7 @@ export default function URDFSettings({
 
   const handleRemovePointCloudTopic = (topicToRemove: string) => {
     if (onPointCloudTopicsChange) {
-      onPointCloudTopicsChange(pointCloudTopics.filter(t => t !== topicToRemove));
+      onPointCloudTopicsChange(pointCloudTopics.filter((t) => t !== topicToRemove));
     }
   };
 
@@ -136,7 +136,13 @@ export default function URDFSettings({
         title="URDF Settings"
       >
         <Settings className={visualizationStyles.urdfSettings.triggerIcon} />
-        <ChevronDown className={cn(isOpen ? visualizationStyles.urdfSettings.triggerChevronOpen : visualizationStyles.urdfSettings.triggerChevron)} />
+        <ChevronDown
+          className={cn(
+            isOpen
+              ? visualizationStyles.urdfSettings.triggerChevronOpen
+              : visualizationStyles.urdfSettings.triggerChevron
+          )}
+        />
       </button>
 
       {isOpen && (
@@ -144,7 +150,7 @@ export default function URDFSettings({
           {/* Point Cloud Topics Section */}
           <div className={visualizationStyles.urdfSettings.section}>
             <h3 className={visualizationStyles.urdfSettings.sectionTitle}>Point Cloud Topics</h3>
-            
+
             {/* Add new topic input */}
             <div className={visualizationStyles.urdfSettings.topicInputContainer}>
               <input
@@ -168,10 +174,7 @@ export default function URDFSettings({
             {pointCloudTopics.length > 0 ? (
               <div className={visualizationStyles.urdfSettings.topicList}>
                 {pointCloudTopics.map((topic, index) => (
-                  <div
-                    key={index}
-                    className={visualizationStyles.urdfSettings.topicItem}
-                  >
+                  <div key={index} className={visualizationStyles.urdfSettings.topicItem}>
                     <span className={visualizationStyles.urdfSettings.topicName}>{topic}</span>
                     <button
                       onClick={() => handleRemovePointCloudTopic(topic)}
@@ -184,7 +187,9 @@ export default function URDFSettings({
                 ))}
               </div>
             ) : (
-              <p className={visualizationStyles.urdfSettings.emptyState}>No point cloud topics added</p>
+              <p className={visualizationStyles.urdfSettings.emptyState}>
+                No point cloud topics added
+              </p>
             )}
           </div>
 
@@ -193,10 +198,7 @@ export default function URDFSettings({
             <h3 className={visualizationStyles.urdfSettings.sectionTitle}>Presets</h3>
             <div className={visualizationStyles.urdfSettings.presetsList}>
               {presets.map((preset, index) => (
-                <div
-                  key={index}
-                  className={visualizationStyles.urdfSettings.presetItem}
-                >
+                <div key={index} className={visualizationStyles.urdfSettings.presetItem}>
                   <button
                     onClick={() => handleLoadPreset(preset)}
                     className={visualizationStyles.urdfSettings.presetButton}
@@ -204,7 +206,9 @@ export default function URDFSettings({
                     <div className={visualizationStyles.urdfSettings.presetContent}>
                       <div className={visualizationStyles.urdfSettings.presetInfo}>
                         <p className={visualizationStyles.urdfSettings.presetName}>{preset.name}</p>
-                        <p className={visualizationStyles.urdfSettings.presetUrl}>{preset.urdfUrl}</p>
+                        <p className={visualizationStyles.urdfSettings.presetUrl}>
+                          {preset.urdfUrl}
+                        </p>
                       </div>
                       {index >= DEFAULT_PRESETS.length && (
                         <button
@@ -239,10 +243,7 @@ export default function URDFSettings({
               </div>
               <div className={visualizationStyles.urdfSettings.recentList}>
                 {recentUrls.slice(0, 3).map((url, index) => (
-                  <div
-                    key={index}
-                    className={visualizationStyles.urdfSettings.recentItem}
-                  >
+                  <div key={index} className={visualizationStyles.urdfSettings.recentItem}>
                     <p className={visualizationStyles.urdfSettings.recentUrl}>{url}</p>
                   </div>
                 ))}
@@ -253,7 +254,8 @@ export default function URDFSettings({
           {/* Info */}
           <div className={visualizationStyles.urdfSettings.section}>
             <p className={visualizationStyles.urdfSettings.infoText}>
-              <strong className={visualizationStyles.urdfSettings.infoTip}>Tip:</strong> Enable CORS on your web server
+              <strong className={visualizationStyles.urdfSettings.infoTip}>Tip:</strong> Enable CORS
+              on your web server
             </p>
           </div>
         </div>

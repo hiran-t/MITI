@@ -28,9 +28,7 @@ export default function ConnectionStatus({ connected, url, onUrlChange }: Connec
       </div>
       <div className={connectionStyles.status.divider} />
       <span className={connectionStyles.status.url}>{url}</span>
-      {connected && (
-        <div className={connectionStyles.status.indicator} />
-      )}
+      {connected && <div className={connectionStyles.status.indicator} />}
       {onUrlChange && (
         <>
           <div className={connectionStyles.status.divider} />

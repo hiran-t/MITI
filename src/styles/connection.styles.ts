@@ -26,7 +26,8 @@ export const connectionStyles = {
 
   // Connection settings modal
   modal: {
-    backdrop: 'fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4',
+    backdrop:
+      'fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4',
     container: 'bg-gray-900 border border-gray-800 rounded-lg shadow-xl max-w-md w-full',
     header: 'flex items-center justify-between p-4 border-b border-gray-800',
     title: 'text-lg font-semibold text-white',
@@ -39,7 +40,8 @@ export const connectionStyles = {
   // Form inputs
   form: {
     label: 'block text-sm font-medium text-gray-300 mb-2',
-    input: 'w-full px-3 py-2 bg-gray-950 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 transition-colors',
+    input:
+      'w-full px-3 py-2 bg-gray-950 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 transition-colors',
     hint: 'mt-1 text-xs text-gray-500',
   },
 

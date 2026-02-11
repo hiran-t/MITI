@@ -40,17 +40,13 @@ function PointCloud({ points }: PointCloudProps) {
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    
+
     return geo;
   }, [points]);
 
   return (
     <points geometry={geometry}>
-      <pointsMaterial
-        size={0.02}
-        vertexColors={true}
-        sizeAttenuation={true}
-      />
+      <pointsMaterial size={0.02} vertexColors={true} sizeAttenuation={true} />
     </points>
   );
 }

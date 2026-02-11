@@ -44,22 +44,21 @@ function PointCloud({ points }: { points: ParsedPoint[] }) {
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    
+
     return geo;
   }, [points]);
 
   return (
     <points geometry={geometry}>
-      <pointsMaterial
-        size={0.02}
-        vertexColors={true}
-        sizeAttenuation={true}
-      />
+      <pointsMaterial size={0.02} vertexColors={true} sizeAttenuation={true} />
     </points>
   );
 }
 
-export default function PointCloudViewer({ client, topic = '/camera/depth/points' }: PointCloudViewerProps) {
+export default function PointCloudViewer({
+  client,
+  topic = '/camera/depth/points',
+}: PointCloudViewerProps) {
   const { data: pointCloudData, lastUpdate } = useTopic<sensor_msgs.PointCloud2>(
     client,
     topic,
@@ -90,9 +89,7 @@ export default function PointCloudViewer({ client, topic = '/camera/depth/points
 
   return (
     <div className={visualizationStyles.viewer.container}>
-      <div className={visualizationStyles.viewer.header}>
-        Point Cloud Viewer
-      </div>
+      <div className={visualizationStyles.viewer.header}>Point Cloud Viewer</div>
 
       <div className={visualizationStyles.viewer.statusBar}>
         {pointCount > 0 ? `${pointCount.toLocaleString()} points` : 'No data'}
@@ -113,16 +110,10 @@ export default function PointCloudViewer({ client, topic = '/camera/depth/points
           </div>
         </div>
       ) : (
-        <Scene3D>
-          {points.length > 0 && <PointCloud points={points} />}
-        </Scene3D>
+        <Scene3D>{points.length > 0 && <PointCloud points={points} />}</Scene3D>
       )}
 
-      {parsing && (
-        <div className={visualizationStyles.pointcloud.parsingBadge}>
-          Parsing...
-        </div>
-      )}
+      {parsing && <div className={visualizationStyles.pointcloud.parsingBadge}>Parsing...</div>}
     </div>
   );
 }

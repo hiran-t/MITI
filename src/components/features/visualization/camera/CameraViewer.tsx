@@ -21,9 +21,7 @@ const CAMERA_TOPICS = [
 ];
 
 export default function CameraViewer({ client, topic: initialTopic }: CameraViewerProps) {
-  const [selectedTopic, setSelectedTopic] = useState(
-    initialTopic || CAMERA_TOPICS[0].value
-  );
+  const [selectedTopic, setSelectedTopic] = useState(initialTopic || CAMERA_TOPICS[0].value);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,17 +46,17 @@ export default function CameraViewer({ client, topic: initialTopic }: CameraView
 
     setProcessing(true);
     setError(null);
-    
+
     // Process image in a non-blocking way
     setTimeout(() => {
       try {
         const url = parseImageMessage(imageData);
-        
+
         // Revoke previous object URL to prevent memory leaks
         if (imageUrl) {
           URL.revokeObjectURL(imageUrl);
         }
-        
+
         setImageUrl(url);
         // console.log('Image URL created successfully');
       } catch (error) {
@@ -77,14 +75,17 @@ export default function CameraViewer({ client, topic: initialTopic }: CameraView
     };
   }, [imageData]);
 
-  const handleTopicChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
-    // Clean up current image URL before switching topics
-    if (imageUrl) {
-      URL.revokeObjectURL(imageUrl);
-      setImageUrl(null);
-    }
-    setSelectedTopic(event.target.value);
-  }, [imageUrl]);
+  const handleTopicChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      // Clean up current image URL before switching topics
+      if (imageUrl) {
+        URL.revokeObjectURL(imageUrl);
+        setImageUrl(null);
+      }
+      setSelectedTopic(event.target.value);
+    },
+    [imageUrl]
+  );
 
   return (
     <div className={visualizationStyles.viewer.container}>
@@ -111,9 +112,7 @@ export default function CameraViewer({ client, topic: initialTopic }: CameraView
 
       {/* Status bar */}
       <div className={visualizationStyles.viewer.statusBarLower} style={{ top: '3.5rem' }}>
-        {processing && (
-          <Loader2 className={visualizationStyles.camera.statusIcon} />
-        )}
+        {processing && <Loader2 className={visualizationStyles.camera.statusIcon} />}
         {imageData && (
           <span>
             {imageData.width} × {imageData.height}

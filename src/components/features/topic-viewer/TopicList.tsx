@@ -21,9 +21,7 @@ export default function TopicList({ topics, loading, onRefresh, client }: TopicL
     if (!searchTerm) return topics;
     const term = searchTerm.toLowerCase();
     return topics.filter(
-      (t) =>
-        t.topic.toLowerCase().includes(term) ||
-        t.type.toLowerCase().includes(term)
+      (t) => t.topic.toLowerCase().includes(term) || t.type.toLowerCase().includes(term)
     );
   }, [topics, searchTerm]);
 
@@ -46,7 +44,11 @@ export default function TopicList({ topics, loading, onRefresh, client }: TopicL
           className={topicStyles.list.refreshButton}
           title="Refresh topics"
         >
-          <RefreshCw className={cn(loading ? topicStyles.list.refreshIconSpinning : topicStyles.list.refreshIcon)} />
+          <RefreshCw
+            className={cn(
+              loading ? topicStyles.list.refreshIconSpinning : topicStyles.list.refreshIcon
+            )}
+          />
         </button>
       </div>
 
@@ -63,12 +65,7 @@ export default function TopicList({ topics, loading, onRefresh, client }: TopicL
           </div>
         ) : (
           filteredTopics.map((topic) => (
-            <TopicCard
-              key={topic.topic}
-              topic={topic.topic}
-              type={topic.type}
-              client={client}
-            />
+            <TopicCard key={topic.topic} topic={topic.topic} type={topic.type} client={client} />
           ))
         )}
       </div>

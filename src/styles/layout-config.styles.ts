@@ -34,13 +34,15 @@ export const layoutConfigStyles = {
 
   // Instructions/Tips section
   tips: {
-    container: 'p-3 bg-gradient-to-r from-lime-400/10 to-cyan-400/10 border border-cyan-400/30 rounded-lg',
+    container:
+      'p-3 bg-gradient-to-r from-lime-400/10 to-cyan-400/10 border border-cyan-400/30 rounded-lg',
     text: 'text-xs text-blue-300',
   },
 
   // Reset button
   reset: {
-    button: 'w-full flex items-center justify-center gap-2 p-3 bg-gradient-to-r from-lime-400/20 to-cyan-400/20 hover:from-lime-400/30 hover:to-cyan-400/30 border border-cyan-400/30 rounded-lg transition-all',
+    button:
+      'w-full flex items-center justify-center gap-2 p-3 bg-gradient-to-r from-lime-400/20 to-cyan-400/20 hover:from-lime-400/30 hover:to-cyan-400/30 border border-cyan-400/30 rounded-lg transition-all',
     icon: 'w-4 h-4 text-blue-400',
     text: 'text-sm text-blue-400',
   },

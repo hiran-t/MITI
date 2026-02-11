@@ -37,14 +37,14 @@ export class ROSBridge {
           this.connected = true;
           this.shouldReconnect = true;
           console.log('Connected to rosbridge');
-          
+
           // Flush message queue
           while (this.messageQueue.length > 0) {
             const msg = this.messageQueue.shift();
             if (msg) this.send(msg);
           }
 
-          this.connectionCallbacks.forEach(cb => cb());
+          this.connectionCallbacks.forEach((cb) => cb());
           resolve();
         };
 
@@ -60,14 +60,14 @@ export class ROSBridge {
         this.ws.onerror = (error) => {
           console.error('WebSocket error:', error);
           const err = new Error('WebSocket error');
-          this.errorCallbacks.forEach(cb => cb(err));
+          this.errorCallbacks.forEach((cb) => cb(err));
           reject(err);
         };
 
         this.ws.onclose = () => {
           this.connected = false;
           console.log('Disconnected from rosbridge');
-          this.disconnectionCallbacks.forEach(cb => cb());
+          this.disconnectionCallbacks.forEach((cb) => cb());
 
           if (this.shouldReconnect) {
             this.scheduleReconnect();
@@ -93,11 +93,11 @@ export class ROSBridge {
 
   private scheduleReconnect(): void {
     if (this.reconnectTimer) return;
-    
+
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
       console.log('Attempting to reconnect...');
-      this.connect().catch(err => {
+      this.connect().catch((err) => {
         console.error('Reconnection failed:', err);
       });
     }, this.reconnectInterval);
@@ -107,7 +107,7 @@ export class ROSBridge {
     if (data.op === 'publish' && data.topic) {
       const callbacks = this.subscriptions.get(data.topic);
       if (callbacks) {
-        callbacks.forEach(cb => cb(data.msg));
+        callbacks.forEach((cb) => cb(data.msg));
       }
     }
   }

@@ -8,11 +8,7 @@ interface TopicDataDisplayProps {
 
 export default function TopicDataDisplay({ data }: TopicDataDisplayProps) {
   if (!data) {
-    return (
-      <div className={topicStyles.data.emptyState}>
-        No data received yet
-      </div>
-    );
+    return <div className={topicStyles.data.emptyState}>No data received yet</div>;
   }
 
   return (

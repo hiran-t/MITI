@@ -72,7 +72,7 @@ function configureURDFLoader(
   }
 
   loader.packages = {
-    'ur_description': meshBaseUrl,
+    ur_description: meshBaseUrl,
     ...detectedPackages,
     ...packageMapping,
   };
@@ -84,8 +84,16 @@ function configureURDFLoader(
 function createMeshLoader(
   loader: URDFLoader,
   meshBaseUrl?: string
-): (path: string, manager: THREE.LoadingManager, done: (mesh: THREE.Object3D, err?: Error) => void) => void {
-  return function loadMesh(path: string, manager: THREE.LoadingManager, done: (mesh: THREE.Object3D, err?: Error) => void) {
+): (
+  path: string,
+  manager: THREE.LoadingManager,
+  done: (mesh: THREE.Object3D, err?: Error) => void
+) => void {
+  return function loadMesh(
+    path: string,
+    manager: THREE.LoadingManager,
+    done: (mesh: THREE.Object3D, err?: Error) => void
+  ) {
     console.log('🔄 Loading mesh:', path);
 
     // Resolve package:// paths
@@ -97,7 +105,12 @@ function createMeshLoader(
         let baseUrl = meshBaseUrl || '';
 
         // Check if loader.packages is an object and has the package name
-        if (loader.packages && typeof loader.packages === 'object' && !Array.isArray(loader.packages) && packageName in loader.packages) {
+        if (
+          loader.packages &&
+          typeof loader.packages === 'object' &&
+          !Array.isArray(loader.packages) &&
+          packageName in loader.packages
+        ) {
           baseUrl = loader.packages[packageName];
         } else if (typeof loader.packages === 'function') {
           baseUrl = loader.packages(packageName);

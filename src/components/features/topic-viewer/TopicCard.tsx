@@ -22,10 +22,14 @@ export default function TopicCard({ topic, type, client }: TopicCardProps) {
       client.unsubscribe(topic);
       setSubscribed(false);
     } else {
-      client.subscribe(topic, (msg) => {
-        setLastMessage(msg);
-        setMessageCount(prev => prev + 1);
-      }, type);
+      client.subscribe(
+        topic,
+        (msg) => {
+          setLastMessage(msg);
+          setMessageCount((prev) => prev + 1);
+        },
+        type
+      );
       setSubscribed(true);
     }
   };
@@ -47,14 +51,14 @@ export default function TopicCard({ topic, type, client }: TopicCardProps) {
           {subscribed ? 'Unsubscribe' : 'Subscribe'}
         </button>
       </div>
-      
+
       {subscribed && (
         <div className={topicStyles.message.container}>
           <div className={topicStyles.message.stats}>
             <span>Messages: {messageCount}</span>
             {lastMessage && <span>Last update: {new Date().toLocaleTimeString()}</span>}
           </div>
-          
+
           {lastMessage && (
             <div className={topicStyles.message.json}>
               <pre>{JSON.stringify(lastMessage, null, 2)}</pre>

@@ -4,8 +4,9 @@
 
 export const widgetStyles = {
   // Widget container styles
-  container: 'bg-gray-900/30 backdrop-blur-sm rounded-lg border border-gray-800 overflow-hidden flex flex-col react-grid-no-drag',
-  
+  container:
+    'bg-gray-900/30 backdrop-blur-sm rounded-lg border border-gray-800 overflow-hidden flex flex-col react-grid-no-drag',
+
   // Widget header styles
   header: {
     base: 'drag-handle px-4 py-3 border-b border-gray-800 flex items-center justify-between cursor-move bg-gray-800/50 hover:bg-gray-800/70 transition-colors select-none',
@@ -39,7 +40,8 @@ export const widgetStyles = {
   // Widget menu/modal styles
   menu: {
     backdrop: 'fixed inset-0 z-30 bg-black/20 backdrop-blur-sm',
-    container: 'fixed bottom-24 right-6 z-50 bg-gray-900 border border-gray-800 rounded-lg shadow-2xl p-2 min-w-[250px]',
+    container:
+      'fixed bottom-24 right-6 z-50 bg-gray-900 border border-gray-800 rounded-lg shadow-2xl p-2 min-w-[250px]',
     header: 'text-xs font-semibold text-gray-400 px-3 py-2 mb-1',
     item: 'w-full flex items-center gap-3 p-3 hover:bg-gray-800 rounded-lg transition-colors text-left',
     itemIcon: 'text-2xl',

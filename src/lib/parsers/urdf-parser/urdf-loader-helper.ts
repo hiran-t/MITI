@@ -4,7 +4,7 @@ export function createURDFLoader() {
   // This is a helper function to handle urdf-loader initialization
   // The actual loading will be done in the component
   const manager = new LoadingManager();
-  
+
   manager.onStart = (url, itemsLoaded, itemsTotal) => {
     console.log(`Started loading: ${url}. Loaded ${itemsLoaded} of ${itemsTotal}`);
   };

@@ -49,25 +49,40 @@ export function useUrdfConfig() {
 
   // Convenience handlers for common updates
   const handlers = {
-    setMode: useCallback((mode: URDFMode) => {
-      updateConfig({ mode });
-    }, [updateConfig]),
+    setMode: useCallback(
+      (mode: URDFMode) => {
+        updateConfig({ mode });
+      },
+      [updateConfig]
+    ),
 
-    setTopic: useCallback((topic: string) => {
-      updateConfig({ topic });
-    }, [updateConfig]),
+    setTopic: useCallback(
+      (topic: string) => {
+        updateConfig({ topic });
+      },
+      [updateConfig]
+    ),
 
-    setUrdfUrl: useCallback((urdfUrl: string) => {
-      updateConfig({ urdfUrl });
-    }, [updateConfig]),
+    setUrdfUrl: useCallback(
+      (urdfUrl: string) => {
+        updateConfig({ urdfUrl });
+      },
+      [updateConfig]
+    ),
 
-    setMeshBaseUrl: useCallback((meshBaseUrl: string) => {
-      updateConfig({ meshBaseUrl });
-    }, [updateConfig]),
+    setMeshBaseUrl: useCallback(
+      (meshBaseUrl: string) => {
+        updateConfig({ meshBaseUrl });
+      },
+      [updateConfig]
+    ),
 
-    setPackageMapping: useCallback((packageMapping: Record<string, string>) => {
-      updateConfig({ packageMapping });
-    }, [updateConfig]),
+    setPackageMapping: useCallback(
+      (packageMapping: Record<string, string>) => {
+        updateConfig({ packageMapping });
+      },
+      [updateConfig]
+    ),
   };
 
   return {

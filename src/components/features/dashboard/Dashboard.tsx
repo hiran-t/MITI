@@ -22,7 +22,8 @@ export default function Dashboard() {
   );
   const { client, connected, error } = useRosbridge(rosbridgeUrl);
   const { topics, loading, refreshTopics } = useTopicList(client);
-  const { layout, addWidget, removeWidget, updateLayout, resetLayout, toggleLock } = useLayoutConfig();
+  const { layout, addWidget, removeWidget, updateLayout, resetLayout, toggleLock } =
+    useLayoutConfig();
   const urdfConfig = useUrdfConfig();
 
   const handleUrlChange = (newUrl: string) => {
@@ -46,7 +47,7 @@ export default function Dashboard() {
                 className={dashboardStyles.header.logo}
               />
             </div>
-            
+
             {/* Connection Status and Layout Config */}
             <div className={dashboardStyles.header.actionsSection}>
               <ConnectionStatus
@@ -54,13 +55,10 @@ export default function Dashboard() {
                 url={rosbridgeUrl}
                 onUrlChange={handleUrlChange}
               />
-              <LayoutConfigPanel
-                onAddWidget={addWidget}
-                onResetLayout={resetLayout}
-              />
+              <LayoutConfigPanel onAddWidget={addWidget} onResetLayout={resetLayout} />
             </div>
           </div>
-          
+
           {error && (
             <div className={dashboardStyles.header.errorBanner}>
               Connection error: {error.message}
@@ -88,7 +86,7 @@ export default function Dashboard() {
               onPackageMappingChange: urdfConfig.setPackageMapping,
             }}
           />
-          
+
           {/* Floating Add Widget Button */}
           <AddWidgetButton onAddWidget={addWidget} />
         </main>

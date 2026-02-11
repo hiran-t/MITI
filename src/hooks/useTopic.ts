@@ -3,11 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ROSBridge } from '@/lib/rosbridge/client';
 
-export function useTopic<T = any>(
-  client: ROSBridge | null,
-  topic: string,
-  messageType?: string
-) {
+export function useTopic<T = any>(client: ROSBridge | null, topic: string, messageType?: string) {
   const [data, setData] = useState<T | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 

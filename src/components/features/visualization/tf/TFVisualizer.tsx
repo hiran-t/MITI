@@ -46,14 +46,17 @@ export default function TFVisualizer({
   };
 
   // Calculate world transform for a frame recursively
-  const getWorldTransform = (frameName: string, cache: Map<string, THREE.Matrix4> = new Map()): THREE.Matrix4 => {
+  const getWorldTransform = (
+    frameName: string,
+    cache: Map<string, THREE.Matrix4> = new Map()
+  ): THREE.Matrix4 => {
     // Check cache first
     if (cache.has(frameName)) {
       return cache.get(frameName)!.clone();
     }
 
     const frame = tfTree.frames.get(frameName);
-    
+
     if (!frame) return new THREE.Matrix4();
 
     // If baseFrame is specified and this is the base frame, return identity matrix
@@ -75,7 +78,7 @@ export default function TFVisualizer({
       frame.transform.rotation.z,
       frame.transform.rotation.w
     );
-    
+
     const localTransform = new THREE.Matrix4();
     localTransform.compose(position, quaternion, new THREE.Vector3(1, 1, 1));
 
@@ -94,11 +97,11 @@ export default function TFVisualizer({
 
     // Get parent's world transform recursively
     const parentWorldTransform = getWorldTransform(frame.parent, cache);
-    
+
     // Calculate world transform: parent_world * local
     const worldTransform = new THREE.Matrix4();
     worldTransform.multiplyMatrices(parentWorldTransform, localTransform);
-    
+
     cache.set(frameName, worldTransform);
     return worldTransform.clone();
   };
@@ -150,10 +153,10 @@ export default function TFVisualizer({
   }, [tfTree, baseFrame]);
 
   // Apply base_link transform from URDF model
-  const groupPosition: [number, number, number] = baseLinkPosition 
+  const groupPosition: [number, number, number] = baseLinkPosition
     ? [baseLinkPosition.x, baseLinkPosition.y, baseLinkPosition.z]
     : [0, 0, 0];
-  
+
   const groupQuaternion: [number, number, number, number] | undefined = baseLinkQuaternion
     ? [baseLinkQuaternion.x, baseLinkQuaternion.y, baseLinkQuaternion.z, baseLinkQuaternion.w]
     : undefined;
@@ -164,19 +167,28 @@ export default function TFVisualizer({
       <group position={[0, 0, 0]}>
         {/* World X axis (red) */}
         <Line
-          points={[[0, 0, 0], [axisLength * 2, 0, 0]]}
+          points={[
+            [0, 0, 0],
+            [axisLength * 2, 0, 0],
+          ]}
           color="red"
           lineWidth={lineWidth * 2}
         />
         {/* World Y axis (green) */}
         <Line
-          points={[[0, 0, 0], [0, axisLength * 2, 0]]}
+          points={[
+            [0, 0, 0],
+            [0, axisLength * 2, 0],
+          ]}
           color="lime"
           lineWidth={lineWidth * 2}
         />
         {/* World Z axis (blue) */}
         <Line
-          points={[[0, 0, 0], [0, 0, axisLength * 2]]}
+          points={[
+            [0, 0, 0],
+            [0, 0, axisLength * 2],
+          ]}
           color="blue"
           lineWidth={lineWidth * 2}
         />
@@ -215,67 +227,72 @@ export default function TFVisualizer({
       {/* TF frames (transformed by base_link) */}
       <group ref={groupRef} position={groupPosition} quaternion={groupQuaternion}>
         {frameData.map((frame) => (
-        <group key={frame.name}>
-          {/* Frame coordinate axes */}
-          {showAxes && (
-            <group position={frame.position} quaternion={frame.rotation}>
-              {/* X axis (red) */}
-              <Line
-                points={[[0, 0, 0], [axisLength, 0, 0]]}
-                color="red"
-                lineWidth={lineWidth * 1.5}
-              />
-              {/* Y axis (green) */}
-              <Line
-                points={[[0, 0, 0], [0, axisLength, 0]]}
-                color="lime"
-                lineWidth={lineWidth * 1.5}
-              />
-              {/* Z axis (blue) */}
-              <Line
-                points={[[0, 0, 0], [0, 0, axisLength]]}
-                color="blue"
-                lineWidth={lineWidth * 1.5}
-              />
-            </group>
-          )}
+          <group key={frame.name}>
+            {/* Frame coordinate axes */}
+            {showAxes && (
+              <group position={frame.position} quaternion={frame.rotation}>
+                {/* X axis (red) */}
+                <Line
+                  points={[
+                    [0, 0, 0],
+                    [axisLength, 0, 0],
+                  ]}
+                  color="red"
+                  lineWidth={lineWidth * 1.5}
+                />
+                {/* Y axis (green) */}
+                <Line
+                  points={[
+                    [0, 0, 0],
+                    [0, axisLength, 0],
+                  ]}
+                  color="lime"
+                  lineWidth={lineWidth * 1.5}
+                />
+                {/* Z axis (blue) */}
+                <Line
+                  points={[
+                    [0, 0, 0],
+                    [0, 0, axisLength],
+                  ]}
+                  color="blue"
+                  lineWidth={lineWidth * 1.5}
+                />
+              </group>
+            )}
 
-          {/* Connection line to parent */}
-          {showConnections && frame.parentPosition && (
-            <Line
-              points={[
-                [frame.parentPosition.x, frame.parentPosition.y, frame.parentPosition.z],
-                [frame.position.x, frame.position.y, frame.position.z],
-              ]}
-              color="yellow"
-              lineWidth={lineWidth * 1.0}
-              dashed
-              dashScale={50}
-              dashSize={1}
-              gapSize={0}
-            />
-          )}
+            {/* Connection line to parent */}
+            {showConnections && frame.parentPosition && (
+              <Line
+                points={[
+                  [frame.parentPosition.x, frame.parentPosition.y, frame.parentPosition.z],
+                  [frame.position.x, frame.position.y, frame.position.z],
+                ]}
+                color="yellow"
+                lineWidth={lineWidth * 1.0}
+                dashed
+                dashScale={50}
+                dashSize={1}
+                gapSize={0}
+              />
+            )}
 
-          {/* Frame label */}
-          {showLabels && (
-            <Text
-              position={[
-                frame.position.x,
-                frame.position.y,
-                frame.position.z + axisLength * 1.5,
-              ]}
-              fontSize={labelSize}
-              color="white"
-              anchorX="center"
-              anchorY="middle"
-              outlineWidth={labelSize * 0.1}
-              outlineColor="black"
-            >
-              {frame.name}
-            </Text>
-          )}
-        </group>
-      ))}
+            {/* Frame label */}
+            {showLabels && (
+              <Text
+                position={[frame.position.x, frame.position.y, frame.position.z + axisLength * 1.5]}
+                fontSize={labelSize}
+                color="white"
+                anchorX="center"
+                anchorY="middle"
+                outlineWidth={labelSize * 0.1}
+                outlineColor="black"
+              >
+                {frame.name}
+              </Text>
+            )}
+          </group>
+        ))}
       </group>
     </>
   );

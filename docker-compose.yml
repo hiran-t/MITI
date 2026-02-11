@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # MITI Web Application
+  miti-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: miti-web
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_ROSBRIDGE_URL=ws://rosbridge:9090
+    depends_on:
+      - rosbridge
+    networks:
+      - miti-network
+    restart: unless-stopped
+
+  # Rosbridge Server (optional - for development)
+  # Uncomment if you want to run rosbridge in Docker
+  # rosbridge:
+  #   image: ros:humble
+  #   container_name: miti-rosbridge
+  #   command: >
+  #     bash -c "
+  #       apt-get update &&
+  #       apt-get install -y ros-humble-rosbridge-suite &&
+  #       source /opt/ros/humble/setup.bash &&
+  #       ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+  #     "
+  #   ports:
+  #     - "9090:9090"
+  #   networks:
+  #     - miti-network
+  #   restart: unless-stopped
+
+networks:
+  miti-network:
+    driver: bridge
+
+# Usage:
+# 1. Build and start all services:
+#    docker-compose up -d
+#
+# 2. View logs:
+#    docker-compose logs -f
+#
+# 3. Stop all services:
+#    docker-compose down
+#
+# 4. Rebuild after code changes:
+#    docker-compose up -d --build

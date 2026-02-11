@@ -4,19 +4,17 @@ import { resolvePackagePath } from '@/utils/package-path-resolver';
 
 /**
  * Loads URDF content from a URL
- * 
+ *
  * @param options - Loading options including URL and mesh base URL
  * @returns Promise that resolves to the URDF string content
  * @throws URDFLoadError if loading fails
  */
-export async function loadURDFFromURL(
-  options: URDFLoaderOptions
-): Promise<string> {
+export async function loadURDFFromURL(options: URDFLoaderOptions): Promise<string> {
   const { urdfUrl, meshBaseUrl, packageMapping } = options;
 
   try {
     console.log('Loading URDF from URL:', urdfUrl);
-    
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
@@ -24,7 +22,7 @@ export async function loadURDFFromURL(
       signal: controller.signal,
       method: 'GET',
       headers: {
-        'Accept': 'application/xml, text/xml, text/plain, */*',
+        Accept: 'application/xml, text/xml, text/plain, */*',
       },
     });
 
@@ -41,7 +39,7 @@ export async function loadURDFFromURL(
     }
 
     const urdfContent = await response.text();
-    
+
     if (!urdfContent || urdfContent.trim().length === 0) {
       const error: URDFLoadError = {
         type: 'parse',
@@ -53,7 +51,6 @@ export async function loadURDFFromURL(
 
     console.log('Successfully loaded URDF, size:', urdfContent.length);
     return urdfContent;
-
   } catch (err: any) {
     // Handle specific error types
     if (err.name === 'AbortError') {
@@ -68,14 +65,17 @@ export async function loadURDFFromURL(
 
     // Detect CORS errors - they typically show as TypeError with 'Failed to fetch'
     // or network errors when the actual issue is CORS
-    if (err.name === 'TypeError' && 
-        (err.message.includes('Failed to fetch') || 
-         err.message.includes('NetworkError') ||
-         err.message.includes('Network request failed'))) {
+    if (
+      err.name === 'TypeError' &&
+      (err.message.includes('Failed to fetch') ||
+        err.message.includes('NetworkError') ||
+        err.message.includes('Network request failed'))
+    ) {
       const error: URDFLoadError = {
         type: 'cors',
         message: 'Failed to load URDF - possible CORS issue',
-        details: 'The server may not allow cross-origin requests. See documentation for CORS configuration.',
+        details:
+          'The server may not allow cross-origin requests. See documentation for CORS configuration.',
         url: urdfUrl,
       };
       throw error;
@@ -115,7 +115,7 @@ function joinUrlPath(baseUrl: string, path: string): string {
 
 /**
  * Creates a custom THREE.LoadingManager for handling mesh paths in URDF
- * 
+ *
  * @param baseUrl - Base URL for resolving mesh paths
  * @param packageMapping - Optional mapping of package names to URLs
  * @param onProgress - Optional callback for progress updates
@@ -162,16 +162,16 @@ export function createMeshLoadManager(
 
   // Override URL resolution to handle package:// paths
   const originalResolveURL = manager.resolveURL.bind(manager);
-  manager.resolveURL = function(url: string): string {
+  manager.resolveURL = function (url: string): string {
     console.log('🔍 Resolving URL:', url);
-    
+
     // If it's a package:// path, resolve it
     if (url.startsWith('package://')) {
       const resolved = resolvePackagePath(url, baseUrl, packageMapping);
       console.log(`📦 Package resolved: ${url} → ${resolved}`);
       return resolved;
     }
-    
+
     // If it's already an absolute URL with protocol, return as-is
     if (url.match(/^[a-z][a-z0-9+.-]*:/i)) {
       return url;
@@ -183,7 +183,7 @@ export function createMeshLoadManager(
       console.log(`📁 Relative resolved: ${url} → ${resolved}`);
       return resolved;
     }
-    
+
     // Use original resolver for absolute paths
     return originalResolveURL(url);
   };
@@ -193,7 +193,7 @@ export function createMeshLoadManager(
 
 /**
  * Validates URDF content
- * 
+ *
  * @param urdfContent - URDF XML string
  * @returns true if valid, throws URDFLoadError if invalid
  */
@@ -235,11 +235,11 @@ export function validateURDF(urdfContent: string): boolean {
  */
 export function formatURDFError(error: URDFLoadError): string {
   let message = error.message;
-  
+
   if (error.details) {
     message += `\n${error.details}`;
   }
-  
+
   if (error.url) {
     message += `\nURL: ${error.url}`;
   }

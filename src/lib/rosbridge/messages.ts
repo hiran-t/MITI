@@ -1,8 +1,4 @@
-export const createSubscribeMessage = (
-  topic: string,
-  type?: string,
-  throttleRate?: number
-) => ({
+export const createSubscribeMessage = (topic: string, type?: string, throttleRate?: number) => ({
   op: 'subscribe',
   topic,
   ...(type && { type }),

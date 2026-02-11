@@ -48,7 +48,7 @@ export default function WidgetContainer({
             client={client}
           />
         );
-      
+
       case 'urdf-viewer':
         return urdfConfig && onUrdfConfigChange ? (
           <URDFViewer
@@ -65,21 +65,17 @@ export default function WidgetContainer({
             onPackageMappingChange={onUrdfConfigChange.onPackageMappingChange}
           />
         ) : null;
-      
+
       case 'pointcloud-viewer':
         return <PointCloudViewer client={client} />;
-      
+
       case 'camera-viewer':
         return <CameraViewer client={client} topic={widget.props?.topic} />;
-      
+
       default:
         return <div className={widgetStyles.types.unknown}>Unknown widget type</div>;
     }
   };
 
-  return (
-    <div className={widgetStyles.content.inner}>
-      {renderWidget()}
-    </div>
-  );
+  return <div className={widgetStyles.content.inner}>{renderWidget()}</div>;
 }

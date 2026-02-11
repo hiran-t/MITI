@@ -15,7 +15,13 @@ interface URDFLoadStatusProps {
   onClose?: () => void;
 }
 
-export default function URDFLoadStatus({ loading, error, success, progress, onClose }: URDFLoadStatusProps) {
+export default function URDFLoadStatus({
+  loading,
+  error,
+  success,
+  progress,
+  onClose,
+}: URDFLoadStatusProps) {
   if (!loading && !error && !success) {
     return null;
   }
@@ -36,21 +42,23 @@ export default function URDFLoadStatus({ loading, error, success, progress, onCl
               <Loader2 className={visualizationStyles.loadStatus.loadingSpinner} />
               <h3 className={visualizationStyles.loadStatus.loadingTitle}>Loading URDF</h3>
             </div>
-            
+
             {progress && progress.total > 0 && (
               <div>
                 <div className={visualizationStyles.loadStatus.progressInfo}>
                   <span>Loading meshes...</span>
-                  <span>{progress.loaded} / {progress.total}</span>
+                  <span>
+                    {progress.loaded} / {progress.total}
+                  </span>
                 </div>
-                
+
                 <div className={visualizationStyles.loadStatus.progressBar}>
-                  <div 
+                  <div
                     className={visualizationStyles.loadStatus.progressFill}
                     style={{ width: `${(progress.loaded / progress.total) * 100}%` }}
                   />
                 </div>
-                
+
                 {progress.currentFile && (
                   <p className={visualizationStyles.loadStatus.currentFile}>
                     {progress.currentFile}
@@ -58,11 +66,9 @@ export default function URDFLoadStatus({ loading, error, success, progress, onCl
                 )}
               </div>
             )}
-            
+
             {(!progress || progress.total === 0) && (
-              <p className={visualizationStyles.loadStatus.loadingMessage}>
-                Fetching URDF data...
-              </p>
+              <p className={visualizationStyles.loadStatus.loadingMessage}>Fetching URDF data...</p>
             )}
           </div>
         )}
@@ -97,7 +103,9 @@ export default function URDFLoadStatus({ loading, error, success, progress, onCl
             )}
             <div className={visualizationStyles.loadStatus.successHeader}>
               <CheckCircle2 className={visualizationStyles.loadStatus.successIcon} />
-              <h3 className={visualizationStyles.loadStatus.successTitle}>URDF Loaded Successfully</h3>
+              <h3 className={visualizationStyles.loadStatus.successTitle}>
+                URDF Loaded Successfully
+              </h3>
             </div>
           </div>
         )}

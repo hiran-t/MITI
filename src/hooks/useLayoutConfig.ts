@@ -1,7 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { LayoutConfig, WidgetConfig, DEFAULT_LAYOUT, WIDGET_TYPES, WidgetType } from '@/types/widget';
+import {
+  LayoutConfig,
+  WidgetConfig,
+  DEFAULT_LAYOUT,
+  WIDGET_TYPES,
+  WidgetType,
+} from '@/types/widget';
 
 const STORAGE_KEY = 'miti_layout_config';
 
@@ -34,81 +40,82 @@ export function useLayoutConfig() {
   }, [layout]);
 
   const updateWidget = useCallback((widgetId: string, updates: Partial<WidgetConfig>) => {
-    setLayout(prev => ({
+    setLayout((prev) => ({
       ...prev,
-      widgets: prev.widgets.map(w =>
-        w.i === widgetId ? { ...w, ...updates } : w
-      ),
+      widgets: prev.widgets.map((w) => (w.i === widgetId ? { ...w, ...updates } : w)),
     }));
   }, []);
 
-  const addWidget = useCallback((type: WidgetType) => {
-    const widgetInfo = WIDGET_TYPES.find(w => w.type === type);
-    if (!widgetInfo) return;
+  const addWidget = useCallback(
+    (type: WidgetType) => {
+      const widgetInfo = WIDGET_TYPES.find((w) => w.type === type);
+      if (!widgetInfo) return;
 
-    // Generate unique ID
-    const existingIds = layout.widgets.map(w => w.i);
-    let counter = 1;
-    let newId = `${type}-${counter}`;
-    while (existingIds.includes(newId)) {
-      counter++;
-      newId = `${type}-${counter}`;
-    }
-
-    // Find the rightmost position to place new widget horizontally
-    let maxX = 0;
-    let maxXY = { x: 0, y: 0, w: 0, h: 0 };
-    
-    layout.widgets.forEach(widget => {
-      const rightEdge = widget.x + widget.w;
-      if (rightEdge > maxX) {
-        maxX = rightEdge;
-        maxXY = { x: widget.x, y: widget.y, w: widget.w, h: widget.h };
+      // Generate unique ID
+      const existingIds = layout.widgets.map((w) => w.i);
+      let counter = 1;
+      let newId = `${type}-${counter}`;
+      while (existingIds.includes(newId)) {
+        counter++;
+        newId = `${type}-${counter}`;
       }
-    });
 
-    // Place new widget to the right of the rightmost widget
-    // If it would exceed grid width (12 cols), wrap to next row
-    const newW = widgetInfo.defaultSize.w;
-    let newX = maxX;
-    let newY = maxXY.y;
-    
-    if (newX + newW > 12) {
-      // Would exceed grid, place at start of next row
-      newX = 0;
-      newY = maxXY.y + maxXY.h;
-    }
+      // Find the rightmost position to place new widget horizontally
+      let maxX = 0;
+      let maxXY = { x: 0, y: 0, w: 0, h: 0 };
 
-    const newWidget: WidgetConfig = {
-      i: newId,
-      type,
-      title: widgetInfo.label,
-      x: newX,
-      y: newY,
-      w: newW,
-      h: widgetInfo.defaultSize.h,
-      minW: widgetInfo.minSize.minW,
-      minH: widgetInfo.minSize.minH,
-    };
+      layout.widgets.forEach((widget) => {
+        const rightEdge = widget.x + widget.w;
+        if (rightEdge > maxX) {
+          maxX = rightEdge;
+          maxXY = { x: widget.x, y: widget.y, w: widget.w, h: widget.h };
+        }
+      });
 
-    setLayout(prev => ({
-      ...prev,
-      widgets: [...prev.widgets, newWidget],
-    }));
-  }, [layout.widgets]);
+      // Place new widget to the right of the rightmost widget
+      // If it would exceed grid width (12 cols), wrap to next row
+      const newW = widgetInfo.defaultSize.w;
+      let newX = maxX;
+      let newY = maxXY.y;
+
+      if (newX + newW > 12) {
+        // Would exceed grid, place at start of next row
+        newX = 0;
+        newY = maxXY.y + maxXY.h;
+      }
+
+      const newWidget: WidgetConfig = {
+        i: newId,
+        type,
+        title: widgetInfo.label,
+        x: newX,
+        y: newY,
+        w: newW,
+        h: widgetInfo.defaultSize.h,
+        minW: widgetInfo.minSize.minW,
+        minH: widgetInfo.minSize.minH,
+      };
+
+      setLayout((prev) => ({
+        ...prev,
+        widgets: [...prev.widgets, newWidget],
+      }));
+    },
+    [layout.widgets]
+  );
 
   const removeWidget = useCallback((widgetId: string) => {
-    setLayout(prev => ({
+    setLayout((prev) => ({
       ...prev,
-      widgets: prev.widgets.filter(w => w.i !== widgetId),
+      widgets: prev.widgets.filter((w) => w.i !== widgetId),
     }));
   }, []);
 
   const updateLayout = useCallback((newLayout: readonly any[]) => {
-    setLayout(prev => ({
+    setLayout((prev) => ({
       ...prev,
-      widgets: prev.widgets.map(widget => {
-        const layoutItem = newLayout.find(l => l.i === widget.i);
+      widgets: prev.widgets.map((widget) => {
+        const layoutItem = newLayout.find((l) => l.i === widget.i);
         if (layoutItem) {
           return {
             ...widget,
@@ -124,11 +131,9 @@ export function useLayoutConfig() {
   }, []);
 
   const toggleLock = useCallback((widgetId: string) => {
-    setLayout(prev => ({
+    setLayout((prev) => ({
       ...prev,
-      widgets: prev.widgets.map(w =>
-        w.i === widgetId ? { ...w, locked: !w.locked } : w
-      ),
+      widgets: prev.widgets.map((w) => (w.i === widgetId ? { ...w, locked: !w.locked } : w)),
     }));
   }, []);
 
