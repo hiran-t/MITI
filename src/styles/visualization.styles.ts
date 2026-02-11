@@ -145,6 +145,24 @@ export const visualizationStyles = {
     },
   },
 
+  // URDF Viewer
+  urdfViewer: {
+    container: 'relative w-full h-full bg-gray-950 rounded-lg overflow-hidden border border-gray-800',
+    headerBar: 'absolute top-3 left-3 right-3 z-10 flex items-center justify-between gap-3',
+    headerLeft: 'flex items-center gap-3 flex-1',
+    badge: 'px-3 py-1.5 bg-gray-900/90 rounded text-xs font-medium text-gray-300 border border-gray-800',
+    badgeConnected: 'ml-2 text-green-400',
+    badgeLoaded: 'ml-2 text-purple-400',
+    tfToggleButton: 'px-3 py-1.5 rounded text-xs font-medium border transition-colors',
+    tfToggleActive: 'bg-blue-500/20 text-blue-400 border-blue-500/50 hover:bg-blue-500/30',
+    tfToggleInactive: 'bg-gray-800/90 text-gray-400 border-gray-700 hover:bg-gray-700/90',
+    emptyState: 'absolute inset-0 flex items-center justify-center',
+    emptyContent: 'text-center',
+    emptyIcon: 'w-8 h-8 text-gray-600 mx-auto mb-2',
+    emptyIconSpin: 'w-8 h-8 text-gray-600 animate-spin mx-auto mb-2',
+    emptyText: 'text-sm text-gray-400',
+  },
+
   // Scene 3D
   scene: {
     canvas: 'bg-white',

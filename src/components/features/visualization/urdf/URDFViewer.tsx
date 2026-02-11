@@ -15,6 +15,7 @@ import URDFModel from './URDFModel';
 import { useUrdfUrlLoader } from '../hooks/useUrdfUrlLoader';
 import { sensor_msgs } from '@/types/ros-messages';
 import * as THREE from 'three';
+import { visualizationStyles } from '@/styles';
 
 interface URDFViewerProps {
   client: ROSBridge | null;
@@ -69,7 +70,7 @@ export default function URDFViewer({
     showAxes: true,
     showConnections: true,
     showLabels: false,
-    axisLength: 0.15, // ขนาดของ coordinate axes
+    axisLength: 0.15, // size of coordinate axes
   });
 
   const urlLoader = useUrdfUrlLoader();
@@ -163,17 +164,17 @@ export default function URDFViewer({
   // Removed auto-load - now requires manual "Load URDF" button press
 
   return (
-    <div className="relative w-full h-full bg-gray-950 rounded-lg overflow-hidden border border-gray-800">
+    <div className={visualizationStyles.urdfViewer.container}>
       {/* Header */}
-      <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 flex-1">
-          <div className="px-3 py-1.5 bg-gray-900/90 rounded text-xs font-medium text-gray-300 border border-gray-800">
+      <div className={visualizationStyles.urdfViewer.headerBar}>
+        <div className={visualizationStyles.urdfViewer.headerLeft}>
+          <div className={visualizationStyles.urdfViewer.badge}>
             URDF Viewer
             {currentMode === 'topic' && urdfData && (
-              <span className="ml-2 text-green-400">• Connected</span>
+              <span className={visualizationStyles.urdfViewer.badgeConnected}>• Connected</span>
             )}
             {currentMode === 'url' && urlLoader.urdfContent && (
-              <span className="ml-2 text-purple-400">• Loaded</span>
+              <span className={visualizationStyles.urdfViewer.badgeLoaded}>• Loaded</span>
             )}
           </div>
 
@@ -212,10 +213,10 @@ export default function URDFViewer({
         {/* TF Visualization Toggle */}
         <button
           onClick={() => setShowTF(!showTF)}
-          className={`px-3 py-1.5 rounded text-xs font-medium border transition-colors ${
+          className={`${visualizationStyles.urdfViewer.tfToggleButton} ${
             showTF
-              ? 'bg-blue-500/20 text-blue-400 border-blue-500/50 hover:bg-blue-500/30'
-              : 'bg-gray-800/90 text-gray-400 border-gray-700 hover:bg-gray-700/90'
+              ? visualizationStyles.urdfViewer.tfToggleActive
+              : visualizationStyles.urdfViewer.tfToggleInactive
           }`}
           title="Toggle TF visualization"
         >
@@ -238,19 +239,19 @@ export default function URDFViewer({
 
       {/* 3D Scene */}
       {!urdfString ? (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center">
+        <div className={visualizationStyles.urdfViewer.emptyState}>
+          <div className={visualizationStyles.urdfViewer.emptyContent}>
             {currentMode === 'topic' ? (
               <>
-                <Loader2 className="w-8 h-8 text-gray-600 animate-spin mx-auto mb-2" />
-                <p className="text-sm text-gray-400">
+                <Loader2 className={visualizationStyles.urdfViewer.emptyIconSpin} />
+                <p className={visualizationStyles.urdfViewer.emptyText}>
                   Waiting for {currentTopic} topic...
                 </p>
               </>
             ) : (
               <>
-                <Download className="w-8 h-8 text-gray-600 mx-auto mb-2" />
-                <p className="text-sm text-gray-400">
+                <Download className={visualizationStyles.urdfViewer.emptyIcon} />
+                <p className={visualizationStyles.urdfViewer.emptyText}>
                   Enter a URDF URL and click Load
                 </p>
               </>
