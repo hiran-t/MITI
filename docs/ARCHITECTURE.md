@@ -3,6 +3,7 @@
 This document describes the architecture and design decisions of MITI.
 
 ## Table of Contents
+
 - [Overview](#overview)
 - [Technology Stack](#technology-stack)
 - [Project Structure](#project-structure)
@@ -17,8 +18,8 @@ MITI is a modern web application for visualizing ROS2 robots and sensor data in 
 
 ```
 ┌─────────────┐         WebSocket         ┌──────────────┐
-│   MITI Web  │ ◄──────────────────────► │  rosbridge   │
-│ Application │      (Port 9090)          │   server     │
+│   MITI Web  │ ◄──────────────────────►  │  rosbridge   │
+│ Application │        (Port 9090)        │   server     │
 └─────────────┘                           └──────────────┘
                                                  ▲
                                                  │
@@ -28,9 +29,25 @@ MITI is a modern web application for visualizing ROS2 robots and sensor data in 
                                           └─────────────┘
 ```
 
+OR
+
+```
+┌─────────────┐         ROS DDS           ┌──────────────┐
+│  rosbridge  │ ◄──────────────────────►  │     ROS2     │
+│   server    │                           │   Systems    │
+└─────────────┘                           └──────────────┘
+        ▲
+        │
+ ┌──────┴──────┐
+ │   MITI      │
+ │ Application │
+ └─────────────┘
+```
+
 ## Technology Stack
 
 ### Frontend
+
 - **Next.js 14**: React framework with App Router
 - **React 18**: UI library
 - **TypeScript 5.9**: Type safety
@@ -38,17 +55,20 @@ MITI is a modern web application for visualizing ROS2 robots and sensor data in 
 - **Bun**: Runtime and package manager
 
 ### 3D Visualization
+
 - **Three.js**: 3D rendering engine
 - **React Three Fiber**: React renderer for Three.js
 - **@react-three/drei**: Helper components for R3F
 - **urdf-loader**: URDF file parsing
 
 ### State Management
+
 - **Zustand**: Lightweight state management
 - **React Hooks**: Local component state
 - **LocalStorage**: Persistent configuration
 
 ### ROS2 Integration
+
 - **rosbridge_suite**: WebSocket bridge to ROS2
 - **Custom rosbridge client**: TypeScript client implementation
 
@@ -104,21 +124,25 @@ src/
 ## Data Flow
 
 ### 1. Connection Establishment
+
 ```typescript
 useRosbridge(url) → ROSBridge.connect() → WebSocket connection
 ```
 
 ### 2. Topic Subscription
+
 ```typescript
 useTopic(topic, client) → client.subscribe() → Message callback
 ```
 
 ### 3. Data Processing
+
 ```typescript
 Raw ROS message → Parser (image/pointcloud/etc) → React state → UI update
 ```
 
 ### 4. 3D Rendering
+
 ```typescript
 URDF data → urdf-loader → Three.js scene → React Three Fiber → Canvas
 ```
@@ -126,21 +150,27 @@ URDF data → urdf-loader → Three.js scene → React Three Fiber → Canvas
 ## Key Components
 
 ### 1. Dashboard
+
 The main application container that manages:
+
 - Connection state
 - Layout configuration
 - Widget management
 - Topic list
 
 ### 2. ROSBridge Client
+
 Custom WebSocket client with features:
+
 - Auto-reconnection
 - Message queuing
 - Subscription management
 - Type-safe message handling
 
 ### 3. Widget System
+
 Draggable, resizable widgets powered by:
+
 - `react-grid-layout`
 - Persistent layout storage
 - Widget-specific configurations
@@ -148,21 +178,25 @@ Draggable, resizable widgets powered by:
 ### 4. Visualization Components
 
 #### URDF Viewer
+
 - Loads robot models from `/robot_description`
 - Updates joint states from `/joint_states`
 - Interactive 3D controls
 
 #### Point Cloud Viewer
+
 - Renders point cloud data
 - Color mapping (depth/RGB)
 - Configurable rendering options
 
 #### TF Visualizer
+
 - Subscribes to `/tf` and `/tf_static`
 - Builds transform tree
 - 3D coordinate frame visualization
 
 #### Camera Viewer
+
 - Displays image topics
 - Supports compressed images
 - Real-time updates
@@ -170,19 +204,25 @@ Draggable, resizable widgets powered by:
 ## State Management
 
 ### Global State (Zustand)
+
 Not currently used, but recommended for:
+
 - Connection status
 - Global settings
 - Shared widget data
 
 ### Local State (React Hooks)
+
 Used for:
+
 - Component-specific state
 - Form inputs
 - UI interactions
 
 ### Persistent State (LocalStorage)
+
 Used for:
+
 - Layout configuration
 - Connection URL
 - URDF settings
@@ -191,26 +231,31 @@ Used for:
 ## Performance Considerations
 
 ### 1. Code Splitting
+
 - Dynamic imports for heavy components
 - Route-based splitting with Next.js
 
 ### 2. React Optimization
+
 - `useMemo` for expensive computations
 - `useCallback` for stable function references
 - `React.memo` for component memoization
 
 ### 3. WebSocket Optimization
+
 - Message throttling for high-frequency topics
 - Efficient subscription management
 - Connection pooling
 
 ### 4. 3D Rendering
+
 - Frustum culling
 - Level of Detail (LOD)
 - Instanced rendering for repeated geometries
 - RequestAnimationFrame optimization
 
 ### 5. Bundle Size
+
 - Tree shaking
 - Dynamic imports
 - Minimize dependencies
@@ -218,14 +263,18 @@ Used for:
 ## Design Patterns
 
 ### 1. Custom Hooks
+
 Encapsulate complex logic:
+
 ```typescript
 const { client, connected } = useRosbridge(url);
 const { data, loading } = useTopic(topic, client);
 ```
 
 ### 2. Render Props
+
 Flexible component composition:
+
 ```typescript
 <WidgetContainer
   onRemove={() => removeWidget(id)}
@@ -234,7 +283,9 @@ Flexible component composition:
 ```
 
 ### 3. Compound Components
+
 Related components working together:
+
 ```typescript
 <URDFViewer>
   <URDFSettings />
@@ -245,16 +296,19 @@ Related components working together:
 ## Error Handling
 
 ### 1. Connection Errors
+
 - Auto-reconnection with exponential backoff
 - User-friendly error messages
 - Connection status indicators
 
 ### 2. Parse Errors
+
 - Graceful fallbacks
 - Error boundaries for components
 - Console warnings for debugging
 
 ### 3. Render Errors
+
 - React Error Boundaries
 - Fallback UI components
 - Error reporting
@@ -262,16 +316,19 @@ Related components working together:
 ## Security Considerations
 
 ### 1. WebSocket Security
+
 - WSS support for encrypted connections
 - Origin validation
 - Input sanitization
 
 ### 2. XSS Protection
+
 - React's built-in XSS protection
 - Content Security Policy (CSP)
 - Sanitize user inputs
 
 ### 3. Data Validation
+
 - Type checking with TypeScript
 - Runtime validation for ROS messages
 - Safe parsing of JSON data
