@@ -1,15 +1,42 @@
 <div align="center">
   <img src="public/main_logo.svg" alt="MITI Logo" width="800"/>
+  
+  # MITI - ROS2 Web Visualization
+  
+  **A modern, real-time web application for visualizing ROS2 robots and sensor data**
+  
+  Built with Next.js 14, React 18, and Three.js for high-performance 3D visualization
+  
+  [![ROS2](https://img.shields.io/badge/ROS2-Humble%20%7C%20Iron%20%7C%20Jazzy-blue)](https://docs.ros.org/)
+  [![Next.js](https://img.shields.io/badge/Next.js-14+-black)](https://nextjs.org/)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue)](https://www.typescriptlang.org/)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+  [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+  
+  [Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Documentation](#-documentation) • [Contributing](#-contributing)
+  
 </div>
 
-# MITI - ROS2 Web Visualization
+---
 
-A modern web application for visualizing and monitoring ROS2 topics in real-time. Built with Next.js 14, React 18, and Three.js for high-performance 3D visualization.
+## 📖 Table of Contents
 
-![MITI Dashboard](https://img.shields.io/badge/ROS2-Humble%20%7C%20Iron-blue)
-![Next.js](https://img.shields.io/badge/Next.js-14+-black)
-![TypeScript](https://img.shields.io/badge/TypeScript-5+-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+- [Features](#-features)
+- [Demo](#-demo)
+- [Prerequisites](#-prerequisites)
+- [Installation](#-installation)
+- [Quick Start](#-quick-start)
+- [Usage](#-usage)
+- [Architecture](#-architecture)
+- [ROS2 Integration](#-ros2-integration)
+- [Customization](#-customization)
+- [Testing](#-testing)
+- [Troubleshooting](#-troubleshooting)
+- [Production Build](#-production-build)
+- [Contributing](#-contributing)
+- [License](#-license)
+- [Acknowledgments](#-acknowledgments)
+- [Support](#-support)
 
 ## 🚀 Features
 
@@ -31,6 +58,26 @@ A modern web application for visualizing and monitoring ROS2 topics in real-time
 - **Responsive Design**: Works on desktop, tablet, and mobile
 - **Real-time Updates**: Live connection status and message counts
 - **Search & Filter**: Quickly find topics with instant search
+- **Draggable Widgets**: Customizable dashboard layout with drag-and-drop
+- **Persistent Configuration**: Layout and settings saved in browser localStorage
+
+## 🎬 Demo
+
+> **Note**: Add screenshots or GIF demonstrations of MITI in action here.
+
+<details>
+<summary>📸 Click to view screenshots</summary>
+
+<!-- Add your screenshots here -->
+```
+Screenshots coming soon!
+- Dashboard with multiple widgets
+- URDF robot visualization
+- Point cloud viewer
+- Topic browser
+```
+
+</details>
 
 ## 📋 Prerequisites
 
@@ -42,27 +89,35 @@ Before running MITI, ensure you have the following installed:
 
 ```bash
 # Install ROS2 (Ubuntu)
-# Follow official ROS2 installation guide for your distribution
-# https://docs.ros.org/en/humble/Installation.html
-
-# Install rosbridge_suite
-sudo apt install ros-${ROS_DISTRO}-rosbridge-suite
-```
-
-### Node.js & Bun
-- **Node.js**: 20.x or later
-- **Bun**: 1.0 or later (optional but recommended)
+### Option 1: Clone from GitHub
 
 ```bash
-# Install Bun (optional)
-curl -fsSL https://bun.sh/install | bash
-
-# Or use npm (comes with Node.js)
+# Clone the repository
+git clone https://github.com/yourusername/miti.git
+cd miti
 ```
 
-## 🛠️ Installation
+### Option 2: Download Release
 
-1. **Clone the repository**
+Download the latest release from the [Releases page](https://github.com/yourusername/miti/releases).
+
+### Install Dependencies
+
+Using Bun (recommended):
+```bash
+bun install
+```
+
+Or using npm:
+```bash
+npm install
+```
+
+> **Note**: This project uses **Bun** as the primary package manager and runtime. While npm/yarn will work, Bun provides significantly better performance and is recommended for development.
+> 
+> Install Bun: `curl -fsSL https://bun.sh/install | bash`
+
+### Configure Connection (O
 ```bash
 git clone https://github.com/thongpanchang/miti.git
 cd miti
@@ -79,6 +134,8 @@ Or using npm:
 ```bash
 npm install
 ```
+
+> **Note**: This project uses **Bun** as the primary package manager and runtime. While npm/yarn will work, Bun provides better performance and is recommended.
 
 3. **Configure rosbridge connection** (optional)
 
@@ -102,8 +159,8 @@ Once the app is running, click the settings icon (⚙️) next to the connection
 
 Examples:
 - Local development: `ws://localhost:9090`
-- Remote robot: `ws://192.168.10.27:9090`
-- Docker container: `ws://ros-bridge:9090`
+- Remote rosbidge: `ws://192.168.10.27:9090`
+- Docker container: `ws://ros-bridge:9090` (network=host)
 
 ## 🚦 Usage
 
@@ -125,7 +182,7 @@ The rosbridge server will start on `ws://localhost:9090` by default.
 
 In a new terminal, start the Next.js development server:
 
-Using Bun:
+Using Bun (recommended):
 ```bash
 bun dev
 ```
@@ -134,6 +191,12 @@ Or using npm:
 ```bash
 npm run dev
 ```
+
+> **Building for production:**
+> ```bash
+> bun run build  # Build optimized production bundle
+> bun start      # Start production server
+> ```
 
 ### 3. Open your browser
 
@@ -150,32 +213,138 @@ You should see:
 
 ```
 miti/
-├── app/                          # Next.js App Router
-│   ├── components/              # React components
-│   │   ├── Dashboard.tsx        # Main dashboard layout
-│   │   ├── ConnectionStatus.tsx # Connection indicator
-│   │   ├── TopicViewer/        # Topic browsing components
-│   │   │   ├── TopicList.tsx
-│   │   │   ├── TopicCard.tsx
-│   │   │   └── TopicDataDisplay.tsx
-│   │   └── Visualization/       # 3D visualization components
-│   │       ├── Scene3D.tsx      # Three.js scene wrapper
-│   │       ├── URDFViewer.tsx   # URDF model viewer
-│   │       ├── PointCloudViewer.tsx
-│   │       └── ViewerControls.tsx
-│   ├── hooks/                   # React hooks
+├── src/                         # Source directory (Next.js 14 App Router)
+│   ├── app/                    # Next.js App Router
+│   │   ├── globals.css         # Global styles
+│   │   ├── layout.tsx          # Root layout
+│   │   └── page.tsx            # Home page
+│   │
+│   ├── components/             # React components (feature-based organization)
+│   │   └── features/           # Feature-specific components
+│   │       ├── connection/     # Connection management
+│   │       │   ├── ConnectionStatus.tsx
+│   │       │   └── ConnectionSettings.tsx
+│   │       ├── dashboard/      # Main dashboard
+│   │       │   └── Dashboard.tsx
+│   │       ├── layout/         # Layout and grid system
+│   │       │   ├── DraggableGridLayout.tsx
+│   │       │   ├── WidgetContainer.tsx
+│   │       │   ├── AddWidgetButton.tsx
+│   │       │   └── LayoutConfig.tsx
+│   │       ├── topic-viewer/   # Topic browsing and monitoring
+│   │       │   ├── TopicList.tsx
+│   │       │   ├── TopicCard.tsx
+│   │       │   └── TopicDataDisplay.tsx
+│   │       └── visualization/  # 3D visualization components
+│   │           ├── camera/     # Camera feed viewer
+│   │           │   └── CameraViewer.tsx
+│   │           ├── pointcloud/ # Point cloud visualization
+│   │           │   ├── PointCloudViewer.tsx
+│   │           │   └── PointCloudRenderer.tsx
+│   │           ├── tf/         # TF frame visualization
+│   │           │   └── TFVisualizer.tsx
+│   │           ├── urdf/       # URDF robot model viewer
+│   │           │   ├── URDFViewer.tsx
+│   │           │   ├── URDFModel.tsx
+│   │           │   ├── URDFSettings.tsx
+│   │           │   ├── URDFSourceSelector.tsx
+│   │           │   ├── URDFLoadStatus.tsx
+│   │           │   └── Scene3D.tsx
+│   │           ├── shared/     # Shared visualization components
+│   │           │   └── ViewerControls.tsx
+│   │           └── hooks/       # Visualization-specific hooks
+│   │               └── useUrdfUrlLoader.ts
+│   │
+│   ├── hooks/                    # Global React hooks
 │   │   ├── useRosbridge.ts     # ROS connection management
 │   │   ├── useTopic.ts         # Topic subscription
-│   │   └── useTopicList.ts     # Topic discovery
-│   ├── globals.css             # Global styles
-│   ├── layout.tsx              # Root layout
-│   └── page.tsx                # Home page
-├── lib/                         # Core libraries
-│   ├── rosbridge/              # rosbridge client
-│   │   ├── client.ts           # WebSocket client
-│   │   ├── types.ts            # TypeScript types
-│   │   └── messages.ts         # Message builders
-│   └── utils/                  # Utility functions
+│   │   ├── useTopicList.ts     # Topic discovery
+│   │   ├── useTF.ts            # TF frame handling
+│   │   ├── useLayoutConfig.ts  # Widget layout management
+│   │   ├── useLocalStorage.ts  # Local storage utilities
+│   │   └── useUrdfConfig.ts    # URDF configuration state
+│   │
+│   ├── lib/                      # Core libraries
+│   │   ├── rosbridge/          # rosbridge client
+│   │   │   ├── client.ts       # WebSocket client
+│   │   │   ├── types.ts        # TypeScript types
+│   │   │   └── messages.ts     # Message builders
+│   │   └── parsers/                        # Data parsers
+│   │       ├── image-parser.ts
+│   │       ├── pointcloud-parser.ts
+│   │       └── urdf-parser/              # URDF loading utilities
+│   │           ├── urdf-url-loader.ts
+│   │           └── urdf-loader-helper.ts
+│   │
+│   ├── styles/                       # Centralized style modules
+│   │   ├── index.ts                # Main style exports
+│   │   ├── common.styles.ts        # Reusable UI patterns
+│   │   ├── widget.styles.ts        # Widget container styles
+│   │   ├── topic.styles.ts         # Topic viewer styles
+│   │   ├── connection.styles.ts    # Connection UI styles
+│   │   ├── dashboard.styles.ts     # Dashboard layout styles
+│   │   ├── layout-config.styles.ts # Layout config styles
+│   │   └── visualization.styles.ts # Visualization styles
+│   │
+│   └── types/                    # TypeScript definitions
+│       ├── ros-messages.d.ts   # ROS message types
+│       ├── tf-messages.d.ts    # TF frame types
+│       ├── urdf-config.ts      # URDF configuration
+│       ├── urdf-loader.d.ts    # URDF loader types
+│       └── widget.ts           # Widget configuration
+│
+├── public/                     # Static assets
+│   ├── main_logo.svg
+│   └── ...
+│
+├── bunfig.toml                   # Bun configuration
+├── next.config.js              # Next.js configuration
+├── tailwind.config.ts          # Tailwind CSS configuration
+├── tsconfig.json               # TypeScript configuration
+├── package.json                # Dependencies and scripts
+├── LICENSE                     # MIT License
+└── CONTRIBUTING.md             # Contribution guidelines
+```
+
+### Key Architecture Decisions
+
+#### 1. Feature-Based Component Organization
+Components are organized by feature rather than by type, making it easier to:
+- Locate related components
+- Understand feature boundaries
+- Scale the application
+- Maintain and refactor code
+
+#### 2. Centralized Style Management
+All component styles are extracted into TypeScript constant modules in `src/styles/`:
+- **Consistency**: Single source of truth for design patterns
+- **Maintainability**: Easy to update styles across components
+- **Type Safety**: Full TypeScript support with intellisense
+- **Reusability**: Common patterns defined once in `common.styles.ts`
+- **Organization**: Feature-specific styles in separate modules
+
+Example usage:
+```typescript
+import { visualizationStyles, cn } from '@/styles';
+
+<div className={visualizationStyles.camera.container}>
+  <button className={cn(
+    commonStyles.button.primary,
+    isActive && commonStyles.button.active
+  )}>
+    Click me
+  </button>
+</div>
+```
+
+#### 3. Path Aliases
+The project uses TypeScript path aliases for clean imports:
+- `@/components/*` → `src/components/*`
+- `@/hooks/*` → `src/hooks/*`
+- `@/lib/*` → `src/lib/*`
+- `@/styles/*` → `src/styles/*`
+- `@/types/*` → `src/types/*`
+- `@/utils/*` → `src/utils/*  └── utils/                  # Utility functions
 │       ├── pointcloud-parser.ts
 │       └── urdf-loader-helper.ts
 ├── types/                       # TypeScript definitions
@@ -185,13 +354,16 @@ miti/
 
 ### Technology Stack
 
-- **Frontend Framework**: Next.js 14 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **3D Graphics**: Three.js, React Three Fiber, Drei
-- **State Management**: Zustand (for future use)
+- **Frontend Framework**: Next.js 14 (App Router with `src/` directory)
+- **Language**: TypeScript 5.9+
+- **Runtime**: Bun (recommended) / Node.js 20+
+- **Styling**: Tailwind CSS 3.4+ with centralized style modules
+- **3D Graphics**: Three.js, React Three Fiber (@react-three/fiber), Drei (@react-three/drei)
+- **State Management**: React hooks + localStorage
+- **Grid Layout**: react-grid-layout (for draggable widget system)
 - **Icons**: Lucide React
-- **Runtime**: Bun / Node.js
+- **URDF Parsing**: urdf-loader (with custom URL loader extensions)
+- **ROS Integration**: Custom rosbridge WebSocket client
 
 ## 📡 ROS2 Integration
 
@@ -238,16 +410,83 @@ ros2 topic pub /robot_description std_msgs/msg/String "data: '$(cat robot.urdf)'
 
 **In MITI:**
 1. Ensure "ROS Topic" mode is selected
-2. Enter your topic name (default: `/robot_description`)
-3. URDF will load automatically when published
+2. Enter your topic name (dehooks/useTopic';
 
-#### 2. From URL
+function MyComponent({ client }) {
+  const { data, lastUpdate } = useTopic(
+    client,
+    '/my_topic',
+    'std_msgs/String'
+  );
 
-Load URDF directly from HTTP/HTTPS URL without requiring ROS:
+  return <div>{data?.data}</div>;
+}
+```
 
-**Setup:**
-1. Host your URDF and mesh files on a web server
-2. In MITI, switch to "URL" mode
+### Creating Custom Widgets
+
+To add a new widget to the dashboard:
+
+**Option 1: Environment Variable** (for default connection)
+
+Edit `.env.local`:
+```env
+NEXT_PUBLIC_ROSBRIDGE_URL=ws://your-robot-ip:9090
+```
+
+**Option 2: UI Settings** (recommended)
+
+Click the settings icon (⚙️) next to the connection status to change the URL dynamically. Settings are persisted in browser localStorage.
+
+### Customizing Styles
+
+The project uses a centralized style system for consistency and maintainability.
+
+**Modifying Existing Styles:**
+Edit the appropriate style module in `src/styles/`:
+```typescript
+// src/styles/visualization.styles.ts
+export const visualizationStyles = {
+  camera: {
+    container: 'relative w-full h-full bg-gray-950 rounded-lg', // Modify here
+    // ...
+  }
+};
+```
+
+**Adding New Style Patterns:**
+Add to `src/styles/common.styles.ts` for reusable patterns:
+```typescript
+export const commonStyles = {
+  button: {
+    custom: 'px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg',
+  },
+};
+```
+
+**Theme Configuration:**
+Edit global theme settings in:
+- `src/app/globals.css` - Global CSS variables and base styles
+- `tailwind.config.ts` - Tailwind theme extensions and color palette
+
+### Adding New Visualizations
+
+1. Create component in `src/components/features/visualization/`
+2. Add feature-specific styles to `src/styles/visualization.styles.ts`
+3. Use hooks from `src/hooks/` to subscribe to ROS topics
+4. Register in widget system via `src/types/widget.ts`
+5. Add to `WidgetContainer.tsx` for dashboard integration
+
+Example structure:
+```
+src/components/features/visualization/
+└── my-viz/
+    ├── MyVizViewer.tsx      # Main component
+    ├── MyVizRenderer.tsx    # Rendering logic
+    └── MyVizControls.tsx    # User controls
+```
+    </div>
+  )
 3. Enter URDF URL: `http://192.168.10.27:8000/robot.urdf`
 4. Enter Mesh Base URL: `http://192.168.10.27:8000`
 5. Click "Load URDF"
@@ -347,16 +586,56 @@ function MyComponent({ client }) {
 }
 ```
 
-## 🎨 Customization
+Build and deploy MITI for production:
 
-### Changing the rosbridge URL
+```bash
+# Build optimized production bundle
+bun run build
 
-Edit `.env.local`:
-```env
-NEXT_PUBLIC_ROSBRIDGE_URL=ws://your-robot-ip:9090
+# Start production server
+bun start
+
+# Or using npm
+npm run build
+npm start
 ```
 
-### Customizing the Theme
+The production build will:
+- Optimize and minify all code
+- Generate static assets
+- Enable production-grade performance
+- Tree-shake unused code
+- Optimize images and assets
+
+**Build Output:**
+- Next.js generates optimized bundles in `.next/`
+- Static assets are served from `.next/static/`
+- Server-side rendering ready
+
+**Environment Variables for Production:**
+Create `.env.production`:
+```env
+NEXT_PUBLIC_ROSBRIDGE_URL=ws://your-production-robot:9090
+```
+
+**Docker Deployment** (optional):
+```dockerfile
+FROM oven/bun:1 as base
+WORKDIR /app
+
+# Install dependencies
+COPY package.json bun.lockb ./
+RUN bun install --frozen-lockfile
+
+# Copy source
+COPY . .
+
+# Build
+RUN bun run build
+
+# Start
+EXPOSE 3000
+CMD ["bun", "start"]mizing the Theme
 
 Edit `app/globals.css` or Tailwind configuration in `tailwind.config.ts`
 
@@ -524,13 +803,85 @@ npm start
 
 ## 📚 Additional Resources
 
-- [ROS2 Documentation](https://docs.ros.org/en/humble/)
-- [rosbridge_suite](https://github.com/RobotWebTools/rosbridge_suite)
-- [Next.js Documentation](https://nextjs.org/docs)
-- [React Three Fiber](https://docs.pmnd.rs/react-three-fiber/)
-- [Three.js](https://threejs.org/docs/)
+We love contributions! MITI is a community-driven project, and we welcome contributions of all kinds:
 
-## 🤝 Contributing
+- 🐛 **Bug reports** - Found a bug? [Open an issue](https://github.com/yourusername/miti/issues/new)
+- 💡 **Feature requests** - Have an idea? [Start a discussion](https://github.com/yourusername/miti/discussions)
+- 📖 **Documentation** - Improve our docs
+- 🔧 **Code contributions** - Submit a pull request
+
+### How to Contribute
+
+1. **Fork** the repository
+2. **Clone** your fork: `git clone **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+```
+MIT License
+
+Copyright (c) 2026 MITI Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+```
+
+## 🙏 Acknowledgments
+
+MITI stands on the shoulders of giants. We are grateful to:
+
+- **[ROS2](https://docs.ros.org/)** - Robot Operating System community and maintainers
+- **[rosbridge_suite](https://github.com/RobotWebTools/rosbridge_suite)** - WebSocket bridge for ROS
+- **[Three.js](https://threejs.org/)** - 3D graphics library
+- **[React Three Fiber](https://docs.pmnd.rs/react-three-fiber/)** - React renderer for Three.js
+- **[Next.js](https://nextjs.org/)** - React framework by Vercel
+- **[Tailwind CSS](https://tailwindcss.com/)** - Utility-first CSS framework
+- **[Lucide](https://lucide.dev/)** - Beautiful icon set
+- **[Bun](https://bun.sh/)** - Fast JavaScript runtime
+- **[urdf-loader](https://github.com/gkjohnson/urdf-loaders)** - URDF parsing for Three.js
+
+Special thanks to all [contributors](https://github.com/yourusername/miti/graphs/contributors) who have helped make MITI better!
+
+## 💬 Support
+
+### Getting Help
+
+- 📚 **Documentation**: Start with this README and check our [wiki](https://github.com/yourusername/miti/wiki) (if available)
+- 🐛 **Bug Reports**: [Open an issue](https://github.com/yourusername/miti/issues/new) with detailed reproduction steps
+- 💡 **Feature Requests**: [Start a discussion](https://github.com/yourusername/miti/discussions) to propose new ideas
+- ❓ **Questions**: Check [existing issues](https://github.com/yourusername/miti/issues) or open a new one
+
+### Community
+
+- **GitHub Issues**: For bug reports and feature requests
+- **GitHub Discussions**: For questions and community support
+- **Pull Requests**: For code contributions
+
+### Stay Updated
+
+- ⭐ **Star** this repository to show support
+- 👁️ **Watch** for updates and new releases
+- 🍴 **Fork** to create your own customized version
+
+---
+
+<div align="center">
+  
+### Made with ❤️ for the ROS2 Community
+
+**[⬆ back to top](#miti---ros2-web-visualization)**
+
+</div>
+All contributors will be recognized in our release notes and README. Thank you for making MITI better! 🎉
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
