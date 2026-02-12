@@ -124,13 +124,24 @@ case $choice in
             # Get paths
             MITI_DIR=$(pwd)
             BUN_PATH=$(which bun)
-            SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-            SERVICE_TEMPLATE="$SCRIPT_DIR/auto-startapp.service"
+            
+            # Find service template (could be in scripts/ or same directory as extracted)
+            if [ -f "scripts/auto-startapp.service" ]; then
+                SERVICE_TEMPLATE="scripts/auto-startapp.service"
+            elif [ -f "../scripts/auto-startapp.service" ]; then
+                SERVICE_TEMPLATE="../scripts/auto-startapp.service"
+            elif [ -f "auto-startapp.service" ]; then
+                SERVICE_TEMPLATE="auto-startapp.service"
+            else
+                SERVICE_TEMPLATE=""
+            fi
+            
             SERVICE_FILE="/etc/systemd/system/miti.service"
             
             # Check if service template exists
-            if [ ! -f "$SERVICE_TEMPLATE" ]; then
-                echo "❌ Service template not found at: $SERVICE_TEMPLATE"
+            if [ -z "$SERVICE_TEMPLATE" ] || [ ! -f "$SERVICE_TEMPLATE" ]; then
+                echo "❌ Service template (auto-startapp.service) not found"
+                echo "   Searched in: scripts/, ../, and current directory"
                 echo "Falling back to direct execution..."
                 nohup bun server.js > miti.log 2>&1 &
                 echo $! > miti.pid
@@ -140,6 +151,7 @@ case $choice in
             fi
             
             echo "Creating systemd service from template..."
+            echo "Using template: $SERVICE_TEMPLATE"
             
             # Create service file with substitutions
             sed -e "s|__USER__|$USER|g" \
