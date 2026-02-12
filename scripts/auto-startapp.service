@@ -1,0 +1,18 @@
+[Unit]
+Description=MITI - ROS2 Web Visualization Dashboard
+After=network.target
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=__WORKDIR__
+Environment="PORT=3000"
+Environment="HOSTNAME=0.0.0.0"
+ExecStart=__BUN_PATH__ server.js
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

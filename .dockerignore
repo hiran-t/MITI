@@ -72,9 +72,10 @@ docs/
 # CI/CD
 .github/
 
-# Scripts
-deploy.sh
-ubuntu-setup.sh
+# Scripts (deployment only, not needed in Docker)
+scripts/
+
+# Deploy directory
 deploy/
 
 # Husky

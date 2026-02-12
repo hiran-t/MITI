@@ -98,9 +98,11 @@ jobs:
           
           echo "✅ Standalone package structure verified"
           
-          # Copy deployment scripts
-          cp ubuntu-setup.sh deploy/
-          cp deploy.sh deploy/ || true
+          # Copy deployment scripts and systemd service
+          mkdir -p deploy/scripts
+          cp scripts/ubuntu-setup.sh deploy/
+          cp scripts/auto-startapp.service deploy/scripts/
+          cp scripts/deploy.sh deploy/scripts/ || true
           
           # Create README for release
           cat > deploy/README.md << 'EOF'

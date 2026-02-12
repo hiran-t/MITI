@@ -121,48 +121,56 @@ case $choice in
             
             echo "🚀 Starting MITI..."
             
-            # Check if we should use PM2 or run directly
-            if command -v npm &> /dev/null; then
-                # Install PM2 for process management
-                if ! command -v pm2 &> /dev/null; then
-                    echo "Installing PM2..."
-                    npm install -g pm2
-                fi
-                
-                # Start with PM2
-                PORT=3000 HOSTNAME=0.0.0.0 pm2 start bun --name miti -- server.js
-                pm2 save
-                pm2 startup
-                
-                echo ""
-                echo "✅ MITI is running with PM2!"
-                echo "🌐 Access at: http://localhost:3000"
-                echo ""
-                echo "Useful commands:"
-                echo "  pm2 logs miti              # View logs"
-                echo "  pm2 stop miti              # Stop application"
-                echo "  pm2 start miti             # Start application"
-                echo "  pm2 restart miti           # Restart application"
-            else
-                # Run directly with bun (background process)
-                echo "Running with Bun directly (no PM2)..."
+            # Get paths
+            MITI_DIR=$(pwd)
+            BUN_PATH=$(which bun)
+            SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+            SERVICE_TEMPLATE="$SCRIPT_DIR/auto-startapp.service"
+            SERVICE_FILE="/etc/systemd/system/miti.service"
+            
+            # Check if service template exists
+            if [ ! -f "$SERVICE_TEMPLATE" ]; then
+                echo "❌ Service template not found at: $SERVICE_TEMPLATE"
+                echo "Falling back to direct execution..."
                 nohup bun server.js > miti.log 2>&1 &
                 echo $! > miti.pid
-                
-                sleep 2
-                if ps -p $(cat miti.pid) > /dev/null; then
-                    echo ""
-                    echo "✅ MITI is running!"
-                    echo "🌐 Access at: http://localhost:3000"
-                    echo ""
-                    echo "Useful commands:"
-                    echo "  tail -f $(pwd)/miti.log    # View logs"
-                    echo "  kill \$(cat $(pwd)/miti.pid) # Stop application"
-                    echo ""
-                    echo "Process ID: $(cat miti.pid)"
-                else
-                    echo "❌ Failed to start MITI. Check logs at $(pwd)/miti.log"
-                fi
+                echo "✅ MITI started with PID: $(cat miti.pid)"
+                echo "⚠️  Will NOT auto-start after reboot"
+                exit 0
+            fi
+            
+            echo "Creating systemd service from template..."
+            
+            # Create service file with substitutions
+            sed -e "s|__USER__|$USER|g" \
+                -e "s|__WORKDIR__|$MITI_DIR|g" \
+                -e "s|__BUN_PATH__|$BUN_PATH|g" \
+                "$SERVICE_TEMPLATE" | sudo tee "$SERVICE_FILE" > /dev/null
+
+            # Enable and start the service
+            sudo systemctl daemon-reload
+            sudo systemctl enable miti.service
+            sudo systemctl start miti.service
+            
+            # Wait a moment and check status
+            sleep 2
+            if sudo systemctl is-active --quiet miti.service; then
+                echo ""
+                echo "✅ MITI is running as systemd service!"
+                echo "🌐 Access at: http://localhost:3000"
+                echo ""
+                echo "📝 The application will auto-start after reboot"
+                echo ""
+                echo "Useful commands:"
+                echo "  sudo systemctl status miti     # Check status"
+                echo "  sudo systemctl stop miti       # Stop application"
+                echo "  sudo systemctl start miti      # Start application"
+                echo "  sudo systemctl restart miti    # Restart application"
+                echo "  sudo journalctl -u miti -f     # View logs"
+            else
+                echo ""
+                echo "❌ Service failed to start. Check logs:"
+                echo "  sudo journalctl -u miti -n 50"
             fi
         else
             echo "❌ Standalone package file (miti-standalone*.tar.gz) not found in current directory"
