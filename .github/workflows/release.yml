@@ -51,12 +51,33 @@ jobs:
       - name: Create Standalone Package
         run: |
           echo "📦 Creating standalone deployment package..."
+          
+          # Create the base directory
           mkdir -p deploy/miti
+          
+          # Copy the entire standalone build
           cp -r .next/standalone/* deploy/miti/
+          
+          # Copy static files (critical for Next.js)
           mkdir -p deploy/miti/.next/static
           cp -r .next/static/* deploy/miti/.next/static/
-          mkdir -p deploy/miti/public
-          cp -r public/* deploy/miti/public/
+          
+          # Copy public files
+          if [ -d "public" ]; then
+            mkdir -p deploy/miti/public
+            cp -r public/* deploy/miti/public/
+          fi
+          
+          # Copy node_modules from standalone (Next.js includes necessary ones)
+          if [ -d ".next/standalone/node_modules" ]; then
+            cp -r .next/standalone/node_modules deploy/miti/
+          fi
+          
+          # Verify critical files exist
+          if [ ! -f "deploy/miti/server.js" ]; then
+            echo "❌ server.js not found in standalone build!"
+            exit 1
+          fi
           
           # Copy deployment scripts
           cp ubuntu-setup.sh deploy/
