@@ -102,7 +102,13 @@ jobs:
           mkdir -p deploy/scripts
           cp scripts/ubuntu-setup.sh deploy/
           cp scripts/auto-startapp.service deploy/scripts/
+          cp scripts/auto-launch-browser.sh deploy/scripts/
+          cp scripts/miti-browser.desktop deploy/scripts/
           cp scripts/deploy.sh deploy/scripts/ || true
+          
+          # Make scripts executable
+          chmod +x deploy/ubuntu-setup.sh
+          chmod +x deploy/scripts/*.sh
           
           # Create README for release
           cat > deploy/README.md << 'EOF'

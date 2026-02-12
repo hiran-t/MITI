@@ -203,6 +203,50 @@ case $choice in
                 echo ""
                 echo "📝 The application will auto-start after reboot"
                 echo ""
+                
+                # Setup auto-launch browser
+                echo "Setting up auto-launch browser..."
+                
+                # Find browser launch script
+                if [ -f "scripts/auto-launch-browser.sh" ]; then
+                    BROWSER_SCRIPT="scripts/auto-launch-browser.sh"
+                elif [ -f "../scripts/auto-launch-browser.sh" ]; then
+                    BROWSER_SCRIPT="../scripts/auto-launch-browser.sh"
+                else
+                    BROWSER_SCRIPT=""
+                fi
+                
+                if [ -n "$BROWSER_SCRIPT" ]; then
+                    # Make browser script executable
+                    chmod +x "$BROWSER_SCRIPT"
+                    BROWSER_SCRIPT_PATH="$(cd "$(dirname "$BROWSER_SCRIPT")" && pwd)/$(basename "$BROWSER_SCRIPT")"
+                    
+                    # Create autostart directory if it doesn't exist
+                    mkdir -p ~/.config/autostart
+                    
+                    # Create desktop entry
+                    cat > ~/.config/autostart/miti-browser.desktop << EOF
+[Desktop Entry]
+Type=Application
+Name=MITI Browser
+Comment=Auto-launch browser for MITI dashboard
+Exec=$BROWSER_SCRIPT_PATH
+Terminal=false
+X-GNOME-Autostart-enabled=true
+EOF
+                    
+                    echo "✅ Browser will auto-launch in fullscreen after reboot"
+                    echo ""
+                    read -p "Launch browser now? [Y/n]: " launch_now
+                    if [ "$launch_now" != "n" ]; then
+                        "$BROWSER_SCRIPT_PATH" &
+                        echo "✅ Browser launched!"
+                    fi
+                else
+                    echo "⚠️  Browser auto-launch script not found"
+                fi
+                
+                echo ""
                 echo "Useful commands:"
                 echo "  sudo systemctl status miti     # Check status"
                 echo "  sudo systemctl stop miti       # Stop application"
