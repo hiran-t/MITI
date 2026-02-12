@@ -121,6 +121,36 @@ case $choice in
             
             echo "🚀 Starting MITI..."
             
+            # Check if port 3000 is already in use
+            if sudo lsof -i :3000 -t >/dev/null 2>&1; then
+                echo "⚠️  Port 3000 is already in use!"
+                echo ""
+                sudo lsof -i :3000
+                echo ""
+                read -p "Do you want to stop the existing process? [y/N]: " stop_existing
+                if [ "$stop_existing" = "y" ]; then
+                    echo "Stopping existing process..."
+                    # Try systemd service first
+                    if sudo systemctl is-active --quiet miti.service 2>/dev/null; then
+                        sudo systemctl stop miti.service
+                        echo "✅ Stopped existing miti service"
+                    fi
+                    # Kill any remaining processes on port 3000
+                    sudo lsof -i :3000 -t | xargs -r sudo kill
+                    sleep 1
+                else
+                    echo "❌ Cannot start MITI while port 3000 is in use"
+                    exit 1
+                fi
+            fi
+            
+            # Check if miti service already exists
+            if sudo systemctl list-unit-files | grep -q "^miti.service"; then
+                echo "📝 Existing miti service found. Updating..."
+                sudo systemctl stop miti.service 2>/dev/null || true
+                sudo systemctl disable miti.service 2>/dev/null || true
+            fi
+            
             # Get paths
             MITI_DIR=$(pwd)
             BUN_PATH=$(which bun)
