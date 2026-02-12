@@ -28,6 +28,7 @@ jobs:
         run: bun run build
         env:
           NEXT_PUBLIC_ROSBRIDGE_URL: ws://localhost:9090
+          STANDALONE_BUILD: true
       
       - name: Create Standalone Package
         run: |

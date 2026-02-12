@@ -20,6 +20,7 @@ COPY . .
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV NODE_ENV production
+ENV STANDALONE_BUILD true
 
 # Build the application
 RUN bun run build
