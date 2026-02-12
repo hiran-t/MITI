@@ -1,0 +1,109 @@
+# Dependencies
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+bun-debug.log*
+.pnp
+.pnp.js
+
+# Testing
+coverage
+.nyc_output
+
+# Next.js
+.next/
+out/
+dist
+build
+
+# Production
+.vercel
+.netlify
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env*.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# OS
+.DS_Store
+*.pem
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+CHANGELOG.md
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+SECURITY.md
+LICENSE
+docs/
+
+# CI/CD
+.github/
+
+# Scripts
+deploy.sh
+ubuntu-setup.sh
+deploy/
+
+# Husky
+.husky/
+
+# Cache
+.bun-cache/
+.cache/
+.turbo/
+.eslintcache
+
+# Lock files (we'll copy specific ones we need)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Test files
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+__tests__/
+jest.config.ts
+jest.setup.ts
+
+# Config files we don't need in container
+.eslintrc.json
+.prettierrc
+.prettierignore
+.lintstagedrc.js
+docker-compose.yml
+Dockerfile

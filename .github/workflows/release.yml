@@ -24,6 +24,20 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
       
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build Docker Image and Export
+        run: |
+          echo "🐳 Building Docker image..."
+          docker build -t miti:${{ github.ref_name }} .
+          
+          # Save as tar for release
+          docker save miti:${{ github.ref_name }} | gzip > miti-docker-${{ github.ref_name }}.tar.gz
+          
+          echo "✅ Docker image created"
+          ls -lh miti-docker-*.tar.gz
+      
       - name: Build application
         run: bun run build
         env:
@@ -90,14 +104,6 @@ jobs:
           
           echo "✅ Standalone package created"
           ls -lh miti-standalone-*.tar.gz
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      
-      - name: Build Docker Image and Export
-        run: |
-          echo "🐳 Building Docker image..."
-          docker build -t miti:${{ github.ref_name }} .
           
           # Save as tar for release
           docker save miti:${{ github.ref_name }} | gzip > miti-docker-${{ github.ref_name }}.tar.gz
