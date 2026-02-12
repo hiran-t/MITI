@@ -52,32 +52,51 @@ jobs:
         run: |
           echo "📦 Creating standalone deployment package..."
           
+          # Debug: Check what was built
+          echo "Contents of .next/standalone:"
+          ls -la .next/standalone/
+          echo ""
+          echo "Contents of .next/standalone/.next:"
+          ls -la .next/standalone/.next/ || echo "No .next in standalone"
+          
           # Create the base directory
           mkdir -p deploy/miti
           
-          # Copy the entire standalone build
-          cp -r .next/standalone/* deploy/miti/
+          # Copy the entire standalone build INCLUDING hidden files
+          cp -r .next/standalone/. deploy/miti/
           
-          # Copy static files (critical for Next.js)
-          mkdir -p deploy/miti/.next/static
-          cp -r .next/static/* deploy/miti/.next/static/
+          # IMPORTANT: Next.js standalone build already has .next/ directory
+          # We need to add static files to the EXISTING .next/ directory
+          echo ""
+          echo "Copying static files..."
+          cp -r .next/static deploy/miti/.next/
           
-          # Copy public files
+          # Copy public files (if standalone didn't include them)
           if [ -d "public" ]; then
-            mkdir -p deploy/miti/public
-            cp -r public/* deploy/miti/public/
+            echo "Copying public files..."
+            cp -r public deploy/miti/ || true
           fi
           
-          # Copy node_modules from standalone (Next.js includes necessary ones)
-          if [ -d ".next/standalone/node_modules" ]; then
-            cp -r .next/standalone/node_modules deploy/miti/
-          fi
+          # Debug: Verify structure
+          echo ""
+          echo "Final structure in deploy/miti:"
+          ls -la deploy/miti/
+          echo ""
+          echo "Contents of deploy/miti/.next:"
+          ls -la deploy/miti/.next/ || echo "ERROR: No .next directory!"
           
           # Verify critical files exist
           if [ ! -f "deploy/miti/server.js" ]; then
             echo "❌ server.js not found in standalone build!"
             exit 1
           fi
+          
+          if [ ! -f "deploy/miti/.next/BUILD_ID" ]; then
+            echo "❌ BUILD_ID not found! Standalone build may have failed."
+            exit 1
+          fi
+          
+          echo "✅ Standalone package structure verified"
           
           # Copy deployment scripts
           cp ubuntu-setup.sh deploy/
