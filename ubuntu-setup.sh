@@ -57,9 +57,15 @@ case $choice in
             echo "✅ Docker already installed"
         fi
         
-        if [ -f "miti-docker.tar" ]; then
-            echo "📦 Loading Docker image..."
-            docker load -i miti-docker.tar
+        # Find docker image file
+        DOCKER_FILE=$(ls miti-docker*.tar.gz 2>/dev/null | head -n 1)
+        if [ -n "$DOCKER_FILE" ]; then
+            echo "📦 Loading Docker image from $DOCKER_FILE..."
+            docker load -i "$DOCKER_FILE"
+            
+            # Extract tag name from filename or use latest
+            TAG=$(echo "$DOCKER_FILE" | grep -oP 'v\d+\.\d+\.\d+' || echo "latest")
+            IMAGE_NAME="miti:${TAG}"
             
             echo "🚀 Starting MITI..."
             docker run -d \
@@ -67,7 +73,7 @@ case $choice in
               -e NEXT_PUBLIC_ROSBRIDGE_URL=ws://localhost:9090 \
               --name miti \
               --restart unless-stopped \
-              miti:latest
+              "$IMAGE_NAME"
             
             echo ""
             echo "✅ MITI is running!"
@@ -79,7 +85,7 @@ case $choice in
             echo "  docker start miti          # Start container"
             echo "  docker restart miti        # Restart container"
         else
-            echo "❌ miti-docker.tar not found in current directory"
+            echo "❌ Docker image file (miti-docker*.tar.gz) not found in current directory"
         fi
         ;;
         
@@ -97,9 +103,11 @@ case $choice in
             echo "✅ Bun already installed"
         fi
         
-        if [ -f "miti-standalone.tar.gz" ]; then
-            echo "📦 Extracting files..."
-            tar -xzf miti-standalone.tar.gz
+        # Find standalone package file
+        STANDALONE_FILE=$(ls miti-standalone*.tar.gz 2>/dev/null | head -n 1)
+        if [ -n "$STANDALONE_FILE" ]; then
+            echo "📦 Extracting files from $STANDALONE_FILE..."
+            tar -xzf "$STANDALONE_FILE"
             cd deploy
             
             echo "🚀 Starting MITI..."
@@ -124,7 +132,7 @@ case $choice in
             echo "  pm2 start miti             # Start application"
             echo "  pm2 restart miti           # Restart application"
         else
-            echo "❌ miti-standalone.tar.gz not found in current directory"
+            echo "❌ Standalone package file (miti-standalone*.tar.gz) not found in current directory"
         fi
         ;;
         
