@@ -108,29 +108,62 @@ case $choice in
         if [ -n "$STANDALONE_FILE" ]; then
             echo "📦 Extracting files from $STANDALONE_FILE..."
             tar -xzf "$STANDALONE_FILE"
-            cd deploy
             
-            echo "🚀 Starting MITI..."
-            # Install PM2 for process management
-            if ! command -v pm2 &> /dev/null; then
-                echo "Installing PM2..."
-                npm install -g pm2
+            # Check if extraction created expected directory structure
+            if [ -d "miti" ]; then
+                cd miti
+            elif [ -d "deploy/miti" ]; then
+                cd deploy/miti
+            else
+                echo "❌ Unexpected package structure"
+                exit 1
             fi
             
-            # Start with PM2
-            PORT=3000 HOSTNAME=0.0.0.0 pm2 start "bun server.js" --name miti
-            pm2 save
-            pm2 startup
+            echo "🚀 Starting MITI..."
             
-            echo ""
-            echo "✅ MITI is running!"
-            echo "🌐 Access at: http://localhost:3000"
-            echo ""
-            echo "Useful commands:"
-            echo "  pm2 logs miti              # View logs"
-            echo "  pm2 stop miti              # Stop application"
-            echo "  pm2 start miti             # Start application"
-            echo "  pm2 restart miti           # Restart application"
+            # Check if we should use PM2 or run directly
+            if command -v npm &> /dev/null; then
+                # Install PM2 for process management
+                if ! command -v pm2 &> /dev/null; then
+                    echo "Installing PM2..."
+                    npm install -g pm2
+                fi
+                
+                # Start with PM2
+                PORT=3000 HOSTNAME=0.0.0.0 pm2 start bun --name miti -- server.js
+                pm2 save
+                pm2 startup
+                
+                echo ""
+                echo "✅ MITI is running with PM2!"
+                echo "🌐 Access at: http://localhost:3000"
+                echo ""
+                echo "Useful commands:"
+                echo "  pm2 logs miti              # View logs"
+                echo "  pm2 stop miti              # Stop application"
+                echo "  pm2 start miti             # Start application"
+                echo "  pm2 restart miti           # Restart application"
+            else
+                # Run directly with bun (background process)
+                echo "Running with Bun directly (no PM2)..."
+                nohup bun server.js > miti.log 2>&1 &
+                echo $! > miti.pid
+                
+                sleep 2
+                if ps -p $(cat miti.pid) > /dev/null; then
+                    echo ""
+                    echo "✅ MITI is running!"
+                    echo "🌐 Access at: http://localhost:3000"
+                    echo ""
+                    echo "Useful commands:"
+                    echo "  tail -f $(pwd)/miti.log    # View logs"
+                    echo "  kill \$(cat $(pwd)/miti.pid) # Stop application"
+                    echo ""
+                    echo "Process ID: $(cat miti.pid)"
+                else
+                    echo "❌ Failed to start MITI. Check logs at $(pwd)/miti.log"
+                fi
+            fi
         else
             echo "❌ Standalone package file (miti-standalone*.tar.gz) not found in current directory"
         fi
