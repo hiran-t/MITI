@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import type { MouseEvent as ReactMouseEvent, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Settings, ChevronDown, Trash2, Clock, Plus, X } from 'lucide-react';
 import { visualizationStyles, cn } from '@/styles';
 
@@ -15,6 +16,10 @@ interface URDFSettingsProps {
   onLoadPreset: (preset: Omit<URDFPreset, 'name'>) => void;
   pointCloudTopics?: string[];
   onPointCloudTopicsChange?: (topics: string[]) => void;
+  jointStatesTopic: string;
+  onJointStatesTopicChange: (topic: string) => void;
+  tfTopics: string[];
+  onTfTopicsChange: (topics: string[]) => void;
 }
 
 const DEFAULT_PRESETS: URDFPreset[] = [
@@ -33,51 +38,57 @@ export default function URDFSettings({
   onLoadPreset,
   pointCloudTopics = [],
   onPointCloudTopicsChange,
+  jointStatesTopic,
+  onJointStatesTopicChange,
+  tfTopics,
+  onTfTopicsChange,
 }: URDFSettingsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [presets, setPresets] = useState<URDFPreset[]>(DEFAULT_PRESETS);
   const [recentUrls, setRecentUrls] = useState<string[]>([]);
-  const [newTopicInput, setNewTopicInput] = useState('');
+  const [newPointTopicInput, setNewPointTopicInput] = useState('');
+  const [newTfTopicInput, setNewTfTopicInput] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Load saved data from localStorage
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedPresets = localStorage.getItem(STORAGE_KEY_PRESETS);
-      const savedRecent = localStorage.getItem(STORAGE_KEY_RECENT);
+    const savedPresets = localStorage.getItem(STORAGE_KEY_PRESETS);
+    const savedRecent = localStorage.getItem(STORAGE_KEY_RECENT);
 
-      if (savedPresets) {
-        try {
-          setPresets(JSON.parse(savedPresets));
-        } catch (e) {
-          console.error('Failed to load presets:', e);
-        }
+    if (savedPresets) {
+      try {
+        const parsed = JSON.parse(savedPresets) as URDFPreset[];
+        // fallback กันกรณี stored เป็น empty / malformed
+        setPresets(Array.isArray(parsed) && parsed.length ? parsed : DEFAULT_PRESETS);
+      } catch (e) {
+        console.error('Failed to load presets:', e);
+        setPresets(DEFAULT_PRESETS);
       }
+    }
 
-      if (savedRecent) {
-        try {
-          setRecentUrls(JSON.parse(savedRecent));
-        } catch (e) {
-          console.error('Failed to load recent URLs:', e);
-        }
+    if (savedRecent) {
+      try {
+        const parsed = JSON.parse(savedRecent) as string[];
+        setRecentUrls(Array.isArray(parsed) ? parsed : []);
+      } catch (e) {
+        console.error('Failed to load recent URLs:', e);
+        setRecentUrls([]);
       }
     }
   }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: globalThis.MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
 
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }
+    if (!isOpen) return;
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
   const handleLoadPreset = (preset: URDFPreset) => {
@@ -89,51 +100,63 @@ export default function URDFSettings({
     setIsOpen(false);
   };
 
-  const handleDeletePreset = (index: number, e: React.MouseEvent) => {
+  const handleDeletePreset = (index: number, e: ReactMouseEvent) => {
     e.stopPropagation();
     const updated = presets.filter((_, i) => i !== index);
     setPresets(updated);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY_PRESETS, JSON.stringify(updated));
-    }
+    localStorage.setItem(STORAGE_KEY_PRESETS, JSON.stringify(updated));
   };
 
-  const handleClearRecent = (e: React.MouseEvent) => {
+  const handleClearRecent = (e: ReactMouseEvent) => {
     e.stopPropagation();
     setRecentUrls([]);
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(STORAGE_KEY_RECENT);
-    }
+    localStorage.removeItem(STORAGE_KEY_RECENT);
   };
 
+  // PointCloud topics
   const handleAddPointCloudTopic = () => {
-    if (newTopicInput.trim() && onPointCloudTopicsChange) {
-      const trimmed = newTopicInput.trim();
-      if (!pointCloudTopics.includes(trimmed)) {
-        onPointCloudTopicsChange([...pointCloudTopics, trimmed]);
-      }
-      setNewTopicInput('');
+    if (!onPointCloudTopicsChange) return;
+
+    const trimmed = newPointTopicInput.trim();
+    if (!trimmed) return;
+
+    if (!pointCloudTopics.includes(trimmed)) {
+      onPointCloudTopicsChange([...pointCloudTopics, trimmed]);
     }
+    setNewPointTopicInput('');
   };
 
   const handleRemovePointCloudTopic = (topicToRemove: string) => {
-    if (onPointCloudTopicsChange) {
-      onPointCloudTopicsChange(pointCloudTopics.filter((t) => t !== topicToRemove));
-    }
+    if (!onPointCloudTopicsChange) return;
+    onPointCloudTopicsChange(pointCloudTopics.filter((t) => t !== topicToRemove));
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleAddPointCloudTopic();
+  const handlePointCloudKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') handleAddPointCloudTopic();
+  };
+
+  // TF topics
+  const handleAddTfTopic = () => {
+    const trimmed = newTfTopicInput.trim();
+    if (!trimmed) return;
+
+    if (!tfTopics.includes(trimmed)) {
+      onTfTopicsChange([...tfTopics, trimmed]);
     }
+    setNewTfTopicInput('');
+  };
+
+  const handleTfKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') handleAddTfTopic();
   };
 
   return (
     <div className={visualizationStyles.urdfSettings.container} ref={dropdownRef}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => setIsOpen((v) => !v)}
         className={visualizationStyles.urdfSettings.triggerButton}
         title="URDF Settings"
+        type="button"
       >
         <Settings className={visualizationStyles.urdfSettings.triggerIcon} />
         <ChevronDown
@@ -147,17 +170,72 @@ export default function URDFSettings({
 
       {isOpen && (
         <div className={visualizationStyles.urdfSettings.dropdown}>
+          {/* Joint States Topic Section */}
+          <div className={visualizationStyles.urdfSettings.section}>
+            <h3 className={visualizationStyles.urdfSettings.sectionTitle}>Joint States Topic</h3>
+            <input
+              type="text"
+              value={jointStatesTopic}
+              onChange={(e) => onJointStatesTopicChange(e.target.value)}
+              placeholder="e.g., /robot_inbound/joint_states"
+              className={visualizationStyles.urdfSettings.topicInput}
+              style={{ width: 255 }}
+            />
+          </div>
+
+          {/* TF Topics Section */}
+          <div className={visualizationStyles.urdfSettings.section}>
+            <h3 className={visualizationStyles.urdfSettings.sectionTitle}>TF Topics</h3>
+            <div className={visualizationStyles.urdfSettings.topicInputContainer}>
+              <input
+                type="text"
+                value={newTfTopicInput}
+                onChange={(e) => setNewTfTopicInput(e.target.value)}
+                onKeyDown={handleTfKeyDown}
+                placeholder="e.g., /robot_inbound/tf"
+                className={visualizationStyles.urdfSettings.topicInput}
+              />
+              <button
+                onClick={handleAddTfTopic}
+                className={visualizationStyles.urdfSettings.addButton}
+                title="Add TF topic"
+                type="button"
+              >
+                <Plus className={visualizationStyles.urdfSettings.addIcon} />
+              </button>
+            </div>
+
+            {tfTopics.length > 0 ? (
+              <div className={visualizationStyles.urdfSettings.topicList}>
+                {tfTopics.map((topic) => (
+                  <div key={topic} className={visualizationStyles.urdfSettings.topicItem}>
+                    <span className={visualizationStyles.urdfSettings.topicName}>{topic}</span>
+                    <button
+                      onClick={() => onTfTopicsChange(tfTopics.filter((t) => t !== topic))}
+                      className={visualizationStyles.urdfSettings.removeButton}
+                      title="Remove TF topic"
+                      type="button"
+                    >
+                      <X className={visualizationStyles.urdfSettings.removeIcon} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className={visualizationStyles.urdfSettings.emptyState}>No TF topics added</p>
+            )}
+          </div>
+
           {/* Point Cloud Topics Section */}
           <div className={visualizationStyles.urdfSettings.section}>
             <h3 className={visualizationStyles.urdfSettings.sectionTitle}>Point Cloud Topics</h3>
 
-            {/* Add new topic input */}
             <div className={visualizationStyles.urdfSettings.topicInputContainer}>
               <input
                 type="text"
-                value={newTopicInput}
-                onChange={(e) => setNewTopicInput(e.target.value)}
-                onKeyDown={handleKeyDown}
+                value={newPointTopicInput}
+                onChange={(e) => setNewPointTopicInput(e.target.value)}
+                onKeyDown={handlePointCloudKeyDown}
                 placeholder="e.g., /camera/depth/points"
                 className={visualizationStyles.urdfSettings.topicInput}
               />
@@ -165,21 +243,22 @@ export default function URDFSettings({
                 onClick={handleAddPointCloudTopic}
                 className={visualizationStyles.urdfSettings.addButton}
                 title="Add topic"
+                type="button"
               >
                 <Plus className={visualizationStyles.urdfSettings.addIcon} />
               </button>
             </div>
 
-            {/* Active topics list */}
             {pointCloudTopics.length > 0 ? (
               <div className={visualizationStyles.urdfSettings.topicList}>
-                {pointCloudTopics.map((topic, index) => (
-                  <div key={index} className={visualizationStyles.urdfSettings.topicItem}>
+                {pointCloudTopics.map((topic) => (
+                  <div key={topic} className={visualizationStyles.urdfSettings.topicItem}>
                     <span className={visualizationStyles.urdfSettings.topicName}>{topic}</span>
                     <button
                       onClick={() => handleRemovePointCloudTopic(topic)}
                       className={visualizationStyles.urdfSettings.removeButton}
                       title="Remove topic"
+                      type="button"
                     >
                       <X className={visualizationStyles.urdfSettings.removeIcon} />
                     </button>
@@ -198,10 +277,14 @@ export default function URDFSettings({
             <h3 className={visualizationStyles.urdfSettings.sectionTitle}>Presets</h3>
             <div className={visualizationStyles.urdfSettings.presetsList}>
               {presets.map((preset, index) => (
-                <div key={index} className={visualizationStyles.urdfSettings.presetItem}>
+                <div
+                  key={`${preset.name}-${index}`}
+                  className={visualizationStyles.urdfSettings.presetItem}
+                >
                   <button
                     onClick={() => handleLoadPreset(preset)}
                     className={visualizationStyles.urdfSettings.presetButton}
+                    type="button"
                   >
                     <div className={visualizationStyles.urdfSettings.presetContent}>
                       <div className={visualizationStyles.urdfSettings.presetInfo}>
@@ -210,11 +293,13 @@ export default function URDFSettings({
                           {preset.urdfUrl}
                         </p>
                       </div>
+
                       {index >= DEFAULT_PRESETS.length && (
                         <button
                           onClick={(e) => handleDeletePreset(index, e)}
                           className={visualizationStyles.urdfSettings.deleteButton}
                           title="Delete preset"
+                          type="button"
                         >
                           <Trash2 className={visualizationStyles.urdfSettings.deleteIcon} />
                         </button>
@@ -237,13 +322,18 @@ export default function URDFSettings({
                 <button
                   onClick={handleClearRecent}
                   className={visualizationStyles.urdfSettings.clearButton}
+                  type="button"
                 >
                   Clear
                 </button>
               </div>
+
               <div className={visualizationStyles.urdfSettings.recentList}>
                 {recentUrls.slice(0, 3).map((url, index) => (
-                  <div key={index} className={visualizationStyles.urdfSettings.recentItem}>
+                  <div
+                    key={`${url}-${index}`}
+                    className={visualizationStyles.urdfSettings.recentItem}
+                  >
                     <p className={visualizationStyles.urdfSettings.recentUrl}>{url}</p>
                   </div>
                 ))}

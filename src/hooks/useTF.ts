@@ -10,9 +10,15 @@ interface UseTFOptions {
   rosbridgeClient: any | null;
   maxAge?: number; // Maximum age in milliseconds before a transform is considered stale (default: 10000ms)
   enabled?: boolean; // Whether TF visualization is enabled
+  tfTopics?: string[]; // List of tf topics to subscribe (default: ['/tf', '/tf_static'])
 }
 
-export function useTF({ rosbridgeClient, maxAge = 10000, enabled = true }: UseTFOptions) {
+export function useTF({
+  rosbridgeClient,
+  maxAge = 10000,
+  enabled = true,
+  tfTopics = ['/tf', '/tf_static'],
+}: UseTFOptions) {
   const [tfTree, setTfTree] = useState<TFTree>({
     frames: new Map(),
     rootFrame: null,
@@ -117,8 +123,7 @@ export function useTF({ rosbridgeClient, maxAge = 10000, enabled = true }: UseTF
       return;
     }
 
-    let tfSubscriptionId: string | undefined;
-    let tfStaticSubscriptionId: string | undefined;
+    let subscriptionIds: string[] = [];
     let updateInterval: NodeJS.Timeout;
 
     const handleTFMessage = (message: TFMessage) => {
@@ -127,18 +132,13 @@ export function useTF({ rosbridgeClient, maxAge = 10000, enabled = true }: UseTF
       }
     };
 
-    console.log('[TF] Subscribing to /tf and /tf_static topics...');
-
-    // Subscribe to /tf topic (dynamic transforms)
-    rosbridgeClient.subscribe(
-      '/tf',
-      handleTFMessage,
-      'tf2_msgs/TFMessage',
-      { throttle_rate: 100 } // Throttle to 10Hz
-    );
-
-    // Subscribe to /tf_static topic (static transforms)
-    rosbridgeClient.subscribe('/tf_static', handleTFMessage, 'tf2_msgs/TFMessage');
+    // Subscribe to all tf topics
+    tfTopics.forEach((topic) => {
+      // Optionally, throttle only for dynamic tf topics
+      const throttle = topic.includes('static') ? undefined : { throttle_rate: 100 };
+      const id = rosbridgeClient.subscribe(topic, handleTFMessage, 'tf2_msgs/TFMessage', throttle);
+      if (id) subscriptionIds.push(id);
+    });
 
     // Update state periodically
     updateInterval = setInterval(() => {
@@ -148,19 +148,17 @@ export function useTF({ rosbridgeClient, maxAge = 10000, enabled = true }: UseTF
     setIsLoading(false);
 
     return () => {
-      if (tfSubscriptionId) {
-        rosbridgeClient.unsubscribe('/tf');
-      }
-      if (tfStaticSubscriptionId) {
-        rosbridgeClient.unsubscribe('/tf_static');
-      }
+      // Unsubscribe all tf topics
+      tfTopics.forEach((topic) => {
+        rosbridgeClient.unsubscribe(topic);
+      });
       if (updateInterval) {
         clearInterval(updateInterval);
       }
       // Clear frames when unmounting
       framesRef.current.clear();
     };
-  }, [enabled, rosbridgeClient, updateTransform, updateState]);
+  }, [enabled, rosbridgeClient, updateTransform, updateState, tfTopics]);
 
   return {
     tfTree,

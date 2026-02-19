@@ -61,6 +61,10 @@ export default function URDFViewer({
   const [currentPointCloudTopics, setCurrentPointCloudTopics] =
     useState<string[]>(initialPointCloudTopics);
   const [modelLoading, setModelLoading] = useState(false);
+  // Dynamic joint_states topic
+  const [jointStatesTopic, setJointStatesTopic] = useState('/robot_inbound/joint_states');
+  // Dynamic tf topics
+  const [tfTopics, setTfTopics] = useState<string[]>(['/tf', '/tf_static']);
   const [showTF, setShowTF] = useState(true); // Toggle TF visualization
   const [baseLinkTransform, setBaseLinkTransform] = useState<{
     position: THREE.Vector3;
@@ -81,6 +85,7 @@ export default function URDFViewer({
   const { tfTree } = useTF({
     rosbridgeClient: client,
     enabled: showTF,
+    tfTopics,
   });
 
   // Use topic subscription for topic mode
@@ -96,7 +101,7 @@ export default function URDFViewer({
   // Subscribe to joint_states topic for robot motion (only when URDF is loaded)
   const { data: jointStatesData } = useTopic<sensor_msgs.JointState>(
     urdfString ? client : null,
-    '/robot_inbound/joint_states',
+    jointStatesTopic,
     'sensor_msgs/JointState'
   );
 
@@ -120,6 +125,24 @@ export default function URDFViewer({
       packageMapping: currentPackageMapping,
     });
   }, [currentUrdfUrl, currentMeshBaseUrl, currentPackageMapping, loadFromUrl]);
+
+  // Auto-load URDF from URL when mode is 'url' and urdfUrl is set and client is connected
+  useEffect(() => {
+    if (
+      currentMode === 'url' &&
+      currentUrdfUrl &&
+      client?.isConnected &&
+      !urlLoader.urdfContent &&
+      !urlLoader.loading
+    ) {
+      loadFromUrl({
+        urdfUrl: currentUrdfUrl,
+        meshBaseUrl: currentMeshBaseUrl,
+        packageMapping: currentPackageMapping,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentMode, currentUrdfUrl, client?.isConnected]);
 
   // Handle preset loading
   const handleLoadPreset = useCallback(
@@ -197,6 +220,8 @@ export default function URDFViewer({
             onLoadUrl={handleLoadFromUrl}
             isLoadingUrl={urlLoader.loading}
           />
+
+          {/* moved joint_states and tf topic config to settings */}
         </div>
 
         <URDFSettings
@@ -206,6 +231,10 @@ export default function URDFViewer({
             setCurrentPointCloudTopics(topics);
             if (onPointCloudTopicsChange) onPointCloudTopicsChange(topics);
           }}
+          jointStatesTopic={jointStatesTopic}
+          onJointStatesTopicChange={setJointStatesTopic}
+          tfTopics={tfTopics}
+          onTfTopicsChange={setTfTopics}
         />
 
         {/* TF Visualization Toggle */}
