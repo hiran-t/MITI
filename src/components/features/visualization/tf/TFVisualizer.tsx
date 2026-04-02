@@ -45,69 +45,60 @@ export default function TFVisualizer({
     return matrix;
   };
 
-  // Calculate world transform for a frame recursively
-  const getWorldTransform = (
-    frameName: string,
-    cache: Map<string, THREE.Matrix4> = new Map()
-  ): THREE.Matrix4 => {
-    // Check cache first
-    if (cache.has(frameName)) {
-      return cache.get(frameName)!.clone();
-    }
-
-    const frame = tfTree.frames.get(frameName);
-
-    if (!frame) return new THREE.Matrix4();
-
-    // If baseFrame is specified and this is the base frame, return identity matrix
-    if (baseFrame && frameName === baseFrame) {
-      const identity = new THREE.Matrix4();
-      cache.set(frameName, identity);
-      return identity.clone();
-    }
-
-    // Create local transform matrix
-    const position = new THREE.Vector3(
-      frame.transform.translation.x,
-      frame.transform.translation.y,
-      frame.transform.translation.z
-    );
-    const quaternion = new THREE.Quaternion(
-      frame.transform.rotation.x,
-      frame.transform.rotation.y,
-      frame.transform.rotation.z,
-      frame.transform.rotation.w
-    );
-
-    const localTransform = new THREE.Matrix4();
-    localTransform.compose(position, quaternion, new THREE.Vector3(1, 1, 1));
-
-    // If no parent, this is a root frame - return identity (stay at origin)
-    if (!frame.parent) {
-      const identity = new THREE.Matrix4();
-      cache.set(frameName, identity);
-      return identity.clone();
-    }
-
-    // If parent is baseFrame (when specified), this is the local transform
-    if (baseFrame && frame.parent === baseFrame) {
-      cache.set(frameName, localTransform);
-      return localTransform.clone();
-    }
-
-    // Get parent's world transform recursively
-    const parentWorldTransform = getWorldTransform(frame.parent, cache);
-
-    // Calculate world transform: parent_world * local
-    const worldTransform = new THREE.Matrix4();
-    worldTransform.multiplyMatrices(parentWorldTransform, localTransform);
-
-    cache.set(frameName, worldTransform);
-    return worldTransform.clone();
-  };
-
   // Prepare frame data with world transforms
   const frameData = useMemo(() => {
+    // Calculate world transform for a frame recursively (defined inside useMemo to capture tfTree/baseFrame)
+    const getWorldTransform = (
+      frameName: string,
+      cache: Map<string, THREE.Matrix4> = new Map()
+    ): THREE.Matrix4 => {
+      if (cache.has(frameName)) {
+        return cache.get(frameName)!.clone();
+      }
+
+      const frame = tfTree.frames.get(frameName);
+      if (!frame) return new THREE.Matrix4();
+
+      if (baseFrame && frameName === baseFrame) {
+        const identity = new THREE.Matrix4();
+        cache.set(frameName, identity);
+        return identity.clone();
+      }
+
+      const position = new THREE.Vector3(
+        frame.transform.translation.x,
+        frame.transform.translation.y,
+        frame.transform.translation.z
+      );
+      const quaternion = new THREE.Quaternion(
+        frame.transform.rotation.x,
+        frame.transform.rotation.y,
+        frame.transform.rotation.z,
+        frame.transform.rotation.w
+      );
+
+      const localTransform = new THREE.Matrix4();
+      localTransform.compose(position, quaternion, new THREE.Vector3(1, 1, 1));
+
+      if (!frame.parent) {
+        const identity = new THREE.Matrix4();
+        cache.set(frameName, identity);
+        return identity.clone();
+      }
+
+      if (baseFrame && frame.parent === baseFrame) {
+        cache.set(frameName, localTransform);
+        return localTransform.clone();
+      }
+
+      const parentWorldTransform = getWorldTransform(frame.parent, cache);
+      const worldTransform = new THREE.Matrix4();
+      worldTransform.multiplyMatrices(parentWorldTransform, localTransform);
+
+      cache.set(frameName, worldTransform);
+      return worldTransform.clone();
+    };
+
     const data: Array<{
       name: string;
       worldMatrix: THREE.Matrix4;
@@ -117,7 +108,6 @@ export default function TFVisualizer({
       parentPosition?: THREE.Vector3;
     }> = [];
 
-    // Create a shared cache for all getWorldTransform calls
     const transformCache = new Map<string, THREE.Matrix4>();
 
     tfTree.frames.forEach((frame, frameName) => {
@@ -127,26 +117,23 @@ export default function TFVisualizer({
       const scale = new THREE.Vector3();
       worldMatrix.decompose(position, rotation, scale);
 
-      const frameInfo: any = {
+      let parentPosition: THREE.Vector3 | undefined;
+      if (frame.parent) {
+        const parentMatrix = getWorldTransform(frame.parent, transformCache);
+        parentPosition = new THREE.Vector3();
+        parentMatrix.decompose(parentPosition, new THREE.Quaternion(), new THREE.Vector3());
+      } else if (frameName === baseFrame) {
+        parentPosition = new THREE.Vector3(0, 0, 0);
+      }
+
+      data.push({
         name: frameName,
         worldMatrix,
         position,
         rotation,
         parent: frame.parent,
-      };
-
-      // Get parent position for drawing connection line
-      if (frame.parent) {
-        const parentMatrix = getWorldTransform(frame.parent, transformCache);
-        const parentPosition = new THREE.Vector3();
-        parentMatrix.decompose(parentPosition, new THREE.Quaternion(), new THREE.Vector3());
-        frameInfo.parentPosition = parentPosition;
-      } else if (frameName === baseFrame) {
-        // For base frame with no parent, connect to world origin
-        frameInfo.parentPosition = new THREE.Vector3(0, 0, 0);
-      }
-
-      data.push(frameInfo);
+        parentPosition,
+      });
     });
 
     return data;

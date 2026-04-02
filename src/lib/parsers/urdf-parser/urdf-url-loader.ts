@@ -51,9 +51,10 @@ export async function loadURDFFromURL(options: URDFLoaderOptions): Promise<strin
 
     console.log('Successfully loaded URDF, size:', urdfContent.length);
     return urdfContent;
-  } catch (err: any) {
+  } catch (err) {
+    const errObj = err instanceof Error ? err : new Error(String(err));
     // Handle specific error types
-    if (err.name === 'AbortError') {
+    if (errObj.name === 'AbortError') {
       const error: URDFLoadError = {
         type: 'network',
         message: 'Request timeout after 30 seconds',
@@ -66,10 +67,10 @@ export async function loadURDFFromURL(options: URDFLoaderOptions): Promise<strin
     // Detect CORS errors - they typically show as TypeError with 'Failed to fetch'
     // or network errors when the actual issue is CORS
     if (
-      err.name === 'TypeError' &&
-      (err.message.includes('Failed to fetch') ||
-        err.message.includes('NetworkError') ||
-        err.message.includes('Network request failed'))
+      errObj.name === 'TypeError' &&
+      (errObj.message.includes('Failed to fetch') ||
+        errObj.message.includes('NetworkError') ||
+        errObj.message.includes('Network request failed'))
     ) {
       const error: URDFLoadError = {
         type: 'cors',
@@ -81,7 +82,7 @@ export async function loadURDFFromURL(options: URDFLoaderOptions): Promise<strin
       throw error;
     }
 
-    if (err.type) {
+    if (err && typeof err === 'object' && 'type' in err) {
       // Already a URDFLoadError
       throw err;
     }
@@ -90,7 +91,7 @@ export async function loadURDFFromURL(options: URDFLoaderOptions): Promise<strin
     const error: URDFLoadError = {
       type: 'network',
       message: 'Failed to load URDF from URL',
-      details: err.message || 'Unknown error occurred',
+      details: errObj.message || 'Unknown error occurred',
       url: urdfUrl,
     };
     throw error;

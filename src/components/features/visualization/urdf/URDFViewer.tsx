@@ -5,7 +5,7 @@ import { ROSBridge } from '@/lib/rosbridge/client';
 import { useTopic } from '@/hooks/useTopic';
 import { useTF } from '@/hooks/useTF';
 import Scene3D from './Scene3D';
-import { Loader2, Download } from 'lucide-react';
+import { Loader2, Download, Settings } from 'lucide-react';
 import URDFSourceSelector from './URDFSourceSelector';
 import URDFSettings from './URDFSettings';
 import URDFLoadStatus from './URDFLoadStatus';
@@ -16,6 +16,7 @@ import { useUrdfUrlLoader } from '../hooks/useUrdfUrlLoader';
 import { sensor_msgs } from '@/types/ros-messages';
 import * as THREE from 'three';
 import { visualizationStyles } from '@/styles';
+import { TF_TOPICS } from '@/constants/ros-topics';
 
 interface URDFViewerProps {
   client: ROSBridge | null;
@@ -64,8 +65,9 @@ export default function URDFViewer({
   // Dynamic joint_states topic
   const [jointStatesTopic, setJointStatesTopic] = useState('/robot_inbound/joint_states');
   // Dynamic tf topics
-  const [tfTopics, setTfTopics] = useState<string[]>(['/tf', '/tf_static']);
-  const [showTF, setShowTF] = useState(true); // Toggle TF visualization
+  const [tfTopics, setTfTopics] = useState<string[]>([TF_TOPICS.DYNAMIC, TF_TOPICS.STATIC]);
+  const [showTF, setShowTF] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
   const [baseLinkTransform, setBaseLinkTransform] = useState<{
     position: THREE.Vector3;
     quaternion: THREE.Quaternion;
@@ -224,19 +226,6 @@ export default function URDFViewer({
           {/* moved joint_states and tf topic config to settings */}
         </div>
 
-        <URDFSettings
-          onLoadPreset={handleLoadPreset}
-          pointCloudTopics={currentPointCloudTopics}
-          onPointCloudTopicsChange={(topics) => {
-            setCurrentPointCloudTopics(topics);
-            if (onPointCloudTopicsChange) onPointCloudTopicsChange(topics);
-          }}
-          jointStatesTopic={jointStatesTopic}
-          onJointStatesTopicChange={setJointStatesTopic}
-          tfTopics={tfTopics}
-          onTfTopicsChange={setTfTopics}
-        />
-
         {/* TF Visualization Toggle */}
         <button
           onClick={() => setShowTF(!showTF)}
@@ -248,6 +237,15 @@ export default function URDFViewer({
           title="Toggle TF visualization"
         >
           🔗 TF
+        </button>
+
+        {/* Settings trigger — unified style */}
+        <button
+          onClick={() => setShowSettings(true)}
+          className="rounded-md border border-gray-800 bg-gray-900/90 p-1.5 text-gray-400 transition-colors hover:bg-gray-800/90 hover:text-gray-200"
+          aria-label="Scene settings"
+        >
+          <Settings className="h-3.5 w-3.5" />
         </button>
       </div>
 
@@ -319,6 +317,22 @@ export default function URDFViewer({
           )}
         </Scene3D>
       )}
+
+      {/* Settings overlay — shared panel shell */}
+      <URDFSettings
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        onLoadPreset={handleLoadPreset}
+        pointCloudTopics={currentPointCloudTopics}
+        onPointCloudTopicsChange={(topics) => {
+          setCurrentPointCloudTopics(topics);
+          onPointCloudTopicsChange?.(topics);
+        }}
+        jointStatesTopic={jointStatesTopic}
+        onJointStatesTopicChange={setJointStatesTopic}
+        tfTopics={tfTopics}
+        onTfTopicsChange={setTfTopics}
+      />
     </div>
   );
 }

@@ -2,25 +2,91 @@
  * Widget system types for flexible UI layout with drag-and-drop support
  */
 
-export type WidgetType = 'topics' | 'urdf-viewer' | 'pointcloud-viewer' | 'camera-viewer';
+import { CAMERA_TOPICS } from '@/constants/ros-topics';
 
-export interface WidgetConfig {
-  i: string; // Unique identifier (required by react-grid-layout)
-  type: WidgetType;
+// ─── Base ────────────────────────────────────────────────────────────────────
+
+interface WidgetBase {
+  i: string;
   title: string;
-  x: number; // Grid column position (0-based)
-  y: number; // Grid row position (0-based)
-  w: number; // Width in grid columns
-  h: number; // Height in grid rows
-  minW?: number; // Minimum width
-  minH?: number; // Minimum height
-  locked?: boolean; // Whether the widget is locked (non-draggable/non-resizable)
-  props?: Record<string, any>;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  minW?: number;
+  minH?: number;
+  locked?: boolean;
 }
+
+// ─── Per-type props ──────────────────────────────────────────────────────────
+
+export interface CameraWidgetProps {
+  topic: string;
+}
+
+export interface StateMachineWidgetProps {
+  smaccTopic?: string;
+  btStatusTopic?: string;
+}
+
+export type ButtonSwitchMode = 'topic' | 'service';
+
+export interface ButtonSwitchWidgetProps {
+  /** Display label on the button */
+  label?: string;
+  /** Whether to publish to a topic or call a service */
+  mode?: ButtonSwitchMode;
+  // ── Topic publish mode ──────────────────────────────────────────────
+  /** ROS topic to publish to */
+  topic?: string;
+  /** ROS message type, e.g. "std_msgs/Bool" */
+  messageType?: string;
+  /** JSON string payload published when switched ON */
+  onPayload?: string;
+  /** JSON string payload published when switched OFF */
+  offPayload?: string;
+  // ── Service call mode ───────────────────────────────────────────────
+  /** ROS service name to call */
+  service?: string;
+  /** JSON string args sent to service when switched ON */
+  onArgs?: string;
+  /** JSON string args sent to service when switched OFF */
+  offArgs?: string;
+}
+
+// ─── Discriminated union variants ────────────────────────────────────────────
+
+export type TopicsWidgetConfig = WidgetBase & { type: 'topics' };
+export type URDFWidgetConfig = WidgetBase & { type: 'urdf-viewer' };
+export type PointCloudWidgetConfig = WidgetBase & { type: 'pointcloud-viewer' };
+export type CameraWidgetConfig = WidgetBase & { type: 'camera-viewer'; props: CameraWidgetProps };
+export type StateMachineWidgetConfig = WidgetBase & {
+  type: 'state-machine';
+  props?: StateMachineWidgetProps;
+};
+export type ButtonSwitchWidgetConfig = WidgetBase & {
+  type: 'button-switch';
+  props?: ButtonSwitchWidgetProps;
+};
+
+export type WidgetConfig =
+  | TopicsWidgetConfig
+  | URDFWidgetConfig
+  | PointCloudWidgetConfig
+  | CameraWidgetConfig
+  | StateMachineWidgetConfig
+  | ButtonSwitchWidgetConfig;
+
+// Derived from the union — stays in sync automatically
+export type WidgetType = WidgetConfig['type'];
+
+// ─── Layout config ───────────────────────────────────────────────────────────
 
 export interface LayoutConfig {
   widgets: WidgetConfig[];
 }
+
+// ─── Widget type metadata ────────────────────────────────────────────────────
 
 export interface WidgetTypeInfo {
   type: WidgetType;
@@ -56,6 +122,20 @@ export const WIDGET_TYPES: WidgetTypeInfo[] = [
     type: 'camera-viewer',
     label: 'Camera',
     icon: '📷',
+    defaultSize: { w: 2, h: 2 },
+    minSize: { minW: 1, minH: 1 },
+  },
+  {
+    type: 'state-machine',
+    label: 'State Machine',
+    icon: '🔀',
+    defaultSize: { w: 3, h: 4 },
+    minSize: { minW: 2, minH: 3 },
+  },
+  {
+    type: 'button-switch',
+    label: 'Button Switch',
+    icon: '🔘',
     defaultSize: { w: 2, h: 2 },
     minSize: { minW: 1, minH: 1 },
   },
@@ -97,9 +177,7 @@ export const DEFAULT_LAYOUT: LayoutConfig = {
       h: 2,
       minW: 1,
       minH: 2,
-      props: {
-        topic: '/camera/color/image_raw',
-      },
+      props: { topic: CAMERA_TOPICS.COLOR },
     },
     {
       i: 'camera-viewer-2',
@@ -111,9 +189,7 @@ export const DEFAULT_LAYOUT: LayoutConfig = {
       h: 2,
       minW: 1,
       minH: 2,
-      props: {
-        topic: '/camera/depth/image_raw',
-      },
+      props: { topic: CAMERA_TOPICS.DEPTH },
     },
     {
       i: 'camera-viewer-3',
@@ -125,9 +201,7 @@ export const DEFAULT_LAYOUT: LayoutConfig = {
       h: 2,
       minW: 1,
       minH: 2,
-      props: {
-        topic: '/pacen_decon_vision/detection_image',
-      },
+      props: { topic: CAMERA_TOPICS.DETECTION },
     },
     {
       i: 'camera-viewer-4',
@@ -139,9 +213,7 @@ export const DEFAULT_LAYOUT: LayoutConfig = {
       h: 2,
       minW: 1,
       minH: 2,
-      props: {
-        topic: '/camera/ir/image_raw',
-      },
+      props: { topic: CAMERA_TOPICS.IR },
     },
   ],
 };

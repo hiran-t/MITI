@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import type { MouseEvent as ReactMouseEvent, KeyboardEvent as ReactKeyboardEvent } from 'react';
-import { Settings, ChevronDown, Trash2, Clock, Plus, X } from 'lucide-react';
-import { visualizationStyles, cn } from '@/styles';
+import { useState, useEffect } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent } from 'react';
+import { Settings, Trash2, Clock, Plus, X } from 'lucide-react';
+import { commonStyles, cn } from '@/styles';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface URDFPreset {
   name: string;
@@ -13,6 +15,8 @@ interface URDFPreset {
 }
 
 interface URDFSettingsProps {
+  isOpen: boolean;
+  onClose: () => void;
   onLoadPreset: (preset: Omit<URDFPreset, 'name'>) => void;
   pointCloudTopics?: string[];
   onPointCloudTopicsChange?: (topics: string[]) => void;
@@ -21,6 +25,8 @@ interface URDFSettingsProps {
   tfTopics: string[];
   onTfTopicsChange: (topics: string[]) => void;
 }
+
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const DEFAULT_PRESETS: URDFPreset[] = [
   {
@@ -34,7 +40,84 @@ const DEFAULT_PRESETS: URDFPreset[] = [
 const STORAGE_KEY_PRESETS = 'miti_urdf_presets';
 const STORAGE_KEY_RECENT = 'miti_urdf_recent';
 
+// ─── Section header ───────────────────────────────────────────────────────────
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">{children}</p>
+  );
+}
+
+// ─── Topic chip list ──────────────────────────────────────────────────────────
+
+interface TopicChipListProps {
+  topics: string[];
+  inputValue: string;
+  placeholder: string;
+  onInputChange: (v: string) => void;
+  onAdd: () => void;
+  onRemove: (t: string) => void;
+  onKeyDown: (e: ReactKeyboardEvent<HTMLInputElement>) => void;
+}
+
+function TopicChipList({
+  topics,
+  inputValue,
+  placeholder,
+  onInputChange,
+  onAdd,
+  onRemove,
+  onKeyDown,
+}: TopicChipListProps) {
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={inputValue}
+          onChange={(e) => onInputChange(e.target.value)}
+          onKeyDown={onKeyDown}
+          placeholder={placeholder}
+          className={cn(commonStyles.input.base, 'py-1.5 text-xs')}
+        />
+        <button
+          onClick={onAdd}
+          type="button"
+          className="shrink-0 rounded-lg bg-gray-700 px-3 py-1.5 text-xs font-medium text-gray-200 transition-colors hover:bg-gray-600"
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      {topics.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5">
+          {topics.map((t) => (
+            <span
+              key={t}
+              className="flex items-center gap-1 rounded-md border border-gray-700 bg-gray-800 py-1 pl-2.5 pr-1.5 text-xs text-gray-300"
+            >
+              <span className="max-w-[180px] truncate">{t}</span>
+              <button
+                onClick={() => onRemove(t)}
+                type="button"
+                className="text-gray-500 transition-colors hover:text-red-400"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs italic text-gray-600">None added</p>
+      )}
+    </div>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
 export default function URDFSettings({
+  isOpen,
+  onClose,
   onLoadPreset,
   pointCloudTopics = [],
   onPointCloudTopicsChange,
@@ -43,14 +126,12 @@ export default function URDFSettings({
   tfTopics,
   onTfTopicsChange,
 }: URDFSettingsProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const [presets, setPresets] = useState<URDFPreset[]>(DEFAULT_PRESETS);
   const [recentUrls, setRecentUrls] = useState<string[]>([]);
   const [newPointTopicInput, setNewPointTopicInput] = useState('');
   const [newTfTopicInput, setNewTfTopicInput] = useState('');
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Load saved data from localStorage
+  // Load persisted data
   useEffect(() => {
     const savedPresets = localStorage.getItem(STORAGE_KEY_PRESETS);
     const savedRecent = localStorage.getItem(STORAGE_KEY_RECENT);
@@ -58,46 +139,31 @@ export default function URDFSettings({
     if (savedPresets) {
       try {
         const parsed = JSON.parse(savedPresets) as URDFPreset[];
-        // fallback กันกรณี stored เป็น empty / malformed
         setPresets(Array.isArray(parsed) && parsed.length ? parsed : DEFAULT_PRESETS);
-      } catch (e) {
-        console.error('Failed to load presets:', e);
+      } catch {
         setPresets(DEFAULT_PRESETS);
       }
     }
-
     if (savedRecent) {
       try {
         const parsed = JSON.parse(savedRecent) as string[];
         setRecentUrls(Array.isArray(parsed) ? parsed : []);
-      } catch (e) {
-        console.error('Failed to load recent URLs:', e);
+      } catch {
         setRecentUrls([]);
       }
     }
   }, []);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: globalThis.MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
+  if (!isOpen) return null;
 
-    if (!isOpen) return;
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
-
+  // ── Presets ──
   const handleLoadPreset = (preset: URDFPreset) => {
     onLoadPreset({
       urdfUrl: preset.urdfUrl,
       meshBaseUrl: preset.meshBaseUrl,
       packageMapping: preset.packageMapping,
     });
-    setIsOpen(false);
+    onClose();
   };
 
   const handleDeletePreset = (index: number, e: ReactMouseEvent) => {
@@ -107,249 +173,153 @@ export default function URDFSettings({
     localStorage.setItem(STORAGE_KEY_PRESETS, JSON.stringify(updated));
   };
 
-  const handleClearRecent = (e: ReactMouseEvent) => {
-    e.stopPropagation();
+  const handleClearRecent = () => {
     setRecentUrls([]);
     localStorage.removeItem(STORAGE_KEY_RECENT);
   };
 
-  // PointCloud topics
-  const handleAddPointCloudTopic = () => {
-    if (!onPointCloudTopicsChange) return;
-
-    const trimmed = newPointTopicInput.trim();
-    if (!trimmed) return;
-
-    if (!pointCloudTopics.includes(trimmed)) {
-      onPointCloudTopicsChange([...pointCloudTopics, trimmed]);
-    }
+  // ── Point cloud topics ──
+  const handleAddPointCloud = () => {
+    const t = newPointTopicInput.trim();
+    if (!t || pointCloudTopics.includes(t)) return;
+    onPointCloudTopicsChange?.([...pointCloudTopics, t]);
     setNewPointTopicInput('');
   };
 
-  const handleRemovePointCloudTopic = (topicToRemove: string) => {
-    if (!onPointCloudTopicsChange) return;
-    onPointCloudTopicsChange(pointCloudTopics.filter((t) => t !== topicToRemove));
-  };
-
-  const handlePointCloudKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') handleAddPointCloudTopic();
-  };
-
-  // TF topics
-  const handleAddTfTopic = () => {
-    const trimmed = newTfTopicInput.trim();
-    if (!trimmed) return;
-
-    if (!tfTopics.includes(trimmed)) {
-      onTfTopicsChange([...tfTopics, trimmed]);
-    }
+  // ── TF topics ──
+  const handleAddTf = () => {
+    const t = newTfTopicInput.trim();
+    if (!t || tfTopics.includes(t)) return;
+    onTfTopicsChange([...tfTopics, t]);
     setNewTfTopicInput('');
   };
 
-  const handleTfKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') handleAddTfTopic();
-  };
-
   return (
-    <div className={visualizationStyles.urdfSettings.container} ref={dropdownRef}>
-      <button
-        onClick={() => setIsOpen((v) => !v)}
-        className={visualizationStyles.urdfSettings.triggerButton}
-        title="URDF Settings"
-        type="button"
-      >
-        <Settings className={visualizationStyles.urdfSettings.triggerIcon} />
-        <ChevronDown
-          className={cn(
-            isOpen
-              ? visualizationStyles.urdfSettings.triggerChevronOpen
-              : visualizationStyles.urdfSettings.triggerChevron
-          )}
-        />
-      </button>
+    <div className="absolute inset-0 z-20 flex flex-col overflow-hidden rounded-lg bg-gray-950/95 backdrop-blur-sm">
+      {/* ── Header ── */}
+      <div className="flex shrink-0 items-center gap-2 border-b border-gray-800 px-4 py-3">
+        <Settings className="h-3.5 w-3.5 text-gray-500" />
+        <span className="flex-1 text-sm font-semibold text-gray-200">Scene Settings</span>
+        <button
+          onClick={onClose}
+          className="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-800/50 hover:text-gray-300"
+          aria-label="Close settings"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
 
-      {isOpen && (
-        <div className={visualizationStyles.urdfSettings.dropdown}>
-          {/* Joint States Topic Section */}
-          <div className={visualizationStyles.urdfSettings.section}>
-            <h3 className={visualizationStyles.urdfSettings.sectionTitle}>Joint States Topic</h3>
-            <input
-              type="text"
-              value={jointStatesTopic}
-              onChange={(e) => onJointStatesTopicChange(e.target.value)}
-              placeholder="e.g., /robot_inbound/joint_states"
-              className={visualizationStyles.urdfSettings.topicInput}
-              style={{ width: 255 }}
-            />
-          </div>
+      {/* ── Body ── */}
+      <div className="flex-1 space-y-5 overflow-y-auto p-4">
+        {/* Joint States Topic */}
+        <div>
+          <SectionLabel>Joint States Topic</SectionLabel>
+          <input
+            type="text"
+            value={jointStatesTopic}
+            onChange={(e) => onJointStatesTopicChange(e.target.value)}
+            placeholder="/robot_inbound/joint_states"
+            className={cn(commonStyles.input.base, 'text-xs')}
+          />
+        </div>
 
-          {/* TF Topics Section */}
-          <div className={visualizationStyles.urdfSettings.section}>
-            <h3 className={visualizationStyles.urdfSettings.sectionTitle}>TF Topics</h3>
-            <div className={visualizationStyles.urdfSettings.topicInputContainer}>
-              <input
-                type="text"
-                value={newTfTopicInput}
-                onChange={(e) => setNewTfTopicInput(e.target.value)}
-                onKeyDown={handleTfKeyDown}
-                placeholder="e.g., /robot_inbound/tf"
-                className={visualizationStyles.urdfSettings.topicInput}
-              />
-              <button
-                onClick={handleAddTfTopic}
-                className={visualizationStyles.urdfSettings.addButton}
-                title="Add TF topic"
-                type="button"
+        {/* TF Topics */}
+        <div>
+          <SectionLabel>TF Topics</SectionLabel>
+          <TopicChipList
+            topics={tfTopics}
+            inputValue={newTfTopicInput}
+            placeholder="/tf or /robot_inbound/tf"
+            onInputChange={setNewTfTopicInput}
+            onAdd={handleAddTf}
+            onRemove={(t) => onTfTopicsChange(tfTopics.filter((x) => x !== t))}
+            onKeyDown={(e) => e.key === 'Enter' && handleAddTf()}
+          />
+        </div>
+
+        {/* Point Cloud Topics */}
+        <div>
+          <SectionLabel>Point Cloud Topics</SectionLabel>
+          <TopicChipList
+            topics={pointCloudTopics}
+            inputValue={newPointTopicInput}
+            placeholder="/camera/depth/points"
+            onInputChange={setNewPointTopicInput}
+            onAdd={handleAddPointCloud}
+            onRemove={(t) => onPointCloudTopicsChange?.(pointCloudTopics.filter((x) => x !== t))}
+            onKeyDown={(e) => e.key === 'Enter' && handleAddPointCloud()}
+          />
+        </div>
+
+        {/* Presets */}
+        <div>
+          <SectionLabel>Presets</SectionLabel>
+          <div className="space-y-1.5">
+            {presets.map((preset, i) => (
+              <div
+                key={`${preset.name}-${i}`}
+                className="group flex cursor-pointer items-center gap-2 rounded-lg border border-gray-700 bg-gray-800/50 px-3 py-2 transition-colors hover:border-gray-600 hover:bg-gray-800"
+                onClick={() => handleLoadPreset(preset)}
               >
-                <Plus className={visualizationStyles.urdfSettings.addIcon} />
-              </button>
-            </div>
-
-            {tfTopics.length > 0 ? (
-              <div className={visualizationStyles.urdfSettings.topicList}>
-                {tfTopics.map((topic) => (
-                  <div key={topic} className={visualizationStyles.urdfSettings.topicItem}>
-                    <span className={visualizationStyles.urdfSettings.topicName}>{topic}</span>
-                    <button
-                      onClick={() => onTfTopicsChange(tfTopics.filter((t) => t !== topic))}
-                      className={visualizationStyles.urdfSettings.removeButton}
-                      title="Remove TF topic"
-                      type="button"
-                    >
-                      <X className={visualizationStyles.urdfSettings.removeIcon} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className={visualizationStyles.urdfSettings.emptyState}>No TF topics added</p>
-            )}
-          </div>
-
-          {/* Point Cloud Topics Section */}
-          <div className={visualizationStyles.urdfSettings.section}>
-            <h3 className={visualizationStyles.urdfSettings.sectionTitle}>Point Cloud Topics</h3>
-
-            <div className={visualizationStyles.urdfSettings.topicInputContainer}>
-              <input
-                type="text"
-                value={newPointTopicInput}
-                onChange={(e) => setNewPointTopicInput(e.target.value)}
-                onKeyDown={handlePointCloudKeyDown}
-                placeholder="e.g., /camera/depth/points"
-                className={visualizationStyles.urdfSettings.topicInput}
-              />
-              <button
-                onClick={handleAddPointCloudTopic}
-                className={visualizationStyles.urdfSettings.addButton}
-                title="Add topic"
-                type="button"
-              >
-                <Plus className={visualizationStyles.urdfSettings.addIcon} />
-              </button>
-            </div>
-
-            {pointCloudTopics.length > 0 ? (
-              <div className={visualizationStyles.urdfSettings.topicList}>
-                {pointCloudTopics.map((topic) => (
-                  <div key={topic} className={visualizationStyles.urdfSettings.topicItem}>
-                    <span className={visualizationStyles.urdfSettings.topicName}>{topic}</span>
-                    <button
-                      onClick={() => handleRemovePointCloudTopic(topic)}
-                      className={visualizationStyles.urdfSettings.removeButton}
-                      title="Remove topic"
-                      type="button"
-                    >
-                      <X className={visualizationStyles.urdfSettings.removeIcon} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className={visualizationStyles.urdfSettings.emptyState}>
-                No point cloud topics added
-              </p>
-            )}
-          </div>
-
-          {/* Presets Section */}
-          <div className={visualizationStyles.urdfSettings.section}>
-            <h3 className={visualizationStyles.urdfSettings.sectionTitle}>Presets</h3>
-            <div className={visualizationStyles.urdfSettings.presetsList}>
-              {presets.map((preset, index) => (
-                <div
-                  key={`${preset.name}-${index}`}
-                  className={visualizationStyles.urdfSettings.presetItem}
-                >
-                  <button
-                    onClick={() => handleLoadPreset(preset)}
-                    className={visualizationStyles.urdfSettings.presetButton}
-                    type="button"
-                  >
-                    <div className={visualizationStyles.urdfSettings.presetContent}>
-                      <div className={visualizationStyles.urdfSettings.presetInfo}>
-                        <p className={visualizationStyles.urdfSettings.presetName}>{preset.name}</p>
-                        <p className={visualizationStyles.urdfSettings.presetUrl}>
-                          {preset.urdfUrl}
-                        </p>
-                      </div>
-
-                      {index >= DEFAULT_PRESETS.length && (
-                        <button
-                          onClick={(e) => handleDeletePreset(index, e)}
-                          className={visualizationStyles.urdfSettings.deleteButton}
-                          title="Delete preset"
-                          type="button"
-                        >
-                          <Trash2 className={visualizationStyles.urdfSettings.deleteIcon} />
-                        </button>
-                      )}
-                    </div>
-                  </button>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-medium text-gray-200">{preset.name}</p>
+                  <p className="truncate text-xs text-gray-500">{preset.urdfUrl}</p>
                 </div>
+                {i >= DEFAULT_PRESETS.length && (
+                  <button
+                    onClick={(e) => handleDeletePreset(i, e)}
+                    type="button"
+                    className="shrink-0 p-1 text-gray-600 opacity-0 transition-all hover:text-red-400 group-hover:opacity-100"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Recent URLs */}
+        {recentUrls.length > 0 && (
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <SectionLabel>
+                <span className="flex items-center gap-1.5">
+                  <Clock className="h-3 w-3" />
+                  Recent URLs
+                </span>
+              </SectionLabel>
+              <button
+                onClick={handleClearRecent}
+                type="button"
+                className="-mt-2 text-xs text-gray-600 transition-colors hover:text-gray-400"
+              >
+                Clear
+              </button>
+            </div>
+            <div className="space-y-1">
+              {recentUrls.slice(0, 3).map((url, i) => (
+                <p key={`${url}-${i}`} className="truncate px-1 text-xs text-gray-500">
+                  {url}
+                </p>
               ))}
             </div>
           </div>
+        )}
 
-          {/* Recent URLs Section */}
-          {recentUrls.length > 0 && (
-            <div className={visualizationStyles.urdfSettings.section}>
-              <div className={visualizationStyles.urdfSettings.sectionHeader}>
-                <h3 className={visualizationStyles.urdfSettings.sectionTitleWithIcon}>
-                  <Clock className={visualizationStyles.urdfSettings.clockIcon} />
-                  Recent URLs
-                </h3>
-                <button
-                  onClick={handleClearRecent}
-                  className={visualizationStyles.urdfSettings.clearButton}
-                  type="button"
-                >
-                  Clear
-                </button>
-              </div>
+        {/* Tip */}
+        <p className="text-xs text-gray-600">
+          <span className="font-medium text-cyan-500">Tip:</span> Enable CORS on your web server to
+          load remote URDF files.
+        </p>
+      </div>
 
-              <div className={visualizationStyles.urdfSettings.recentList}>
-                {recentUrls.slice(0, 3).map((url, index) => (
-                  <div
-                    key={`${url}-${index}`}
-                    className={visualizationStyles.urdfSettings.recentItem}
-                  >
-                    <p className={visualizationStyles.urdfSettings.recentUrl}>{url}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Info */}
-          <div className={visualizationStyles.urdfSettings.section}>
-            <p className={visualizationStyles.urdfSettings.infoText}>
-              <strong className={visualizationStyles.urdfSettings.infoTip}>Tip:</strong> Enable CORS
-              on your web server
-            </p>
-          </div>
-        </div>
-      )}
+      {/* ── Footer ── */}
+      <div className="shrink-0 border-t border-gray-800 px-4 py-3">
+        <button onClick={onClose} className={cn(commonStyles.button.primary, 'w-full text-sm')}>
+          Apply
+        </button>
+      </div>
     </div>
   );
 }

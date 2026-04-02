@@ -188,9 +188,10 @@ function createMeshLoader(
 function processRobotModel(robot: THREE.Object3D): void {
   // Add materials to all meshes that don't have them
   let meshCount = 0;
-  robot.traverse((child: any) => {
-    if (child.isMesh) {
-      meshCount++;
+  robot.traverse((child: THREE.Object3D) => {
+    if (!(child instanceof THREE.Mesh)) return;
+    meshCount++;
+    {
       if (!child.material) {
         child.material = new THREE.MeshStandardMaterial({
           color: 0xcccccc,

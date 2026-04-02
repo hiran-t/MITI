@@ -4,7 +4,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { ROSBridge } from '@/lib/rosbridge/client';
 import type { TopicInfo } from '@/lib/rosbridge/types';
 
-export function useTopicList(client: ROSBridge | null) {
+export function useTopicList(client: ROSBridge | null): {
+  topics: TopicInfo[];
+  loading: boolean;
+  error: Error | null;
+  refreshTopics: () => Promise<void>;
+} {
   const [topics, setTopics] = useState<TopicInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);

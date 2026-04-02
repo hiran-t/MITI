@@ -7,6 +7,7 @@ import { Loader2, Camera } from 'lucide-react';
 import { parseImageMessage } from '@/lib/parsers/image-parser';
 import type { sensor_msgs } from '@/types/ros-messages';
 import { visualizationStyles } from '@/styles';
+import { CAMERA_TOPICS as CAMERA_TOPIC_VALUES } from '@/constants/ros-topics';
 
 interface CameraViewerProps {
   client: ROSBridge | null;
@@ -14,10 +15,10 @@ interface CameraViewerProps {
 }
 
 const CAMERA_TOPICS = [
-  { value: '/camera/color/image_raw', label: 'Color Image' },
-  { value: '/pacen_decon_vision/detection_image', label: 'Detection Image' },
-  { value: '/camera/depth/image_raw', label: 'Depth Image' },
-  { value: '/camera/ir/image_raw', label: 'IR Image' },
+  { value: CAMERA_TOPIC_VALUES.COLOR, label: 'Color Image' },
+  { value: CAMERA_TOPIC_VALUES.DETECTION, label: 'Detection Image' },
+  { value: CAMERA_TOPIC_VALUES.DEPTH, label: 'Depth Image' },
+  { value: CAMERA_TOPIC_VALUES.IR, label: 'IR Image' },
 ];
 
 export default function CameraViewer({ client, topic: initialTopic }: CameraViewerProps) {
