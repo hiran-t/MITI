@@ -1,7 +1,7 @@
 // ROS message types
 export interface ROSMessage {
   op: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface TopicInfo {
@@ -31,21 +31,21 @@ export interface AdvertiseMessage {
 export interface PublishMessage {
   op: 'publish';
   topic: string;
-  msg: any;
+  msg: unknown;
 }
 
 export interface ServiceCallMessage {
   op: 'call_service';
   service: string;
-  args?: any;
+  args?: unknown;
 }
 
 export interface TopicMessage {
   op: 'publish';
   topic: string;
-  msg: any;
+  msg: unknown;
 }
 
-export type MessageCallback = (message: any) => void;
+export type MessageCallback = (message: unknown) => void;
 export type ConnectionCallback = () => void;
 export type ErrorCallback = (error: Error) => void;

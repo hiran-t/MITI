@@ -3,7 +3,7 @@
 import { topicStyles } from '@/styles';
 
 interface TopicDataDisplayProps {
-  data: any;
+  data: unknown;
 }
 
 export default function TopicDataDisplay({ data }: TopicDataDisplayProps) {

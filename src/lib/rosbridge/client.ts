@@ -8,6 +8,9 @@ import type {
 import {
   createSubscribeMessage,
   createUnsubscribeMessage,
+  createAdvertiseMessage,
+  createPublishMessage,
+  createServiceCallMessage,
   createGetTopicsMessage,
 } from './messages';
 
@@ -18,6 +21,10 @@ export class ROSBridge {
   private reconnectTimer: NodeJS.Timeout | null = null;
   private messageQueue: ROSMessage[] = [];
   private subscriptions: Map<string, Set<MessageCallback>> = new Map();
+  private serviceCallbacks: Map<
+    string,
+    { resolve: (v: unknown) => void; reject: (e: Error) => void; timer: NodeJS.Timeout }
+  > = new Map();
   private connectionCallbacks: Set<ConnectionCallback> = new Set();
   private disconnectionCallbacks: Set<ConnectionCallback> = new Set();
   private errorCallbacks: Set<ErrorCallback> = new Set();
@@ -103,11 +110,33 @@ export class ROSBridge {
     }, this.reconnectInterval);
   }
 
-  private handleMessage(data: any): void {
-    if (data.op === 'publish' && data.topic) {
-      const callbacks = this.subscriptions.get(data.topic);
-      if (callbacks) {
-        callbacks.forEach((cb) => cb(data.msg));
+  private handleMessage(data: unknown): void {
+    if (!data || typeof data !== 'object' || !('op' in data)) return;
+    const msg = data as ROSMessage;
+
+    if (msg.op === 'publish' && 'topic' in msg) {
+      const { topic, msg: payload } = msg as { op: string; topic: string; msg?: unknown };
+      const callbacks = this.subscriptions.get(topic);
+      if (callbacks) callbacks.forEach((cb) => cb(payload));
+      return;
+    }
+
+    if (msg.op === 'service_response' && 'id' in msg) {
+      const { id, values, result } = msg as {
+        op: string;
+        id: string;
+        values?: unknown;
+        result?: boolean;
+      };
+      const pending = this.serviceCallbacks.get(id);
+      if (pending) {
+        clearTimeout(pending.timer);
+        this.serviceCallbacks.delete(id);
+        if (result === false) {
+          pending.reject(new Error('Service call failed'));
+        } else {
+          pending.resolve(values);
+        }
       }
     }
   }
@@ -195,8 +224,15 @@ export class ROSBridge {
         safeReject(new Error('Timeout getting topics'));
       }, TIMEOUT_MS);
 
-      const handleTopicsResponse = (data: any) => {
-        if (data.op === 'service_response' && data.service === '/rosapi/topics') {
+      const handleTopicsResponse = (data: unknown) => {
+        if (
+          data &&
+          typeof data === 'object' &&
+          'op' in data &&
+          (data as ROSMessage).op === 'service_response' &&
+          'service' in data &&
+          (data as ROSMessage).service === '/rosapi/topics'
+        ) {
           const topics = this.parseTopicsResponse(data);
           safeResolve(topics);
         }
@@ -226,18 +262,48 @@ export class ROSBridge {
   /**
    * Parses topics response from rosbridge service call
    */
-  private parseTopicsResponse(data: any): TopicInfo[] {
+  private parseTopicsResponse(data: unknown): TopicInfo[] {
     const topics: TopicInfo[] = [];
-    if (data.values?.topics && data.values?.types) {
-      const topicCount = Math.min(data.values.topics.length, data.values.types.length);
-      for (let i = 0; i < topicCount; i++) {
-        topics.push({
-          topic: data.values.topics[i],
-          type: data.values.types[i],
-        });
+    if (data && typeof data === 'object' && 'values' in data) {
+      const values = (data as { values?: { topics?: string[]; types?: string[] } }).values;
+      if (values?.topics && values?.types) {
+        const topicCount = Math.min(values.topics.length, values.types.length);
+        for (let i = 0; i < topicCount; i++) {
+          topics.push({
+            topic: values.topics[i],
+            type: values.types[i],
+          });
+        }
       }
     }
     return topics;
+  }
+
+  advertise(topic: string, messageType: string): void {
+    this.send(createAdvertiseMessage(topic, messageType));
+  }
+
+  publish(topic: string, msg: unknown): void {
+    this.send(createPublishMessage(topic, msg));
+  }
+
+  callService(service: string, args?: unknown): Promise<unknown> {
+    return new Promise((resolve, reject) => {
+      const TIMEOUT_MS = 5000;
+      if (!this.connected) {
+        reject(new Error('Not connected to rosbridge'));
+        return;
+      }
+
+      const id = `call_service:${service}:${Date.now()}`;
+      const timer = setTimeout(() => {
+        this.serviceCallbacks.delete(id);
+        reject(new Error(`Service call timeout: ${service}`));
+      }, TIMEOUT_MS);
+
+      this.serviceCallbacks.set(id, { resolve, reject, timer });
+      this.send({ ...createServiceCallMessage(service, args), id });
+    });
   }
 
   onConnection(callback: ConnectionCallback): () => void {

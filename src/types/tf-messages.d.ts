@@ -21,7 +21,7 @@ export interface Transform {
   rotation: Quaternion;
 }
 
-export interface TransformStamped {
+export interface TFTransformStamped {
   header: {
     seq?: number;
     stamp: {
@@ -35,7 +35,7 @@ export interface TransformStamped {
 }
 
 export interface TFMessage {
-  transforms: TransformStamped[];
+  transforms: TFTransformStamped[];
 }
 
 /**

@@ -47,9 +47,14 @@ export function useUrdfUrlLoader() {
 
       // Save to recent URLs
       saveRecentUrl(urdfUrl);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to load URDF from URL:', err);
-      const errorMsg = err.type ? formatURDFError(err) : err.message || 'Failed to load URDF';
+      const errorMsg =
+        err instanceof Error && !('type' in err)
+          ? err.message
+          : err && typeof err === 'object' && 'type' in err
+            ? formatURDFError(err as Parameters<typeof formatURDFError>[0])
+            : 'Failed to load URDF';
       setError(errorMsg);
       setLoading(false);
     }

@@ -7,6 +7,8 @@ import TopicList from '../topic-viewer/TopicList';
 import URDFViewer from '../visualization/urdf/URDFViewer';
 import PointCloudViewer from '../visualization/pointcloud/PointCloudViewer';
 import CameraViewer from '../visualization/camera/CameraViewer';
+import StateMachineMonitor from '../visualization/state-machine/StateMachineMonitor';
+import ButtonSwitchWidget from '../controls/ButtonSwitchWidget';
 import type { TopicInfo } from '@/lib/rosbridge/types';
 import type { URDFConfig } from '@/types/urdf-config';
 import { widgetStyles } from '@/styles';
@@ -70,10 +72,24 @@ export default function WidgetContainer({
         return <PointCloudViewer client={client} />;
 
       case 'camera-viewer':
-        return <CameraViewer client={client} topic={widget.props?.topic} />;
+        return <CameraViewer client={client} topic={widget.props.topic} />;
 
-      default:
+      case 'state-machine':
+        return (
+          <StateMachineMonitor
+            client={client}
+            smaccTopic={widget.props?.smaccTopic}
+            btStatusTopic={widget.props?.btStatusTopic}
+          />
+        );
+
+      case 'button-switch':
+        return <ButtonSwitchWidget client={client} props={widget.props} />;
+
+      default: {
+        void (widget satisfies never);
         return <div className={widgetStyles.types.unknown}>Unknown widget type</div>;
+      }
     }
   };
 

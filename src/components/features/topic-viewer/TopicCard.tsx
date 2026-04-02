@@ -12,7 +12,7 @@ interface TopicCardProps {
 
 export default function TopicCard({ topic, type, client }: TopicCardProps) {
   const [subscribed, setSubscribed] = useState(false);
-  const [lastMessage, setLastMessage] = useState<any>(null);
+  const [lastMessage, setLastMessage] = useState<unknown>(null);
   const [messageCount, setMessageCount] = useState(0);
 
   const handleToggleSubscribe = () => {
@@ -56,10 +56,10 @@ export default function TopicCard({ topic, type, client }: TopicCardProps) {
         <div className={topicStyles.message.container}>
           <div className={topicStyles.message.stats}>
             <span>Messages: {messageCount}</span>
-            {lastMessage && <span>Last update: {new Date().toLocaleTimeString()}</span>}
+            {lastMessage != null && <span>Last update: {new Date().toLocaleTimeString()}</span>}
           </div>
 
-          {lastMessage && (
+          {lastMessage != null && (
             <div className={topicStyles.message.json}>
               <pre>{JSON.stringify(lastMessage, null, 2)}</pre>
             </div>

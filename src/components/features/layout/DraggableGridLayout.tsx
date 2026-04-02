@@ -13,6 +13,7 @@ import 'react-resizable/css/styles.css';
 
 // Dynamically import react-grid-layout to avoid SSR issues
 import dynamic from 'next/dynamic';
+import type ReactGridLayout from 'react-grid-layout';
 
 const GridLayoutComponent = dynamic(() => import('react-grid-layout').then((mod) => mod.default), {
   ssr: false,
@@ -20,7 +21,7 @@ const GridLayoutComponent = dynamic(() => import('react-grid-layout').then((mod)
 
 interface DraggableGridLayoutProps {
   widgets: WidgetConfig[];
-  onLayoutChange: (layout: readonly any[]) => void;
+  onLayoutChange: (layout: readonly ReactGridLayout.Layout[]) => void;
   onRemoveWidget: (widgetId: string) => void;
   onToggleLock: (widgetId: string) => void;
   client: ROSBridge | null;

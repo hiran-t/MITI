@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import type ReactGridLayout from 'react-grid-layout';
 import {
   LayoutConfig,
   WidgetConfig,
@@ -8,6 +9,7 @@ import {
   WIDGET_TYPES,
   WidgetType,
 } from '@/types/widget';
+import { CAMERA_TOPICS } from '@/constants/ros-topics';
 
 const STORAGE_KEY = 'miti_layout_config';
 
@@ -42,7 +44,9 @@ export function useLayoutConfig() {
   const updateWidget = useCallback((widgetId: string, updates: Partial<WidgetConfig>) => {
     setLayout((prev) => ({
       ...prev,
-      widgets: prev.widgets.map((w) => (w.i === widgetId ? { ...w, ...updates } : w)),
+      widgets: prev.widgets.map((w) =>
+        w.i === widgetId ? ({ ...w, ...updates } as WidgetConfig) : w
+      ),
     }));
   }, []);
 
@@ -84,9 +88,8 @@ export function useLayoutConfig() {
         newY = maxXY.y + maxXY.h;
       }
 
-      const newWidget: WidgetConfig = {
+      const base = {
         i: newId,
-        type,
         title: widgetInfo.label,
         x: newX,
         y: newY,
@@ -95,6 +98,13 @@ export function useLayoutConfig() {
         minW: widgetInfo.minSize.minW,
         minH: widgetInfo.minSize.minH,
       };
+
+      const newWidget: WidgetConfig =
+        type === 'camera-viewer'
+          ? { ...base, type, props: { topic: CAMERA_TOPICS.COLOR } }
+          : type === 'button-switch'
+            ? { ...base, type, props: {} }
+            : { ...base, type };
 
       setLayout((prev) => ({
         ...prev,
@@ -111,7 +121,7 @@ export function useLayoutConfig() {
     }));
   }, []);
 
-  const updateLayout = useCallback((newLayout: readonly any[]) => {
+  const updateLayout = useCallback((newLayout: readonly ReactGridLayout.Layout[]) => {
     setLayout((prev) => ({
       ...prev,
       widgets: prev.widgets.map((widget) => {

@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { parsePointCloud2, type ParsedPoint } from '@/lib/parsers/pointcloud-parser';
 import type { sensor_msgs } from '@/types/ros-messages';
 import { visualizationStyles } from '@/styles';
+import { CAMERA_TOPICS } from '@/constants/ros-topics';
 
 interface PointCloudViewerProps {
   client: ROSBridge | null;
@@ -57,7 +58,7 @@ function PointCloud({ points }: { points: ParsedPoint[] }) {
 
 export default function PointCloudViewer({
   client,
-  topic = '/camera/depth/points',
+  topic = CAMERA_TOPICS.DEPTH_POINTS,
 }: PointCloudViewerProps) {
   const { data: pointCloudData, lastUpdate } = useTopic<sensor_msgs.PointCloud2>(
     client,

@@ -4,21 +4,23 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { TFMessage, TFFrame, TFTree, TransformStamped } from '@/types/tf-messages';
+import { TFMessage, TFFrame, TFTree, TFTransformStamped } from '@/types/tf-messages';
+import { ROSBridge } from '@/lib/rosbridge/client';
+import { TF_TOPICS } from '@/constants/ros-topics';
 
 interface UseTFOptions {
-  rosbridgeClient: any | null;
-  maxAge?: number; // Maximum age in milliseconds before a transform is considered stale (default: 10000ms)
-  enabled?: boolean; // Whether TF visualization is enabled
-  tfTopics?: string[]; // List of tf topics to subscribe (default: ['/tf', '/tf_static'])
+  rosbridgeClient: ROSBridge | null;
+  maxAge?: number;
+  enabled?: boolean;
+  tfTopics?: string[];
 }
 
 export function useTF({
   rosbridgeClient,
   maxAge = 10000,
   enabled = true,
-  tfTopics = ['/tf', '/tf_static'],
-}: UseTFOptions) {
+  tfTopics = [TF_TOPICS.DYNAMIC, TF_TOPICS.STATIC],
+}: UseTFOptions): { tfTree: TFTree; isLoading: boolean } {
   const [tfTree, setTfTree] = useState<TFTree>({
     frames: new Map(),
     rootFrame: null,
@@ -26,13 +28,11 @@ export function useTF({
   const [isLoading, setIsLoading] = useState(true);
   const framesRef = useRef<Map<string, TFFrame>>(new Map());
 
-  // Update transform in the tree
-  const updateTransform = useCallback((transformStamped: TransformStamped) => {
+  const updateTransform = useCallback((transformStamped: TFTransformStamped) => {
     const parentFrame = transformStamped.header.frame_id;
     const childFrame = transformStamped.child_frame_id;
     const timestamp = Date.now();
 
-    // Update or create the child frame
     const existingFrame = framesRef.current.get(childFrame);
     const updatedFrame: TFFrame = {
       name: childFrame,
@@ -44,7 +44,6 @@ export function useTF({
 
     framesRef.current.set(childFrame, updatedFrame);
 
-    // Update parent's children list
     if (parentFrame) {
       const parentFrameData = framesRef.current.get(parentFrame);
       if (parentFrameData) {
@@ -52,7 +51,6 @@ export function useTF({
           parentFrameData.children.push(childFrame);
         }
       } else {
-        // Create parent frame if it doesn't exist
         framesRef.current.set(parentFrame, {
           name: parentFrame,
           parent: null,
@@ -67,7 +65,6 @@ export function useTF({
     }
   }, []);
 
-  // Find root frame (frame with no parent)
   const findRootFrame = useCallback(() => {
     const frames = Array.from(framesRef.current.entries());
     for (const [frameName, frame] of frames) {
@@ -78,7 +75,6 @@ export function useTF({
     return null;
   }, []);
 
-  // Clean up stale transforms
   const cleanupStaleTransforms = useCallback(() => {
     const now = Date.now();
     const framesToDelete: string[] = [];
@@ -102,7 +98,6 @@ export function useTF({
     });
   }, [maxAge]);
 
-  // Update state from ref
   const updateState = useCallback(() => {
     cleanupStaleTransforms();
     const rootFrame = findRootFrame();
@@ -123,40 +118,35 @@ export function useTF({
       return;
     }
 
-    let subscriptionIds: string[] = [];
     let updateInterval: NodeJS.Timeout;
+    const frames = framesRef.current;
 
-    const handleTFMessage = (message: TFMessage) => {
-      if (message.transforms && Array.isArray(message.transforms)) {
-        message.transforms.forEach(updateTransform);
+    const handleTFMessage = (message: unknown) => {
+      const msg = message as TFMessage;
+      if (msg.transforms && Array.isArray(msg.transforms)) {
+        msg.transforms.forEach(updateTransform);
       }
     };
 
-    // Subscribe to all tf topics
     tfTopics.forEach((topic) => {
-      // Optionally, throttle only for dynamic tf topics
       const throttle = topic.includes('static') ? undefined : { throttle_rate: 100 };
-      const id = rosbridgeClient.subscribe(topic, handleTFMessage, 'tf2_msgs/TFMessage', throttle);
-      if (id) subscriptionIds.push(id);
+      rosbridgeClient.subscribe(topic, handleTFMessage, 'tf2_msgs/TFMessage', throttle);
     });
 
-    // Update state periodically
     updateInterval = setInterval(() => {
       updateState();
-    }, 100); // Update UI at 10Hz
+    }, 100);
 
     setIsLoading(false);
 
     return () => {
-      // Unsubscribe all tf topics
       tfTopics.forEach((topic) => {
         rosbridgeClient.unsubscribe(topic);
       });
       if (updateInterval) {
         clearInterval(updateInterval);
       }
-      // Clear frames when unmounting
-      framesRef.current.clear();
+      frames.clear();
     };
   }, [enabled, rosbridgeClient, updateTransform, updateState, tfTopics]);
 

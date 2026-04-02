@@ -56,10 +56,3 @@ export const widgetStyles = {
     unknown: 'text-gray-400',
   },
 } as const;
-
-/**
- * Helper function to combine widget classes
- */
-export const combineWidgetClasses = (...classes: (string | boolean | undefined)[]) => {
-  return classes.filter(Boolean).join(' ');
-};

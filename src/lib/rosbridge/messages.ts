@@ -16,16 +16,16 @@ export const createAdvertiseMessage = (topic: string, type: string) => ({
   type,
 });
 
-export const createPublishMessage = (topic: string, msg: any) => ({
+export const createPublishMessage = (topic: string, msg: unknown) => ({
   op: 'publish',
   topic,
   msg,
 });
 
-export const createServiceCallMessage = (service: string, args?: any) => ({
+export const createServiceCallMessage = (service: string, args?: unknown) => ({
   op: 'call_service',
   service,
-  ...(args && { args }),
+  ...(args !== undefined ? { args } : {}),
 });
 
 export const createGetTopicsMessage = () => ({
