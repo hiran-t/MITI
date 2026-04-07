@@ -36,18 +36,44 @@ build_standalone() {
     echo "   PORT=3000 HOSTNAME=0.0.0.0 bun server.js"
 }
 
+# Method 3: Electron desktop app
+build_electron() {
+    echo "🖥️  Building Electron desktop app..."
+
+    echo "Choose platform:"
+    echo "  a) Current platform only"
+    echo "  b) Windows (.exe)"
+    echo "  c) Linux (.deb + .AppImage)"
+    echo "  d) macOS (.dmg)"
+    echo "  e) All platforms"
+    read -p "Enter choice [a-e]: " platform
+
+    case $platform in
+        a) npm run electron:build ;;
+        b) npm run electron:build:win ;;
+        c) npm run electron:build:linux ;;
+        d) npm run electron:build:mac ;;
+        e) npm run electron:build:all ;;
+        *) echo "Invalid choice"; exit 1 ;;
+    esac
+
+    echo "✅ Done! Installers are in the 'dist-electron/' folder"
+}
+
 # Choose method
 echo "Choose deployment method:"
-echo "1) Docker (recommended)"
-echo "2) Standalone build"
-read -p "Enter choice [1-2]: " choice
+echo "1) Docker (recommended for server)"
+echo "2) Standalone build (Node.js server)"
+echo "3) Electron desktop app (installable software)"
+read -p "Enter choice [1-3]: " choice
 
 case $choice in
     1) build_docker ;;
     2) build_standalone ;;
+    3) build_electron ;;
     *) echo "Invalid choice"; exit 1 ;;
 esac
 
 echo ""
 echo "📊 File sizes:"
-ls -lh miti-* 2>/dev/null || echo "No deployment files found"
+ls -lh miti-* dist-electron/*.{exe,deb,dmg,AppImage} 2>/dev/null || echo "No deployment files found"

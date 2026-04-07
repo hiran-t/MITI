@@ -10,15 +10,17 @@ services:
     ports:
       - "3000:3000"
     environment:
+      # Point this at your ROS2 machine running rosbridge_server
+      # If using the rosbridge service below, keep ws://rosbridge:9090
+      # If using an external robot, change to ws://<robot-ip>:9090
       - NEXT_PUBLIC_ROSBRIDGE_URL=ws://rosbridge:9090
-    depends_on:
-      - rosbridge
     networks:
       - miti-network
     restart: unless-stopped
 
-  # Rosbridge Server (optional - for development)
-  # Uncomment if you want to run rosbridge in Docker
+  # Rosbridge Server (optional)
+  # Uncomment to run rosbridge inside Docker alongside MITI
+  # Note: requires a running ROS2 environment on the host
   # rosbridge:
   #   image: ros:humble
   #   container_name: miti-rosbridge

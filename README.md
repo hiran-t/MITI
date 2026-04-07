@@ -33,6 +33,11 @@
 - [Testing](#-testing)
 - [Troubleshooting](#-troubleshooting)
 - [Production Build](#-production-build)
+  - [Web Build](#web-build-nextjs-server)
+  - [Desktop App Build (Electron)](#️-desktop-app-build-electron)
+    - [macOS](#macos-produces-dmg)
+    - [Windows](#windows-produces-exe-installer)
+    - [Ubuntu / Linux](#ubuntu--linux-produces-deb-and-appimage)
 - [Contributing](#-contributing)
 - [License](#-license)
 - [Acknowledgments](#-acknowledgments)
@@ -41,12 +46,14 @@
 ## 🚀 Features
 
 ### Core Features
+
 - **Real-time ROS2 Connection**: Connect to ROS2 via rosbridge_server WebSocket
 - **Auto-reconnection**: Automatic reconnection on connection loss
 - **Topic Management**: Browse, search, and subscribe to ROS2 topics
 - **Live Data Monitoring**: View real-time topic data in JSON format
 
 ### Visualization
+
 - **URDF 3D Viewer**: Visualize robot models from `/robot_description` topic
 - **Live Robot Motion**: Robot model automatically updates with `/joint_states` topic
 - **Point Cloud Viewer**: Real-time point cloud visualization from depth cameras
@@ -54,6 +61,7 @@
 - **Color Mapping**: Depth-based or RGB coloring for point clouds
 
 ### UI/UX
+
 - **Modern Dark Theme**: Beautiful gradient-based dark interface
 - **Responsive Design**: Works on desktop, tablet, and mobile
 - **Real-time Updates**: Live connection status and message counts
@@ -69,6 +77,7 @@
 <summary>📸 Click to view screenshots</summary>
 
 <!-- Add your screenshots here -->
+
 ```
 Screenshots coming soon!
 - Dashboard with multiple widgets
@@ -84,10 +93,11 @@ Screenshots coming soon!
 Before running MITI, ensure you have the following installed:
 
 ### ROS2
+
 - **ROS2 Distribution**: Humble Hawksbill or later
 - **rosbridge_suite**: For WebSocket communication
 
-```bash
+````bash
 # Install ROS2 (Ubuntu)
 ### Option 1: Clone from GitHub
 
@@ -95,7 +105,7 @@ Before running MITI, ensure you have the following installed:
 # Clone the repository
 git clone https://github.com/yourusername/miti.git
 cd miti
-```
+````
 
 ### Option 2: Download Release
 
@@ -104,20 +114,23 @@ Download the latest release from the [Releases page](https://github.com/youruser
 ### Install Dependencies
 
 Using Bun (recommended):
+
 ```bash
 bun install
 ```
 
 Or using npm:
+
 ```bash
 npm install
 ```
 
 > **Note**: This project uses **Bun** as the primary package manager and runtime. While npm/yarn will work, Bun provides significantly better performance and is recommended for development.
-> 
+>
 > Install Bun: `curl -fsSL https://bun.sh/install | bash`
 
 ### Configure Connection (O
+
 ```bash
 git clone https://github.com/thongpanchang/miti.git
 cd miti
@@ -126,11 +139,13 @@ cd miti
 2. **Install dependencies**
 
 Using Bun (recommended):
+
 ```bash
 bun install
 ```
 
 Or using npm:
+
 ```bash
 npm install
 ```
@@ -144,11 +159,13 @@ You can configure the rosbridge server URL in two ways:
 **Option 1: Using environment variables** (for default connection)
 
 Copy the example environment file and edit it:
+
 ```bash
 cp .env.example .env.local
 ```
 
 Edit `.env.local` and set your rosbridge URL:
+
 ```env
 NEXT_PUBLIC_ROSBRIDGE_URL=ws://192.168.10.27:9090
 ```
@@ -158,6 +175,7 @@ NEXT_PUBLIC_ROSBRIDGE_URL=ws://192.168.10.27:9090
 Once the app is running, click the settings icon (⚙️) next to the connection status to change the rosbridge URL without editing files. The URL is saved in your browser's localStorage and persists across sessions.
 
 Examples:
+
 - Local development: `ws://localhost:9090`
 - Remote rosbidge: `ws://192.168.10.27:9090`
 - Docker container: `ws://ros-bridge:9090` (network=host)
@@ -183,16 +201,19 @@ The rosbridge server will start on `ws://localhost:9090` by default.
 In a new terminal, start the Next.js development server:
 
 Using Bun (recommended):
+
 ```bash
 bun dev
 ```
 
 Or using npm:
+
 ```bash
 npm run dev
 ```
 
 > **Building for production:**
+>
 > ```bash
 > bun run build  # Build optimized production bundle
 > bun start      # Start production server
@@ -203,6 +224,7 @@ npm run dev
 Navigate to [http://localhost:3000](http://localhost:3000)
 
 You should see:
+
 - ✅ Connection status showing "Connected"
 - 📋 List of available ROS2 topics
 - 🎨 3D visualization panels ready
@@ -309,14 +331,18 @@ miti/
 ### Key Architecture Decisions
 
 #### 1. Feature-Based Component Organization
+
 Components are organized by feature rather than by type, making it easier to:
+
 - Locate related components
 - Understand feature boundaries
 - Scale the application
 - Maintain and refactor code
 
 #### 2. Centralized Style Management
+
 All component styles are extracted into TypeScript constant modules in `src/styles/`:
+
 - **Consistency**: Single source of truth for design patterns
 - **Maintainability**: Easy to update styles across components
 - **Type Safety**: Full TypeScript support with intellisense
@@ -324,6 +350,7 @@ All component styles are extracted into TypeScript constant modules in `src/styl
 - **Organization**: Feature-specific styles in separate modules
 
 Example usage:
+
 ```typescript
 import { visualizationStyles, cn } from '@/styles';
 
@@ -338,19 +365,22 @@ import { visualizationStyles, cn } from '@/styles';
 ```
 
 #### 3. Path Aliases
+
 The project uses TypeScript path aliases for clean imports:
+
 - `@/components/*` → `src/components/*`
 - `@/hooks/*` → `src/hooks/*`
 - `@/lib/*` → `src/lib/*`
 - `@/styles/*` → `src/styles/*`
 - `@/types/*` → `src/types/*`
-- `@/utils/*` → `src/utils/*  └── utils/                  # Utility functions
-│       ├── pointcloud-parser.ts
-│       └── urdf-loader-helper.ts
-├── types/                       # TypeScript definitions
-│   └── ros-messages.d.ts       # ROS message types
-└── public/                      # Static assets
-```
+- `@/utils/*` → `src/utils/\* └── utils/ # Utility functions
+  │ ├── pointcloud-parser.ts
+  │ └── urdf-loader-helper.ts
+  ├── types/ # TypeScript definitions
+  │ └── ros-messages.d.ts # ROS message types
+  └── public/ # Static assets
+
+````
 
 ### Technology Stack
 
@@ -387,9 +417,10 @@ Once a URDF model is loaded, MITI automatically subscribes to the `/joint_states
 ```bash
 # The robot will automatically move as joint states are published
 ros2 topic pub /joint_states sensor_msgs/msg/JointState "{name: ['joint1', 'joint2'], position: [0.5, 1.0]}"
-```
+````
 
 **Features:**
+
 - Real-time joint position updates
 - Automatic joint name mapping
 - Supports all joint types (revolute, prismatic, continuous, etc.)
@@ -409,19 +440,21 @@ ros2 topic pub /robot_description std_msgs/msg/String "data: '$(cat robot.urdf)'
 ```
 
 **In MITI:**
+
 1. Ensure "ROS Topic" mode is selected
 2. Enter your topic name (dehooks/useTopic';
 
 function MyComponent({ client }) {
-  const { data, lastUpdate } = useTopic(
-    client,
-    '/my_topic',
-    'std_msgs/String'
-  );
+const { data, lastUpdate } = useTopic(
+client,
+'/my_topic',
+'std_msgs/String'
+);
 
-  return <div>{data?.data}</div>;
+return <div>{data?.data}</div>;
 }
-```
+
+````
 
 ### Creating Custom Widgets
 
@@ -432,7 +465,7 @@ To add a new widget to the dashboard:
 Edit `.env.local`:
 ```env
 NEXT_PUBLIC_ROSBRIDGE_URL=ws://your-robot-ip:9090
-```
+````
 
 **Option 2: UI Settings** (recommended)
 
@@ -444,18 +477,20 @@ The project uses a centralized style system for consistency and maintainability.
 
 **Modifying Existing Styles:**
 Edit the appropriate style module in `src/styles/`:
+
 ```typescript
 // src/styles/visualization.styles.ts
 export const visualizationStyles = {
   camera: {
     container: 'relative w-full h-full bg-gray-950 rounded-lg', // Modify here
     // ...
-  }
+  },
 };
 ```
 
 **Adding New Style Patterns:**
 Add to `src/styles/common.styles.ts` for reusable patterns:
+
 ```typescript
 export const commonStyles = {
   button: {
@@ -466,6 +501,7 @@ export const commonStyles = {
 
 **Theme Configuration:**
 Edit global theme settings in:
+
 - `src/app/globals.css` - Global CSS variables and base styles
 - `tailwind.config.ts` - Tailwind theme extensions and color palette
 
@@ -478,6 +514,7 @@ Edit global theme settings in:
 5. Add to `WidgetContainer.tsx` for dashboard integration
 
 Example structure:
+
 ```
 src/components/features/visualization/
 └── my-viz/
@@ -485,13 +522,13 @@ src/components/features/visualization/
     ├── MyVizRenderer.tsx    # Rendering logic
     └── MyVizControls.tsx    # User controls
 ```
+
     </div>
-  )
-3. Enter URDF URL: `http://192.168.10.27:8000/robot.urdf`
-4. Enter Mesh Base URL: `http://192.168.10.27:8000`
-5. Click "Load URDF"
+
+) 3. Enter URDF URL: `http://192.168.10.27:8000/robot.urdf` 4. Enter Mesh Base URL: `http://192.168.10.27:8000` 5. Click "Load URDF"
 
 **Example: Using Python HTTP Server**
+
 ```bash
 # In your robot description package
 cd /path/to/robot_description
@@ -499,6 +536,7 @@ python3 -m http.server 8000 --bind 0.0.0.0
 ```
 
 **Example: Using Python HTTP Server with CORS**
+
 ```python
 # server.py
 from http.server import HTTPServer, SimpleHTTPRequestHandler
@@ -509,7 +547,7 @@ class CORSRequestHandler(SimpleHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', '*')
         super().end_headers()
-    
+
     def do_OPTIONS(self):
         self.send_response(200)
         self.end_headers()
@@ -544,6 +582,7 @@ You can configure package mappings for robots that use multiple packages:
 ```
 
 Example resolution with package mapping:
+
 ```
 Input:  package://gripper_description/models/gripper.dae
 Mapping: { "gripper_description": "http://192.168.10.27:8001" }
@@ -555,6 +594,7 @@ Output: http://192.168.10.27:8001/models/gripper.dae
 If loading URDF from a different origin, you must configure CORS on your server. The Python example above shows how to enable CORS.
 
 **For NGINX:**
+
 ```nginx
 location / {
     add_header 'Access-Control-Allow-Origin' '*';
@@ -564,6 +604,7 @@ location / {
 ```
 
 **For Apache:**
+
 ```apache
 Header set Access-Control-Allow-Origin "*"
 Header set Access-Control-Allow-Methods "GET, OPTIONS"
@@ -601,6 +642,7 @@ npm start
 ```
 
 The production build will:
+
 - Optimize and minify all code
 - Generate static assets
 - Enable production-grade performance
@@ -608,18 +650,21 @@ The production build will:
 - Optimize images and assets
 
 **Build Output:**
+
 - Next.js generates optimized bundles in `.next/`
 - Static assets are served from `.next/static/`
 - Server-side rendering ready
 
 **Environment Variables for Production:**
 Create `.env.production`:
+
 ```env
 NEXT_PUBLIC_ROSBRIDGE_URL=ws://your-production-robot:9090
 ```
 
 **Docker Deployment** (optional):
-```dockerfile
+
+````dockerfile
 FROM oven/bun:1 as base
 WORKDIR /app
 
@@ -672,7 +717,7 @@ ros2 topic pub /robot_description std_msgs/msg/String "data: '$(cat robot.urdf)'
 
 # Publish joint states for robot motion
 ros2 topic pub /joint_states sensor_msgs/msg/JointState "{header: {stamp: {sec: 0, nanosec: 0}, frame_id: ''}, name: ['joint1', 'joint2'], position: [0.5, 1.0], velocity: [], effort: []}"
-```
+````
 
 ## 🐛 Troubleshooting
 
@@ -681,6 +726,7 @@ ros2 topic pub /joint_states sensor_msgs/msg/JointState "{header: {stamp: {sec: 
 **Problem**: Cannot connect to rosbridge_server
 
 **Solutions**:
+
 - Ensure rosbridge_server is running: `ros2 node list | grep rosbridge`
 - Check the WebSocket URL in `.env.local`
 - Verify firewall settings allow WebSocket connections
@@ -691,6 +737,7 @@ ros2 topic pub /joint_states sensor_msgs/msg/JointState "{header: {stamp: {sec: 
 **Problem**: Topics list is empty
 
 **Solutions**:
+
 - Verify ROS2 nodes are running: `ros2 node list`
 - Check if topics exist: `ros2 topic list`
 - Try refreshing the topics list (click refresh button)
@@ -701,6 +748,7 @@ ros2 topic pub /joint_states sensor_msgs/msg/JointState "{header: {stamp: {sec: 
 **Problem**: Point cloud viewer shows "No data"
 
 **Solutions**:
+
 - Verify topic name matches your camera: `/camera/depth/points`
 - Check message type is `sensor_msgs/PointCloud2`
 - Ensure point cloud data is being published: `ros2 topic hz /camera/depth/points`
@@ -711,12 +759,13 @@ ros2 topic pub /joint_states sensor_msgs/msg/JointState "{header: {stamp: {sec: 
 **Problem**: Cannot load URDF from URL
 
 **Solutions**:
+
 1. **CORS Error**: Your server needs to allow cross-origin requests
    - Use the Python CORS server example provided above
    - Configure your web server (NGINX, Apache) to send CORS headers
    - For development, you can use a CORS proxy
 
-2. **Network Error**: 
+2. **Network Error**:
    - Verify the URL is correct and accessible
    - Test URL in browser: `curl http://192.168.10.27:8000/robot.urdf`
    - Check if server is running and reachable
@@ -734,6 +783,7 @@ ros2 topic pub /joint_states sensor_msgs/msg/JointState "{header: {stamp: {sec: 
    - Ensure file is complete (not truncated)
 
 **Testing URDF URL Loading:**
+
 ```bash
 # 1. Create test directory
 mkdir -p /tmp/urdf_test/meshes
@@ -776,6 +826,7 @@ HTTPServer(('0.0.0.0', 8000), CORSHandler).serve_forever()
 **Problem**: Build fails with dependency errors
 
 **Solutions**:
+
 ```bash
 # Clear cache and reinstall
 rm -rf node_modules .next
@@ -789,17 +840,130 @@ npm run dev
 
 ## 🚀 Production Build
 
+### Web Build (Next.js Server)
+
 ```bash
-# Build for production
-bun run build
-# or
+# Build optimized production bundle
 npm run build
 
 # Start production server
-bun start
-# or
 npm start
 ```
+
+---
+
+### 🖥️ Desktop App Build (Electron)
+
+MITI can be packaged as a standalone desktop application for macOS, Windows, and Ubuntu using Electron.
+End users do not need to install Node.js or any server — just the installer.
+
+#### Prerequisites
+
+- **Node.js** 20+ and **npm**
+- **Git**
+- Each platform must be built on its own native machine (see cross-compile notes below)
+
+---
+
+#### macOS (produces `.dmg`)
+
+Run on a **macOS** machine only.
+
+```bash
+# 1. Clone the repository and install dependencies
+git clone https://github.com/yourusername/miti.git
+cd miti
+npm install
+
+# 2. Build — Next.js static export + Electron packaging in one command
+npm run electron:build:mac
+
+# 3. Output installers
+#    dist-electron/MITI-0.1.0.dmg          (Intel x64)
+#    dist-electron/MITI-0.1.0-arm64.dmg    (Apple Silicon)
+```
+
+> End users install by opening the `.dmg` file and dragging **MITI.app** into Applications.
+
+---
+
+#### Windows (produces `.exe` installer)
+
+Run on a **Windows** machine only.
+
+```powershell
+# 1. Clone the repository and install dependencies
+git clone https://github.com/yourusername/miti.git
+cd miti
+npm install
+
+# 2. Build
+npm run electron:build:win
+
+# 3. Output installer
+#    dist-electron\MITI-0.1.0-Setup.exe
+```
+
+> End users install by double-clicking `MITI-0.1.0-Setup.exe`.
+
+---
+
+#### Ubuntu / Linux (produces `.deb` and `.AppImage`)
+
+Run on an **Ubuntu/Linux** machine only.
+
+```bash
+# 1. Clone the repository and install dependencies
+git clone https://github.com/yourusername/miti.git
+cd miti
+npm install
+
+# 2. Build
+npm run electron:build:linux
+
+# 3. Output installers
+#    dist-electron/MITI-0.1.0-amd64.deb
+#    dist-electron/MITI-0.1.0.AppImage
+```
+
+Install on Ubuntu:
+
+```bash
+# Option 1: .deb (recommended — installs system-wide)
+sudo dpkg -i dist-electron/MITI-0.1.0-amd64.deb
+
+# Option 2: .AppImage (portable — no installation required)
+chmod +x dist-electron/MITI-0.1.0.AppImage
+./dist-electron/MITI-0.1.0.AppImage
+```
+
+---
+
+#### What happens during the build
+
+Each `electron:build:*` command runs three steps automatically:
+
+```
+npm run electron:build:mac
+  └─ 1. next build           → generates static HTML/CSS/JS in out/
+  └─ 2. electron-prepare.js  → copies out/ → app-out/
+  └─ 3. electron-builder     → packages app-out/ + electron/ into an installer
+```
+
+> **Do not commit `app-out/`, `out/`, or `dist-electron/` to git.**
+> All of these directories are generated at build time and are already listed in `.gitignore`.
+
+---
+
+#### Cross-Compile Notes
+
+| Build machine | macOS            | Windows                    | Ubuntu           |
+| ------------- | ---------------- | -------------------------- | ---------------- |
+| **macOS**     | ✅ Native        | ⚠️ Requires Wine installed | ❌ Not supported |
+| **Windows**   | ❌ Not supported | ✅ Native                  | ❌ Not supported |
+| **Ubuntu**    | ❌ Not supported | ❌ Not supported           | ✅ Native        |
+
+It is recommended to build each platform on its own native machine, or use GitHub Actions CI/CD to automate builds for all three platforms.
 
 ## 📚 Additional Resources
 

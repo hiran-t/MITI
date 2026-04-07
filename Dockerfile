@@ -1,16 +1,15 @@
 # Stage 1: Dependencies
-FROM oven/bun:1-alpine AS deps
+FROM node:20-alpine AS deps
 WORKDIR /app
 
 # Copy package files
-COPY package.json bun.lock ./
-COPY bunfig.toml ./
+COPY package.json package-lock.json ./
 
-# Install dependencies
-RUN bun install --frozen-lockfile
+# Install dependencies (ci = clean install, respects package-lock.json)
+RUN npm ci
 
 # Stage 2: Builder
-FROM oven/bun:1-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Copy dependencies
@@ -18,23 +17,23 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Set environment variables for build
-ENV NEXT_TELEMETRY_DISABLED 1
-ENV NODE_ENV production
-ENV STANDALONE_BUILD true
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
+ENV STANDALONE_BUILD=true
 
-# Build the application
-RUN bun run build
+# Build the application (standalone output via STANDALONE_BUILD=true)
+RUN npm run build
 
 # Stage 3: Runner
-FROM oven/bun:1-alpine AS runner
+FROM node:20-alpine AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
 # Create a non-root user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
 # Copy necessary files from builder
 COPY --from=builder /app/public ./public
@@ -48,7 +47,7 @@ USER nextjs
 
 EXPOSE 3000
 
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
-CMD ["bun", "server.js"]
+CMD ["node", "server.js"]
