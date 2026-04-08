@@ -22,11 +22,11 @@
     "prepare": "husky install || true",
     "electron:dev": "concurrently \"next dev\" \"wait-on http://localhost:3000 && NODE_ENV=development electron .\"",
     "electron:prebuild": "cross-env ELECTRON_BUILD=true next build && node scripts/electron-prepare.js",
-    "electron:build": "npm run electron:prebuild && electron-builder",
-    "electron:build:win": "npm run electron:prebuild && electron-builder --win",
-    "electron:build:linux": "npm run electron:prebuild && electron-builder --linux",
-    "electron:build:mac": "npm run electron:prebuild && electron-builder --mac",
-    "electron:build:all": "npm run electron:prebuild && electron-builder --win --linux --mac"
+    "electron:build": "npm run electron:prebuild && electron-builder --publish never",
+    "electron:build:win": "npm run electron:prebuild && electron-builder --win --publish never",
+    "electron:build:linux": "npm run electron:prebuild && electron-builder --linux --publish never",
+    "electron:build:mac": "npm run electron:prebuild && electron-builder --mac --publish never",
+    "electron:build:all": "npm run electron:prebuild && electron-builder --win --linux --mac --publish never"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",
