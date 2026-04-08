@@ -1,0 +1,133 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────────────────
+  # Build Electron app on each platform
+  # ──────────────────────────────────────────────────────────────────────────────
+  build:
+    name: Build – ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macOS
+            os: macos-latest
+            script: electron:build:mac
+            artifact-name: electron-macos
+            artifact-path: |
+              dist-electron/*.dmg
+
+          - platform: Windows
+            os: windows-latest
+            script: electron:build:win
+            artifact-name: electron-windows
+            artifact-path: dist-electron/*Setup*.exe
+
+          - platform: Linux
+            os: ubuntu-latest
+            script: electron:build:linux
+            artifact-name: electron-linux
+            artifact-path: |
+              dist-electron/*.deb
+              dist-electron/*.AppImage
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Electron app
+        run: npm run ${{ matrix.script }}
+        env:
+          NEXT_PUBLIC_ROSBRIDGE_URL: ws://localhost:9090
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: ${{ matrix.artifact-path }}
+          if-no-files-found: error
+
+  # ──────────────────────────────────────────────────────────────────────────────
+  # Create GitHub Release (only when a version tag is pushed)
+  # ──────────────────────────────────────────────────────────────────────────────
+  release:
+    name: Create GitHub Release
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: List release assets
+        run: find release-assets -type f | sort
+
+      - name: Generate release notes
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          cat > RELEASE_NOTES.md << NOTES
+          ## MITI ${TAG}
+
+          ### Download Options
+
+          #### Desktop App (Electron)
+
+          | Platform | File | Install |
+          |----------|------|---------|
+          | **macOS** (Intel) | \`MITI-*.dmg\` | Double-click to install |
+          | **macOS** (Apple Silicon) | \`MITI-*-arm64.dmg\` | Double-click to install |
+          | **Windows** | \`MITI-*-Setup.exe\` | Run the installer |
+          | **Ubuntu / Linux** | \`MITI-*.deb\` | \`sudo dpkg -i MITI-*.deb\` |
+          | **Linux (portable)** | \`MITI-*.AppImage\` | \`chmod +x\` then run |
+
+          ### What's Changed
+
+          NOTES
+
+          # Append commit log since last tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            git log "${PREV_TAG}..HEAD" --pretty=format:"* %s (%h)" >> RELEASE_NOTES.md
+          else
+            git log --pretty=format:"* %s (%h)" -20 >> RELEASE_NOTES.md
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: false
+          files: release-assets/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
