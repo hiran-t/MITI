@@ -2,6 +2,10 @@
   "name": "miti",
   "version": "0.1.0",
   "private": true,
+  "author": {
+    "name": "MITI Contributors",
+    "email": "thongpanchang.h@gmail.com"
+  },
   "main": "electron/main.js",
   "scripts": {
     "dev": "next dev",
@@ -97,7 +101,9 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "MITI"
+      "shortcutName": "MITI",
+      "uninstallDisplayName": "MITI - ROS2 Dashboard",
+      "deleteAppDataOnUninstall": true
     },
     "linux": {
       "target": [
@@ -115,7 +121,13 @@
         }
       ],
       "category": "Utility",
-      "icon": "public/icon.png"
+      "icon": "public/icon.png",
+      "extraFiles": [
+        {
+          "from": "build/uninstall.sh",
+          "to": "uninstall.sh"
+        }
+      ]
     },
     "mac": {
       "target": [

@@ -3,10 +3,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import { ROSBridge } from '@/lib/rosbridge/client';
 import { useTopic } from '@/hooks/useTopic';
-import { Loader2, Camera } from 'lucide-react';
+import { Loader2, Camera, Settings, X } from 'lucide-react';
 import { parseImageMessage } from '@/lib/parsers/image-parser';
 import type { sensor_msgs } from '@/types/ros-messages';
 import { visualizationStyles } from '@/styles';
+import { commonStyles } from '@/styles';
 import { CAMERA_TOPICS as CAMERA_TOPIC_VALUES } from '@/constants/ros-topics';
 
 interface CameraViewerProps {
@@ -14,18 +15,98 @@ interface CameraViewerProps {
   topic?: string;
 }
 
-const CAMERA_TOPICS = [
+const CAMERA_PRESETS = [
   { value: CAMERA_TOPIC_VALUES.COLOR, label: 'Color Image' },
   { value: CAMERA_TOPIC_VALUES.DETECTION, label: 'Detection Image' },
   { value: CAMERA_TOPIC_VALUES.DEPTH, label: 'Depth Image' },
   { value: CAMERA_TOPIC_VALUES.IR, label: 'IR Image' },
 ];
 
+// ─── Settings Panel ─────────────────────────────────────────────────────────
+
+function CameraSettingsPanel({
+  topic,
+  onTopicChange,
+  onClose,
+}: {
+  topic: string;
+  onTopicChange: (t: string) => void;
+  onClose: () => void;
+}) {
+  const [draft, setDraft] = useState(topic);
+
+  const handleApply = () => {
+    onTopicChange(draft);
+    onClose();
+  };
+
+  return (
+    <div className="absolute inset-0 z-20 flex flex-col overflow-hidden rounded-lg bg-gray-950/95 backdrop-blur-sm">
+      {/* Header */}
+      <div className="flex shrink-0 items-center gap-2 border-b border-gray-800 px-4 py-3">
+        <Settings className="h-3.5 w-3.5 text-gray-500" />
+        <span className="flex-1 text-sm font-semibold text-gray-200">Camera Settings</span>
+        <button
+          onClick={onClose}
+          className="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-800/50 hover:text-gray-300"
+          aria-label="Close settings"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      {/* Body */}
+      <div className="flex-1 space-y-4 overflow-y-auto p-4">
+        <div>
+          <label className={commonStyles.input.label}>Image Topic</label>
+          <input
+            type="text"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            className={commonStyles.input.base}
+            placeholder="/camera/color/image_raw"
+          />
+          <p className={commonStyles.input.hint}>ROS topic publishing sensor_msgs/Image</p>
+        </div>
+
+        <div>
+          <label className={commonStyles.input.label}>Presets</label>
+          <div className="flex flex-wrap gap-1.5">
+            {CAMERA_PRESETS.map((preset) => (
+              <button
+                key={preset.value}
+                onClick={() => setDraft(preset.value)}
+                className={`rounded border px-2 py-1 text-xs transition-colors ${
+                  draft === preset.value
+                    ? 'border-cyan-500/50 bg-cyan-500/15 text-cyan-300'
+                    : 'border-gray-700 bg-gray-800/50 text-gray-400 hover:border-gray-600 hover:text-gray-300'
+                }`}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="shrink-0 border-t border-gray-800 px-4 py-3">
+        <button onClick={handleApply} className={`w-full ${commonStyles.button.primary} text-sm`}>
+          Apply
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Component ─────────────────────────────────────────────────────────
+
 export default function CameraViewer({ client, topic: initialTopic }: CameraViewerProps) {
-  const [selectedTopic, setSelectedTopic] = useState(initialTopic || CAMERA_TOPICS[0].value);
+  const [selectedTopic, setSelectedTopic] = useState(initialTopic || CAMERA_PRESETS[0].value);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
 
   const { data: imageData, lastUpdate } = useTopic<sensor_msgs.Image>(
     client,
@@ -35,15 +116,6 @@ export default function CameraViewer({ client, topic: initialTopic }: CameraView
 
   useEffect(() => {
     if (!imageData) return;
-
-    // console.log('Received image data:', {
-    //   width: imageData.width,
-    //   height: imageData.height,
-    //   encoding: imageData.encoding,
-    //   dataLength: imageData.data?.length,
-    //   dataType: typeof imageData.data,
-    //   isArray: Array.isArray(imageData.data)
-    // });
 
     setProcessing(true);
     setError(null);
@@ -59,9 +131,7 @@ export default function CameraViewer({ client, topic: initialTopic }: CameraView
         }
 
         setImageUrl(url);
-        // console.log('Image URL created successfully');
       } catch (error) {
-        // console.error('Error parsing image:', error);
         setError(error instanceof Error ? error.message : 'Failed to parse image');
       } finally {
         setProcessing(false);
@@ -77,38 +147,43 @@ export default function CameraViewer({ client, topic: initialTopic }: CameraView
   }, [imageData]);
 
   const handleTopicChange = useCallback(
-    (event: React.ChangeEvent<HTMLSelectElement>) => {
+    (newTopic: string) => {
       // Clean up current image URL before switching topics
       if (imageUrl) {
         URL.revokeObjectURL(imageUrl);
         setImageUrl(null);
       }
-      setSelectedTopic(event.target.value);
+      setError(null);
+      setSelectedTopic(newTopic);
     },
     [imageUrl]
   );
 
+  // Find label for current topic if it matches a preset
+  const currentPreset = CAMERA_PRESETS.find((p) => p.value === selectedTopic);
+  const topicDisplayName = currentPreset ? currentPreset.label : selectedTopic.split('/').pop();
+
   return (
     <div className={visualizationStyles.viewer.container}>
-      {/* Header with title and topic selector */}
+      {/* Header with title and settings button */}
       <div className={visualizationStyles.camera.headerBar}>
         <div className={visualizationStyles.camera.title}>
           <Camera className={visualizationStyles.camera.titleIcon} />
           Camera Viewer
         </div>
 
-        <select
-          value={selectedTopic}
-          onChange={handleTopicChange}
-          disabled={!client}
-          className={visualizationStyles.camera.select}
-        >
-          {CAMERA_TOPICS.map((topic) => (
-            <option key={topic.value} value={topic.value}>
-              {topic.label}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center gap-2">
+          <span className="truncate text-xs text-gray-400" title={selectedTopic}>
+            {topicDisplayName}
+          </span>
+          <button
+            onClick={() => setShowSettings(true)}
+            className="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-800/50 hover:text-gray-300"
+            aria-label="Camera settings"
+          >
+            <Settings className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
 
       {/* Status bar */}
@@ -164,6 +239,15 @@ export default function CameraViewer({ client, topic: initialTopic }: CameraView
         <div className={visualizationStyles.camera.loadingOverlay}>
           <Loader2 className={visualizationStyles.camera.loadingSpinner} />
         </div>
+      )}
+
+      {/* Settings overlay */}
+      {showSettings && (
+        <CameraSettingsPanel
+          topic={selectedTopic}
+          onTopicChange={handleTopicChange}
+          onClose={() => setShowSettings(false)}
+        />
       )}
     </div>
   );
