@@ -3,8 +3,6 @@ name: Build & Release
 on:
   push:
     branches: [main]
-    tags:
-      - 'v*.*.*'
   workflow_dispatch:
 
 permissions:
@@ -12,10 +10,48 @@ permissions:
 
 jobs:
   # ──────────────────────────────────────────────────────────────────────────────
+  # Check if version changed → decide whether to release
+  # ──────────────────────────────────────────────────────────────────────────────
+  check-version:
+    name: Check Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.pkg.outputs.version }}
+      tag: ${{ steps.pkg.outputs.tag }}
+      should_release: ${{ steps.check.outputs.should_release }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read version from package.json
+        id: pkg
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Version: ${VERSION}"
+
+      - name: Check if tag already exists
+        id: check
+        run: |
+          TAG="v${{ steps.pkg.outputs.version }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists — skipping release"
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Tag $TAG is new — will create release"
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ──────────────────────────────────────────────────────────────────────────────
   # Build Electron app on each platform
   # ──────────────────────────────────────────────────────────────────────────────
   build:
     name: Build – ${{ matrix.platform }}
+    needs: [check-version]
     strategy:
       fail-fast: false
       matrix:
@@ -50,7 +86,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
@@ -69,19 +105,26 @@ jobs:
           if-no-files-found: error
 
   # ──────────────────────────────────────────────────────────────────────────────
-  # Create GitHub Release (only when a version tag is pushed)
+  # Auto-tag + Create GitHub Release (only when version in package.json changes)
   # ──────────────────────────────────────────────────────────────────────────────
   release:
     name: Create GitHub Release
-    needs: [build]
+    needs: [check-version, build]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: needs.check-version.outputs.should_release == 'true'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Create git tag
+        run: |
+          git tag ${{ needs.check-version.outputs.tag }}
+          git push origin ${{ needs.check-version.outputs.tag }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
@@ -94,30 +137,33 @@ jobs:
 
       - name: Generate release notes
         run: |
-          TAG="${GITHUB_REF_NAME}"
-          cat > RELEASE_NOTES.md << NOTES
-          ## MITI ${TAG}
+          TAG="${{ needs.check-version.outputs.tag }}"
+          VERSION="${{ needs.check-version.outputs.version }}"
+
+          cat > RELEASE_NOTES.md << 'NOTES'
+          ## MITI $TAG
 
           ### Download Options
 
-          #### Desktop App (Electron)
-
           | Platform | File | Install |
           |----------|------|---------|
-          | **macOS** (Intel) | \`MITI-*.dmg\` | Double-click to install |
-          | **macOS** (Apple Silicon) | \`MITI-*-arm64.dmg\` | Double-click to install |
-          | **Windows** | \`MITI-*-Setup.exe\` | Run the installer |
-          | **Ubuntu / Linux** | \`MITI-*.deb\` | \`sudo dpkg -i MITI-*.deb\` |
-          | **Linux (portable)** | \`MITI-*.AppImage\` | \`chmod +x\` then run |
+          | **macOS** (Intel) | `MITI-*.dmg` | Double-click to install |
+          | **macOS** (Apple Silicon) | `MITI-*-arm64.dmg` | Double-click to install |
+          | **Windows** | `MITI-*-Setup.exe` | Run the installer |
+          | **Ubuntu / Linux** | `MITI-*.deb` | `sudo dpkg -i MITI-*.deb` |
+          | **Linux (portable)** | `MITI-*.AppImage` | `chmod +x` then run |
 
           ### What's Changed
 
           NOTES
 
+          # Replace $TAG placeholder
+          sed -i "s/\$TAG/${TAG}/g" RELEASE_NOTES.md
+
           # Append commit log since last tag
-          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          PREV_TAG=$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || echo "")
           if [ -n "$PREV_TAG" ]; then
-            git log "${PREV_TAG}..HEAD" --pretty=format:"* %s (%h)" >> RELEASE_NOTES.md
+            git log "${PREV_TAG}..${TAG}" --pretty=format:"* %s (%h)" >> RELEASE_NOTES.md
           else
             git log --pretty=format:"* %s (%h)" -20 >> RELEASE_NOTES.md
           fi
@@ -125,6 +171,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ needs.check-version.outputs.tag }}
+          name: MITI ${{ needs.check-version.outputs.tag }}
           body_path: RELEASE_NOTES.md
           draft: false
           prerelease: false
