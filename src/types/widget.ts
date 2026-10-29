@@ -2,6 +2,7 @@
  * Widget system types for flexible UI layout with drag-and-drop support
  */
 
+import type { URDFConfig } from './urdf-config';
 import { CAMERA_TOPICS } from '@/constants/ros-topics';
 
 // ─── Base ────────────────────────────────────────────────────────────────────
@@ -54,11 +55,26 @@ export interface ButtonSwitchWidgetProps {
   offArgs?: string;
 }
 
+export interface URDFWidgetProps extends URDFConfig {
+  pointCloudTopics?: string[];
+  jointStatesTopic?: string;
+  tfTopics?: string[];
+  staticTfTopics?: string[];
+  showTF?: boolean;
+  fixedFrame?: string;
+  robotFrame?: string;
+  layers?: import('./scene').SceneLayerConfig[];
+  syncTransforms?: boolean;
+}
+
 // ─── Discriminated union variants ────────────────────────────────────────────
 
 export type TopicsWidgetConfig = WidgetBase & { type: 'topics' };
-export type URDFWidgetConfig = WidgetBase & { type: 'urdf-viewer' };
-export type PointCloudWidgetConfig = WidgetBase & { type: 'pointcloud-viewer' };
+export type URDFWidgetConfig = WidgetBase & { type: 'urdf-viewer'; props?: URDFWidgetProps };
+export type PointCloudWidgetConfig = WidgetBase & {
+  type: 'pointcloud-viewer';
+  props?: { topic: string };
+};
 export type CameraWidgetConfig = WidgetBase & { type: 'camera-viewer'; props: CameraWidgetProps };
 export type StateMachineWidgetConfig = WidgetBase & {
   type: 'state-machine';
@@ -101,42 +117,42 @@ export const WIDGET_TYPES: WidgetTypeInfo[] = [
     type: 'topics',
     label: 'Topics',
     icon: '📋',
-    defaultSize: { w: 1, h: 2 },
+    defaultSize: { w: 4, h: 10 },
     minSize: { minW: 1, minH: 2 },
   },
   {
     type: 'urdf-viewer',
-    label: 'URDF Viewer',
+    label: '3D Scene',
     icon: '🤖',
-    defaultSize: { w: 3, h: 3 },
+    defaultSize: { w: 6, h: 16 },
     minSize: { minW: 1, minH: 1 },
   },
   {
     type: 'pointcloud-viewer',
     label: 'Point Cloud',
     icon: '☁️',
-    defaultSize: { w: 2, h: 2 },
+    defaultSize: { w: 4, h: 9 },
     minSize: { minW: 1, minH: 1 },
   },
   {
     type: 'camera-viewer',
     label: 'Camera',
     icon: '📷',
-    defaultSize: { w: 2, h: 2 },
+    defaultSize: { w: 4, h: 9 },
     minSize: { minW: 1, minH: 1 },
   },
   {
     type: 'state-machine',
     label: 'State Machine',
     icon: '🔀',
-    defaultSize: { w: 3, h: 4 },
+    defaultSize: { w: 6, h: 14 },
     minSize: { minW: 2, minH: 3 },
   },
   {
     type: 'button-switch',
     label: 'Button Switch',
     icon: '🔘',
-    defaultSize: { w: 2, h: 2 },
+    defaultSize: { w: 4, h: 9 },
     minSize: { minW: 1, minH: 1 },
   },
 ];
@@ -144,76 +160,36 @@ export const WIDGET_TYPES: WidgetTypeInfo[] = [
 export const DEFAULT_LAYOUT: LayoutConfig = {
   widgets: [
     {
-      i: 'topics-1',
-      type: 'topics',
-      title: 'Topics',
-      x: 0,
-      y: 3,
-      w: 1223,
-      h: 2,
-      minW: 1,
-      minH: 2,
-      locked: true,
-    },
-    {
       i: 'urdf-viewer-1',
       type: 'urdf-viewer',
-      title: '3D SCENE',
+      title: '3D Scene',
       x: 0,
       y: 0,
       w: 6,
-      h: 4,
-      minW: 1,
-      minH: 2,
-      locked: true,
+      h: 18,
+      minW: 3,
+      minH: 6,
     },
-    {
-      i: 'camera-viewer-1',
-      type: 'camera-viewer',
-      title: 'Camera-Color',
-      x: 6,
-      y: 0,
-      w: 3,
-      h: 2,
-      minW: 1,
-      minH: 2,
-      props: { topic: CAMERA_TOPICS.COLOR },
-    },
-    {
-      i: 'camera-viewer-2',
-      type: 'camera-viewer',
-      title: 'Camera-Detection',
-      x: 6,
-      y: 2,
-      w: 3,
-      h: 2,
-      minW: 1,
-      minH: 2,
-      props: { topic: CAMERA_TOPICS.DEPTH },
-    },
-    {
-      i: 'camera-viewer-3',
-      type: 'camera-viewer',
-      title: 'Camera-Depth',
-      x: 9,
-      y: 0,
-      w: 3,
-      h: 2,
-      minW: 1,
-      minH: 2,
-      props: { topic: CAMERA_TOPICS.DETECTION },
-    },
-    {
-      i: 'camera-viewer-4',
-      type: 'camera-viewer',
-      title: 'Camera-Infrared',
-      x: 9,
-      y: 2,
-      w: 3,
-      h: 2,
-      minW: 1,
-      minH: 2,
-      props: { topic: CAMERA_TOPICS.IR },
-    },
+    ...(
+      [
+        ['Color', CAMERA_TOPICS.COLOR],
+        ['Depth', CAMERA_TOPICS.DEPTH],
+        ['Detection', CAMERA_TOPICS.DETECTION],
+        ['Infrared', CAMERA_TOPICS.IR],
+      ] as const
+    ).map(
+      ([name, topic], index): CameraWidgetConfig => ({
+        i: `camera-viewer-${index + 1}`,
+        type: 'camera-viewer',
+        title: `Camera · ${name}`,
+        x: 6 + (index % 2) * 3,
+        y: Math.floor(index / 2) * 9,
+        w: 3,
+        h: 9,
+        minW: 2,
+        minH: 6,
+        props: { topic },
+      })
+    ),
   ],
 };

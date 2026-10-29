@@ -25,8 +25,10 @@ export interface TFTransformStamped {
   header: {
     seq?: number;
     stamp: {
-      secs: number;
-      nsecs: number;
+      secs?: number;
+      nsecs?: number;
+      sec?: number;
+      nanosec?: number;
     };
     frame_id: string;
   };
@@ -47,6 +49,8 @@ export interface TFFrame {
   transform: Transform;
   timestamp: number; // in milliseconds
   children: string[];
+  isStatic?: boolean;
+  history?: { time: number; transform: Transform }[];
 }
 
 /**

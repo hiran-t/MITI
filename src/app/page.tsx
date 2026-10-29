@@ -6,13 +6,13 @@ const Dashboard = dynamic(() => import('@/components/features/dashboard/Dashboar
     <div
       style={{
         minHeight: '100vh',
-        background: '#030712',
+        background: '#111216',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
       }}
     >
-      <div style={{ color: '#4b5563', fontSize: '0.875rem' }}>Loading...</div>
+      <div style={{ color: '#adb3c3', fontSize: '0.875rem' }}>Loading...</div>
     </div>
   ),
 });

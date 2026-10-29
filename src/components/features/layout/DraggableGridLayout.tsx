@@ -5,8 +5,8 @@ import { WidgetConfig } from '@/types/widget';
 import { ROSBridge } from '@/lib/rosbridge/client';
 import WidgetContainer from './WidgetContainer';
 import type { TopicInfo } from '@/lib/rosbridge/types';
-import { X, GripVertical, Lock, Unlock } from 'lucide-react';
-import clsx from 'clsx';
+import { X, GripVertical, Lock, Unlock, Maximize2, Minimize2 } from 'lucide-react';
+import PanelIcon from './PanelIcon';
 import { widgetStyles, cn } from '@/styles';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
@@ -15,9 +15,12 @@ import 'react-resizable/css/styles.css';
 import dynamic from 'next/dynamic';
 import type ReactGridLayout from 'react-grid-layout';
 
-const GridLayoutComponent = dynamic(() => import('react-grid-layout').then((mod) => mod.default), {
-  ssr: false,
-});
+const GridLayoutComponent = dynamic(
+  () => import('react-grid-layout/legacy').then((mod) => mod.default),
+  {
+    ssr: false,
+  }
+);
 
 interface DraggableGridLayoutProps {
   widgets: WidgetConfig[];
@@ -28,20 +31,11 @@ interface DraggableGridLayoutProps {
   topics: TopicInfo[];
   topicsLoading: boolean;
   onRefreshTopics: () => void;
-  urdfConfig: {
-    mode: 'topic' | 'url';
-    topic: string;
-    urdfUrl: string;
-    meshBaseUrl: string;
-    packageMapping: Record<string, string>;
-  };
-  onUrdfConfigChange: {
-    onModeChange: (mode: 'topic' | 'url') => void;
-    onTopicChange: (topic: string) => void;
-    onUrdfUrlChange: (url: string) => void;
-    onMeshBaseUrlChange: (url: string) => void;
-    onPackageMappingChange: (mapping: Record<string, string>) => void;
-  };
+  selectedWidgetId: string | null;
+  onSelectWidget: (id: string) => void;
+  settingsTarget: HTMLElement | null;
+  onCloseSettings: () => void;
+  onUpdateWidget: (id: string, updates: Partial<WidgetConfig>) => void;
 }
 
 export default function DraggableGridLayout({
@@ -53,11 +47,37 @@ export default function DraggableGridLayout({
   topics,
   topicsLoading,
   onRefreshTopics,
-  urdfConfig,
-  onUrdfConfigChange,
+  selectedWidgetId,
+  onSelectWidget,
+  settingsTarget,
+  onCloseSettings,
+  onUpdateWidget,
 }: DraggableGridLayoutProps) {
+  const pointerStart = useRef({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(1200);
+
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [mobile, setMobile] = useState(false);
+  const expandTrigger = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 767px)');
+    const update = () => setMobile(query.matches);
+    update();
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
+  useEffect(() => {
+    if (!expandedId) return;
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setExpandedId(null);
+        expandTrigger.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', escape);
+    return () => window.removeEventListener('keydown', escape);
+  }, [expandedId]);
 
   // Measure container width
   useEffect(() => {
@@ -77,47 +97,106 @@ export default function DraggableGridLayout({
 
   // Convert widgets to react-grid-layout format
   const layout = useMemo(() => {
-    return widgets.map((w) => ({
-      i: w.i,
-      x: w.x,
-      y: w.y,
-      w: w.w,
-      h: w.h,
-      minW: w.minW,
-      minH: w.minH,
-      static: w.locked, // Make locked widgets non-draggable and non-resizable
-    }));
-  }, [widgets]);
+    let mobileY = 0;
+    return widgets.map((w) => {
+      const y = mobileY;
+      mobileY += Math.max(10, w.h);
+      return {
+        i: w.i,
+        x: mobile ? 0 : w.x,
+        y: mobile ? y : w.y,
+        w: mobile ? 12 : w.w,
+        h: mobile ? Math.max(10, w.h) : w.h,
+        minW: w.minW,
+        minH: w.minH,
+        static: mobile || w.locked, // Make locked widgets non-draggable and non-resizable
+      };
+    });
+  }, [widgets, mobile]);
 
   return (
-    <div ref={containerRef} className="h-full w-full">
+    <div
+      ref={containerRef}
+      className={`panel-grid h-full w-full ${expandedId ? 'has-expanded-panel' : ''}`}
+    >
       <GridLayoutComponent
         className="layout"
         layout={layout}
         cols={12}
         rowHeight={30}
         width={containerWidth}
-        onLayoutChange={onLayoutChange}
+        onDragStop={(nextLayout) => {
+          if (!mobile && !expandedId) onLayoutChange(nextLayout);
+        }}
+        onResizeStop={(nextLayout) => {
+          if (!mobile && !expandedId) onLayoutChange(nextLayout);
+        }}
+        margin={[8, 8]}
+        containerPadding={[0, 0]}
         draggableHandle=".drag-handle"
         draggableCancel=".react-grid-item-content, .react-grid-no-drag, button"
         compactType="vertical"
         preventCollision={false}
-        isResizable={true}
-        isDraggable={true}
-        {...({} as any)}
+        isResizable={!mobile && !expandedId}
+        isDraggable={!mobile && !expandedId}
       >
         {widgets.map((widget) => (
-          <div key={widget.i} className={widgetStyles.container}>
+          <div
+            key={widget.i}
+            id={`panel-${widget.i}`}
+            className={`${widgetStyles.container} ${expandedId === widget.i ? 'panel-expanded' : ''} ${selectedWidgetId === widget.i ? 'panel-selected' : ''}`}
+            onPointerDownCapture={(event) => {
+              pointerStart.current = { x: event.clientX, y: event.clientY };
+            }}
+            onPointerUpCapture={(event) => {
+              if (settingsTarget?.contains(event.target as Node)) return;
+              if (
+                (event.target as HTMLElement).closest(
+                  'button, input, select, textarea, a, .react-resizable-handle'
+                )
+              )
+                return;
+              if (
+                Math.hypot(
+                  event.clientX - pointerStart.current.x,
+                  event.clientY - pointerStart.current.y
+                ) < 4
+              )
+                onSelectWidget(widget.i);
+            }}
+            role="region"
+            aria-label={widget.title}
+          >
             {/* Widget Header with drag handle and remove button */}
             <div className={widgetStyles.header.base}>
               <div className={widgetStyles.header.titleWrapper}>
                 <GripVertical className={widgetStyles.buttons.icon} />
                 <h2 className={widgetStyles.header.title}>
-                  <span className={widgetStyles.header.indicator} />
-                  {widget.title}
+                  <button
+                    type="button"
+                    className="panel-title-button"
+                    title={widget.title}
+                    aria-label={`Settings for ${widget.title}`}
+                    aria-pressed={selectedWidgetId === widget.i}
+                    onClick={() => onSelectWidget(widget.i)}
+                  >
+                    <PanelIcon type={widget.type} />
+                    <span className="truncate">{widget.title}</span>
+                  </button>
                 </h2>
               </div>
               <div className={widgetStyles.header.actions}>
+                <button
+                  className={widgetStyles.buttons.base}
+                  aria-label={expandedId === widget.i ? 'Restore panel' : `Expand ${widget.title}`}
+                  title={expandedId === widget.i ? 'Restore panel (Escape)' : 'Expand panel'}
+                  onClick={(event) => {
+                    expandTrigger.current = event.currentTarget;
+                    setExpandedId(expandedId === widget.i ? null : widget.i);
+                  }}
+                >
+                  {expandedId === widget.i ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -138,6 +217,7 @@ export default function DraggableGridLayout({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (expandedId === widget.i) setExpandedId(null);
                     onRemoveWidget(widget.i);
                   }}
                   className={cn(widgetStyles.buttons.base, widgetStyles.buttons.remove)}
@@ -156,8 +236,9 @@ export default function DraggableGridLayout({
                 topics={topics}
                 topicsLoading={topicsLoading}
                 onRefreshTopics={onRefreshTopics}
-                urdfConfig={urdfConfig}
-                onUrdfConfigChange={onUrdfConfigChange}
+                settingsTarget={selectedWidgetId === widget.i ? settingsTarget : null}
+                onCloseSettings={onCloseSettings}
+                onUpdateWidget={onUpdateWidget}
               />
             </div>
           </div>

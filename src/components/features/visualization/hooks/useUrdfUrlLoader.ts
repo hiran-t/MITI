@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { loadURDFFromURL, formatURDFError } from '@/lib/parsers/urdf-parser/urdf-url-loader';
 import type { URDFLoadError } from '@/types/urdf-loader';
 
@@ -17,12 +17,20 @@ interface UseUrdfUrlLoaderOptions {
  * Custom hook for loading URDF from URL with error handling and recent URLs tracking
  */
 export function useUrdfUrlLoader() {
+  const generation = useRef(0);
+  useEffect(
+    () => () => {
+      generation.current++;
+    },
+    []
+  );
   const [urdfContent, setUrdfContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadProgress, setLoadProgress] = useState<{ loaded: number; total: number } | null>(null);
 
   const loadFromUrl = useCallback(async (options: UseUrdfUrlLoaderOptions) => {
+    const request = ++generation.current;
     const { urdfUrl, meshBaseUrl, packageMapping } = options;
 
     if (!urdfUrl) {
@@ -42,12 +50,14 @@ export function useUrdfUrlLoader() {
         packageMapping,
       });
 
+      if (request !== generation.current) return;
       setUrdfContent(content);
       setLoading(false);
 
       // Save to recent URLs
       saveRecentUrl(urdfUrl);
     } catch (err) {
+      if (request !== generation.current) return;
       console.error('Failed to load URDF from URL:', err);
       const errorMsg =
         err instanceof Error && !('type' in err)
@@ -61,6 +71,7 @@ export function useUrdfUrlLoader() {
   }, []);
 
   const reset = useCallback(() => {
+    generation.current++;
     setUrdfContent(null);
     setError(null);
     setLoading(false);

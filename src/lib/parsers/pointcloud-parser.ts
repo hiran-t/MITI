@@ -22,7 +22,7 @@ const POINTFIELD_DATATYPES: { [key: number]: { size: number; reader: string } } 
   8: { size: 8, reader: 'getFloat64' }, // FLOAT64
 };
 
-export function parsePointCloud2(msg: sensor_msgs.PointCloud2): ParsedPoint[] {
+export function parsePointCloud2(msg: sensor_msgs.PointCloud2, maxPoints = 200000): ParsedPoint[] {
   const points: ParsedPoint[] = [];
 
   if (!msg.data || msg.data.length === 0) {
@@ -30,7 +30,10 @@ export function parsePointCloud2(msg: sensor_msgs.PointCloud2): ParsedPoint[] {
   }
 
   // Convert data array to Uint8Array
-  const buffer = new Uint8Array(msg.data);
+  const buffer =
+    typeof msg.data === 'string'
+      ? Uint8Array.from(atob(msg.data), (c) => c.charCodeAt(0))
+      : new Uint8Array(msg.data);
   const dataView = new DataView(buffer.buffer);
 
   // Find field offsets
@@ -45,8 +48,27 @@ export function parsePointCloud2(msg: sensor_msgs.PointCloud2): ParsedPoint[] {
   const numPoints = msg.height * msg.width;
   const pointStep = msg.point_step;
 
-  for (let i = 0; i < numPoints; i++) {
-    const pointOffset = i * pointStep;
+  if (
+    !Number.isInteger(msg.width) ||
+    !Number.isInteger(msg.height) ||
+    msg.width < 0 ||
+    msg.height < 0 ||
+    !Number.isInteger(pointStep) ||
+    pointStep <= 0
+  )
+    throw new Error('Invalid point cloud dimensions');
+  const rowStep = msg.row_step || msg.width * pointStep;
+  if (rowStep < msg.width * pointStep || buffer.length < rowStep * msg.height)
+    throw new Error('Point cloud buffer is truncated');
+  for (const axis of ['x', 'y', 'z']) if (!fields[axis]) throw new Error(`Missing ${axis} field`);
+  for (const field of Object.values(fields)) {
+    const type = POINTFIELD_DATATYPES[field.datatype];
+    if (!type || field.offset < 0 || field.offset + type.size > pointStep)
+      throw new Error('Invalid point field');
+  }
+  const stride = Math.max(1, Math.ceil(numPoints / Math.max(1, maxPoints)));
+  for (let i = 0; i < numPoints; i += stride) {
+    const pointOffset = Math.floor(i / msg.width) * rowStep + (i % msg.width) * pointStep;
     const point: ParsedPoint = { x: 0, y: 0, z: 0 };
 
     // Read X, Y, Z
@@ -76,13 +98,10 @@ export function parsePointCloud2(msg: sensor_msgs.PointCloud2): ParsedPoint[] {
     }
 
     // Read RGB if available
-    if (fields['rgb']) {
-      const rgb = readField(
-        dataView,
-        pointOffset + fields['rgb'].offset,
-        fields['rgb'].datatype,
-        msg.is_bigendian
-      );
+    const packed = fields['rgb'] ?? fields['rgba'];
+    if (packed) {
+      if (packed.offset + 4 > pointStep) throw new Error('Invalid packed color field');
+      const rgb = dataView.getUint32(pointOffset + packed.offset, !msg.is_bigendian);
       point.rgb = rgb;
       // Extract R, G, B from packed RGB
       point.r = ((rgb >> 16) & 0xff) / 255;
@@ -91,28 +110,31 @@ export function parsePointCloud2(msg: sensor_msgs.PointCloud2): ParsedPoint[] {
     } else {
       // Try individual r, g, b fields
       if (fields['r']) {
-        point.r = readField(
-          dataView,
-          pointOffset + fields['r'].offset,
-          fields['r'].datatype,
-          msg.is_bigendian
-        );
+        point.r =
+          readField(
+            dataView,
+            pointOffset + fields['r'].offset,
+            fields['r'].datatype,
+            msg.is_bigendian
+          ) / (fields['r'].datatype === 2 ? 255 : 1);
       }
       if (fields['g']) {
-        point.g = readField(
-          dataView,
-          pointOffset + fields['g'].offset,
-          fields['g'].datatype,
-          msg.is_bigendian
-        );
+        point.g =
+          readField(
+            dataView,
+            pointOffset + fields['g'].offset,
+            fields['g'].datatype,
+            msg.is_bigendian
+          ) / (fields['g'].datatype === 2 ? 255 : 1);
       }
       if (fields['b']) {
-        point.b = readField(
-          dataView,
-          pointOffset + fields['b'].offset,
-          fields['b'].datatype,
-          msg.is_bigendian
-        );
+        point.b =
+          readField(
+            dataView,
+            pointOffset + fields['b'].offset,
+            fields['b'].datatype,
+            msg.is_bigendian
+          ) / (fields['b'].datatype === 2 ? 255 : 1);
       }
     }
 

@@ -13,7 +13,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       {/* Inline background prevents white flash before CSS loads */}
-      <body style={{ background: '#030712', color: '#ffffff' }}>{children}</body>
+      <body style={{ background: '#111216', color: '#e8eaf0' }}>{children}</body>
     </html>
   );
 }

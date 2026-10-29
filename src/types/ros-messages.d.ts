@@ -31,7 +31,7 @@ export namespace sensor_msgs {
     is_bigendian: boolean;
     point_step: number;
     row_step: number;
-    data: number[];
+    data: number[] | string;
     is_dense: boolean;
   }
 

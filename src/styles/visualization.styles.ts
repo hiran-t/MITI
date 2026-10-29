@@ -6,7 +6,7 @@ export const visualizationStyles = {
   // Common viewer container
   viewer: {
     container:
-      'relative w-full h-full bg-gray-950 rounded-lg overflow-hidden border border-gray-800',
+      'relative w-full h-full bg-gray-950 rounded-md overflow-hidden border border-gray-800',
     header:
       'absolute top-3 left-3 z-10 px-3 py-1.5 bg-gray-900/90 rounded text-xs font-medium text-gray-300 border border-gray-800',
     statusBar:
@@ -23,7 +23,7 @@ export const visualizationStyles = {
       'flex items-center gap-2 px-3 py-1.5 bg-gray-900/90 rounded text-xs font-medium text-gray-300 border border-gray-800',
     titleIcon: 'w-4 h-4',
     select:
-      'px-3 py-1.5 bg-gray-900/90 rounded text-xs text-gray-300 border border-gray-800 focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed',
+      'px-3 py-1.5 bg-gray-900/90 rounded text-xs text-gray-300 border border-gray-800 focus:outline-none focus:border-violet-400 disabled:opacity-50 disabled:cursor-not-allowed',
     statusIcon: 'w-3 h-3 animate-spin',
     statusTime: 'text-gray-500',
     emptyState: 'text-center text-gray-500',
@@ -41,7 +41,7 @@ export const visualizationStyles = {
   pointcloud: {
     pointsInfo: 'ml-2 text-gray-500',
     centerContent: 'absolute inset-0 flex items-center justify-center',
-    loadingContainer: 'text-center',
+    loadingContainer: 'text-center px-4 break-words',
     loadingSpinner: 'w-8 h-8 text-gray-600 animate-spin mx-auto mb-2',
     loadingText: 'text-sm text-gray-400',
     parsingBadge:
@@ -61,7 +61,7 @@ export const visualizationStyles = {
     dropdown: {
       container: 'relative',
       trigger:
-        'flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-800 rounded-lg border border-gray-700 hover:border-gray-600 transition-all text-sm font-medium',
+        'flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-800 rounded-md border border-gray-700 hover:border-gray-600 transition-all text-sm font-medium',
       icon: 'w-4 h-4',
       iconTopic: 'text-blue-400',
       iconUrl: 'text-purple-400',
@@ -69,7 +69,7 @@ export const visualizationStyles = {
       chevron: 'w-3.5 h-3.5 text-gray-400 transition-transform',
       chevronOpen: 'w-3.5 h-3.5 text-gray-400 transition-transform rotate-180',
       panel:
-        'absolute left-0 top-full mt-1 w-80 bg-gray-900 border border-gray-800 rounded-lg shadow-xl z-[60] overflow-hidden',
+        'absolute left-0 top-full mt-1 w-80 max-w-[calc(100vw-56px)] bg-gray-900 border border-gray-800 rounded-md shadow-xl z-[60] overflow-hidden',
     },
     tabs: {
       container: 'flex border-b border-gray-800',
@@ -86,10 +86,10 @@ export const visualizationStyles = {
       fieldset: 'space-y-3',
       label: 'block text-xs font-medium text-gray-400 mb-2',
       input:
-        'w-full px-3 py-1.5 bg-gray-800 border border-gray-700 rounded text-sm text-gray-200 focus:outline-none focus:border-blue-500',
+        'w-full px-3 py-1.5 bg-gray-800 border border-gray-700 rounded text-sm text-gray-200 focus:outline-none focus:border-violet-400',
       hint: 'mt-1.5 text-xs text-gray-500',
       select:
-        'w-full px-3 py-1.5 bg-gray-800 border border-gray-700 rounded text-sm text-gray-200 focus:outline-none focus:border-blue-500 disabled:opacity-50',
+        'w-full px-3 py-1.5 bg-gray-800 border border-gray-700 rounded text-sm text-gray-200 focus:outline-none focus:border-violet-400 disabled:opacity-50',
       loadButton:
         'w-full flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-sm font-medium rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed',
       loadIcon: 'w-4 h-4',
@@ -101,12 +101,12 @@ export const visualizationStyles = {
   urdfSettings: {
     container: 'relative',
     triggerButton:
-      'flex items-center gap-1.5 px-3 py-1.5 hover:bg-gray-800/50 rounded-lg transition-colors border border-gray-800 hover:border-gray-700',
+      'flex items-center gap-1.5 px-3 py-1.5 hover:bg-gray-800/50 rounded-md transition-colors border border-gray-800 hover:border-gray-700',
     triggerIcon: 'w-4 h-4 text-gray-400',
     triggerChevron: 'w-3 h-3 text-gray-400 transition-transform',
     triggerChevronOpen: 'w-3 h-3 text-gray-400 transition-transform rotate-180',
     dropdown:
-      'absolute right-0 top-full mt-2 w-80 max-h-[32rem] overflow-y-auto bg-gray-900 border border-gray-800 rounded-lg shadow-xl z-50',
+      'absolute right-0 top-full mt-2 w-80 max-h-[32rem] overflow-y-auto bg-gray-900 border border-gray-800 rounded-md shadow-xl z-50',
     section: 'p-3 border-b border-gray-800',
     sectionTitle: 'text-xs font-semibold text-gray-400 mb-2',
     sectionTitleWithIcon: 'text-xs font-semibold text-gray-400 flex items-center gap-1.5',
@@ -114,7 +114,7 @@ export const visualizationStyles = {
     // Point Cloud Topics
     topicInputContainer: 'flex gap-2 mb-2',
     topicInput:
-      'flex-1 px-2 py-1.5 bg-gray-800 text-gray-200 text-xs rounded border border-gray-700 focus:border-blue-500 focus:outline-none',
+      'flex-1 px-2 py-1.5 bg-gray-800 text-gray-200 text-xs rounded border border-gray-700 focus:border-violet-400 focus:outline-none',
     addButton: 'px-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors',
     addIcon: 'w-4 h-4',
     topicList: 'space-y-1.5',
@@ -151,7 +151,7 @@ export const visualizationStyles = {
       'p-2 bg-gray-900/90 hover:bg-gray-800/90 rounded border border-gray-700 transition-colors',
     icon: 'w-4 h-4 text-gray-300',
     panel:
-      'absolute right-0 top-full mt-2 w-80 bg-gray-900 border border-gray-800 rounded-lg shadow-xl overflow-hidden',
+      'absolute right-0 top-full mt-2 w-80 bg-gray-900 border border-gray-800 rounded-md shadow-xl overflow-hidden',
     header: 'flex items-center justify-between p-3 border-b border-gray-800',
     title: 'text-sm font-semibold text-white',
     closeButton: 'p-1 hover:bg-gray-800 rounded transition-colors',
@@ -166,25 +166,25 @@ export const visualizationStyles = {
     slider: {
       wrapper: 'space-y-1',
       label: 'flex justify-between text-xs text-gray-400',
-      input: 'w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer',
+      input: 'w-full h-2 bg-gray-700 rounded-md appearance-none cursor-pointer',
     },
   },
 
   // URDF Viewer
   urdfViewer: {
     container:
-      'relative w-full h-full bg-gray-950 rounded-lg overflow-hidden border border-gray-800',
+      'relative w-full h-full bg-gray-950 rounded-md overflow-hidden border border-gray-800',
     headerBar: 'absolute top-3 left-3 right-3 z-10 flex items-center justify-between gap-3',
-    headerLeft: 'flex items-center gap-3 flex-1',
+    headerLeft: 'flex min-w-0 items-center gap-2 flex-1',
     badge:
-      'px-3 py-1.5 bg-gray-900/90 rounded text-xs font-medium text-gray-300 border border-gray-800',
+      'hidden md:block px-3 py-1.5 bg-gray-900/90 rounded text-xs font-medium text-gray-300 border border-gray-800',
     badgeConnected: 'ml-2 text-green-400',
     badgeLoaded: 'ml-2 text-purple-400',
     tfToggleButton: 'px-3 py-1.5 rounded text-xs font-medium border transition-colors',
-    tfToggleActive: 'bg-blue-500/20 text-blue-400 border-blue-500/50 hover:bg-blue-500/30',
+    tfToggleActive: 'bg-violet-400/15 text-violet-300 border-violet-400/40 hover:bg-violet-400/25',
     tfToggleInactive: 'bg-gray-800/90 text-gray-400 border-gray-700 hover:bg-gray-700/90',
     emptyState: 'absolute inset-0 flex items-center justify-center',
-    emptyContent: 'text-center',
+    emptyContent: 'text-center px-4 break-words',
     emptyIcon: 'w-8 h-8 text-gray-600 mx-auto mb-2',
     emptyIconSpin: 'w-8 h-8 text-gray-600 animate-spin mx-auto mb-2',
     emptyText: 'text-sm text-gray-400',
@@ -192,7 +192,7 @@ export const visualizationStyles = {
 
   // Scene 3D
   scene: {
-    canvas: 'bg-white',
+    canvas: 'bg-gray-950',
   },
 
   // Load status
@@ -202,24 +202,23 @@ export const visualizationStyles = {
       'absolute inset-0 flex items-center justify-center bg-gray-950/90 backdrop-blur-sm z-20',
     modalContainer: 'max-w-md w-full mx-4',
     // Loading modal
-    loadingCard: 'bg-gray-900/90 border border-gray-800 rounded-lg p-6 relative',
+    loadingCard: 'bg-gray-900/90 border border-gray-800 rounded-md p-6 relative',
     loadingHeader: 'flex items-center gap-3 mb-4',
     loadingSpinner: 'w-6 h-6 text-blue-400 animate-spin',
     loadingTitle: 'text-lg font-semibold text-gray-200',
     progressInfo: 'flex justify-between text-sm text-gray-400 mb-2',
     progressBar: 'w-full bg-gray-800 rounded-full h-2 mb-2',
-    progressFill:
-      'bg-gradient-to-r from-lime-400 to-cyan-400 h-2 rounded-full transition-all duration-300',
+    progressFill: 'bg-violet-400 h-2 rounded-full transition-all duration-300',
     currentFile: 'text-xs text-gray-500 truncate',
     loadingMessage: 'text-sm text-gray-400',
     // Error modal
-    errorCard: 'bg-red-500/10 border border-red-500/30 rounded-lg p-6 relative',
+    errorCard: 'bg-red-500/10 border border-red-500/30 rounded-md p-6 relative',
     errorHeader: 'flex items-center gap-3 mb-3',
     errorIcon: 'w-6 h-6 text-red-400 flex-shrink-0',
     errorTitle: 'text-lg font-semibold text-red-400',
     errorMessage: 'text-sm text-gray-300 whitespace-pre-wrap pr-8',
     // Success modal
-    successCard: 'bg-green-500/10 border border-green-500/30 rounded-lg p-6 relative',
+    successCard: 'bg-green-500/10 border border-green-500/30 rounded-md p-6 relative',
     successHeader: 'flex items-center gap-3',
     successIcon: 'w-6 h-6 text-green-400',
     successTitle: 'text-lg font-semibold text-green-400',
@@ -233,11 +232,11 @@ export const visualizationStyles = {
     successCloseIcon: 'w-5 h-5 text-green-400',
     // Legacy inline status (for backward compatibility)
     inlineContainer: 'absolute bottom-3 left-3 right-3 z-10',
-    inlineError: 'p-3 bg-red-500/10 border border-red-500/30 rounded-lg',
+    inlineError: 'p-3 bg-red-500/10 border border-red-500/30 rounded-md',
     inlineErrorTitle: 'text-sm font-medium text-red-400 mb-1',
     inlineErrorMessage: 'text-xs text-red-300',
     inlineLoading:
-      'flex items-center gap-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg',
+      'flex items-center gap-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-md',
     inlineLoadingContent: 'flex-1',
   },
 } as const;

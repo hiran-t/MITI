@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ROSBridge } from '@/lib/rosbridge/client';
 import { topicStyles, cn } from '@/styles';
 
@@ -15,24 +15,18 @@ export default function TopicCard({ topic, type, client }: TopicCardProps) {
   const [lastMessage, setLastMessage] = useState<unknown>(null);
   const [messageCount, setMessageCount] = useState(0);
 
-  const handleToggleSubscribe = () => {
-    if (!client) return;
-
-    if (subscribed) {
-      client.unsubscribe(topic);
-      setSubscribed(false);
-    } else {
-      client.subscribe(
-        topic,
-        (msg) => {
-          setLastMessage(msg);
-          setMessageCount((prev) => prev + 1);
-        },
-        type
-      );
-      setSubscribed(true);
-    }
-  };
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  useEffect(() => {
+    if (!client || !subscribed) return;
+    const onMessage = (message: unknown) => {
+      setLastMessage(message);
+      setMessageCount((count) => count + 1);
+      setLastUpdate(new Date());
+    };
+    client.subscribe(topic, onMessage, type);
+    return () => client.unsubscribe(topic, onMessage);
+  }, [client, subscribed, topic, type]);
+  const handleToggleSubscribe = () => setSubscribed((value) => !value);
 
   return (
     <div className={topicStyles.card.base}>
@@ -43,6 +37,7 @@ export default function TopicCard({ topic, type, client }: TopicCardProps) {
         </div>
         <button
           onClick={handleToggleSubscribe}
+          disabled={!client}
           className={cn(
             topicStyles.button.base,
             subscribed ? topicStyles.button.subscribed : topicStyles.button.unsubscribed
@@ -56,7 +51,7 @@ export default function TopicCard({ topic, type, client }: TopicCardProps) {
         <div className={topicStyles.message.container}>
           <div className={topicStyles.message.stats}>
             <span>Messages: {messageCount}</span>
-            {lastMessage != null && <span>Last update: {new Date().toLocaleTimeString()}</span>}
+            {lastUpdate && <span>Last update: {lastUpdate.toLocaleTimeString()}</span>}
           </div>
 
           {lastMessage != null && (

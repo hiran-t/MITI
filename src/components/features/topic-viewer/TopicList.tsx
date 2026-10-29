@@ -32,6 +32,7 @@ export default function TopicList({ topics, loading, onRefresh, client }: TopicL
           <Search className={topicStyles.list.searchIcon} />
           <input
             type="text"
+            aria-label="Search topics"
             placeholder="Search topics..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -61,7 +62,13 @@ export default function TopicList({ topics, loading, onRefresh, client }: TopicL
       <div className={topicStyles.list.itemsContainer}>
         {filteredTopics.length === 0 ? (
           <div className={topicStyles.list.emptyState}>
-            {searchTerm ? 'No topics match your search' : 'No topics available'}
+            {!client
+              ? 'Connect to ROS to explore topics'
+              : loading
+                ? 'Discovering topics…'
+                : searchTerm
+                  ? 'No topics match your search'
+                  : 'No topics available'}
           </div>
         ) : (
           filteredTopics.map((topic) => (

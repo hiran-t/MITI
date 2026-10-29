@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Settings, X } from 'lucide-react';
 import { connectionStyles } from '@/styles';
 
@@ -10,12 +10,43 @@ interface ConnectionSettingsProps {
 }
 
 export default function ConnectionSettings({ currentUrl, onUrlChange }: ConnectionSettingsProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [url, setUrl] = useState(currentUrl);
 
   useEffect(() => {
     setUrl(currentUrl);
   }, [currentUrl]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const previous = document.activeElement as HTMLElement | null;
+    dialogRef.current?.querySelector('input')?.focus();
+    const keydown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.stopPropagation();
+        setIsOpen(false);
+      }
+      if (event.key === 'Tab') {
+        const elements = dialogRef.current?.querySelectorAll<HTMLElement>('button, input');
+        if (!elements?.length) return;
+        const first = elements[0],
+          last = elements[elements.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener('keydown', keydown);
+    return () => {
+      document.removeEventListener('keydown', keydown);
+      previous?.focus();
+    };
+  }, [isOpen]);
 
   const handleSave = () => {
     onUrlChange(url);
@@ -41,11 +72,21 @@ export default function ConnectionSettings({ currentUrl, onUrlChange }: Connecti
 
   return (
     <div className={connectionStyles.modal.backdrop}>
-      <div className={connectionStyles.modal.container}>
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Connection Settings"
+        className={connectionStyles.modal.container}
+      >
         {/* Header */}
         <div className={connectionStyles.modal.header}>
           <h3 className={connectionStyles.modal.title}>Connection Settings</h3>
-          <button onClick={() => setIsOpen(false)} className={connectionStyles.modal.closeButton}>
+          <button
+            aria-label="Close connection settings"
+            onClick={() => setIsOpen(false)}
+            className={connectionStyles.modal.closeButton}
+          >
             <X className={connectionStyles.modal.closeIcon} />
           </button>
         </div>

@@ -1,63 +1,68 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { WIDGET_TYPES, WidgetType } from '@/types/widget';
-import { Plus, X } from 'lucide-react';
-import { widgetStyles } from '@/styles';
+import { Plus } from 'lucide-react';
+import PanelIcon from './PanelIcon';
 
-interface AddWidgetButtonProps {
+export default function AddWidgetButton({
+  onAddWidget,
+}: {
   onAddWidget: (type: WidgetType) => void;
-}
-
-export default function AddWidgetButton({ onAddWidget }: AddWidgetButtonProps) {
-  const [isOpen, setIsOpen] = useState(false);
-
+}) {
+  const [open, setOpen] = useState(false);
+  const container = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: PointerEvent) => {
+      if (!container.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+        trigger.current?.focus();
+      }
+    };
+    document.addEventListener('pointerdown', close);
+    document.addEventListener('keydown', escape);
+    return () => {
+      document.removeEventListener('pointerdown', close);
+      document.removeEventListener('keydown', escape);
+    };
+  }, [open]);
   return (
-    <>
-      {/* Floating Add Widget Button */}
+    <div className="relative" ref={container}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={widgetStyles.floatingButton.base}
-        title="Add Widget"
+        ref={trigger}
+        className="workspace-button primary"
+        aria-expanded={open}
+        aria-controls="panel-picker"
+        onClick={() => setOpen(!open)}
       >
-        {isOpen ? (
-          <X className={widgetStyles.floatingButton.icon} />
-        ) : (
-          <Plus className={widgetStyles.floatingButton.icon} />
-        )}
+        <Plus size={15} />
+        Add panel
       </button>
-
-      {/* Widget Type Selector Menu */}
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <div className={widgetStyles.menu.backdrop} onClick={() => setIsOpen(false)} />
-
-          {/* Menu */}
-          <div className={widgetStyles.menu.container}>
-            <div className={widgetStyles.menu.header}>Add Widget</div>
-            {WIDGET_TYPES.map((widgetType) => (
-              <button
-                key={widgetType.type}
-                onClick={() => {
-                  onAddWidget(widgetType.type);
-                  setIsOpen(false);
-                }}
-                className={widgetStyles.menu.item}
-              >
-                <span className={widgetStyles.menu.itemIcon}>{widgetType.icon}</span>
-                <div className={widgetStyles.menu.itemContent}>
-                  <div className={widgetStyles.menu.itemTitle}>{widgetType.label}</div>
-                  <div className={widgetStyles.menu.itemSubtitle}>
-                    {widgetType.defaultSize.w}×{widgetType.defaultSize.h}
-                  </div>
-                </div>
-                <Plus className={widgetStyles.menu.itemAction} />
-              </button>
-            ))}
-          </div>
-        </>
+      {open && (
+        <div id="panel-picker" className="panel-picker" aria-label="Add panel">
+          <p className="px-3 py-2 text-xs text-gray-400">VISUALIZATION PANELS</p>
+          {WIDGET_TYPES.map(({ type, label }) => (
+            <button
+              key={type}
+              className="flex w-full items-center gap-3 rounded px-3 py-3 text-left hover:bg-gray-800"
+              onClick={() => {
+                onAddWidget(type);
+                setOpen(false);
+                trigger.current?.focus();
+              }}
+            >
+              <PanelIcon type={type} />
+              <span className="flex-1">{label}</span>
+              <Plus size={14} />
+            </button>
+          ))}
+        </div>
       )}
-    </>
+    </div>
   );
 }

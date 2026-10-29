@@ -5,7 +5,7 @@
 
 **A modern, real-time web dashboard for visualizing ROS2 robots and sensor data.**
 
-Built with Next.js 14, React 18, Three.js, and Electron.
+Built with Next.js 14, React 18, and Three.js.
 
 [![ROS2](https://img.shields.io/badge/ROS2-Humble%20%7C%20Iron%20%7C%20Jazzy-blue)](https://docs.ros.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-14+-black)](https://nextjs.org/)
@@ -22,13 +22,11 @@ Built with Next.js 14, React 18, Three.js, and Electron.
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Usage](#usage)
-- [Desktop App (Electron)](#desktop-app-electron)
 - [Project Structure](#project-structure)
 - [ROS2 Integration](#ros2-integration)
 - [Customization](#customization)
 - [Testing](#testing)
 - [Troubleshooting](#troubleshooting)
-- [Uninstalling](#uninstalling)
 - [Contributing](#contributing)
 - [License](#license)
 - [Acknowledgments](#acknowledgments)
@@ -128,49 +126,6 @@ npm start
 
 ---
 
-## Desktop App (Electron)
-
-MITI can be packaged as a standalone desktop app. End users do not need Node.js.
-
-### Build commands
-
-| Platform | Command                        | Output                                   |
-| -------- | ------------------------------ | ---------------------------------------- |
-| macOS    | `npm run electron:build:mac`   | `dist-electron/MITI-*.dmg`               |
-| Windows  | `npm run electron:build:win`   | `dist-electron/MITI-*-Setup.exe`         |
-| Linux    | `npm run electron:build:linux` | `dist-electron/MITI-*.deb`, `*.AppImage` |
-
-Each command runs: `next build` (static export) -> `electron-prepare.js` -> `electron-builder`.
-
-### Development mode
-
-```bash
-npm run electron:dev
-```
-
-### Cross-compilation
-
-Build each platform on its native OS, or use CI/CD (e.g., GitHub Actions).
-
-| Host    | macOS | Windows | Linux |
-| ------- | ----- | ------- | ----- |
-| macOS   | Yes   | Wine    | No    |
-| Windows | No    | Yes     | No    |
-| Linux   | No    | No      | Yes   |
-
-### Install on Linux
-
-```bash
-# .deb (system-wide)
-sudo dpkg -i dist-electron/MITI-*.deb
-
-# AppImage (portable, no install)
-chmod +x dist-electron/MITI-*.AppImage
-./dist-electron/MITI-*.AppImage
-```
-
----
-
 ## Project Structure
 
 ```
@@ -189,8 +144,6 @@ miti/
 │   ├── styles/                  # Centralized Tailwind style modules
 │   ├── types/                   # TypeScript definitions
 │   └── constants/               # ROS topic constants
-├── electron/                    # Electron main process & preload
-├── build/                       # NSIS installer hooks, uninstall scripts
 ├── public/                      # Static assets (logos, icons)
 ├── package.json
 ├── tsconfig.json
@@ -349,32 +302,6 @@ npm install
 
 ---
 
-## Uninstalling
-
-### Windows
-
-- Open **Settings > Apps & Features**, find "MITI", click Uninstall
-- Or use the "Uninstall MITI" shortcut in the Start Menu
-
-### macOS
-
-- Drag **MITI.app** from Applications to Trash
-
-### Linux
-
-```bash
-# If installed via .deb
-sudo apt remove miti
-# or
-sudo dpkg -r miti
-
-# If using AppImage, just delete the file
-```
-
-An `uninstall.sh` helper script is also included in the Linux build.
-
----
-
 ## Contributing
 
 1. Fork the repository
@@ -398,5 +325,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 - [Three.js](https://threejs.org/) and [React Three Fiber](https://docs.pmnd.rs/react-three-fiber/)
 - [Next.js](https://nextjs.org/)
 - [Tailwind CSS](https://tailwindcss.com/)
-- [Electron](https://www.electronjs.org/)
 - [urdf-loader](https://github.com/gkjohnson/urdf-loaders)

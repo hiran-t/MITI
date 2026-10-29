@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { SettingsSection } from '../../layout/WidgetSettingsPortal';
 import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent } from 'react';
-import { Settings, Trash2, Clock, Plus, X } from 'lucide-react';
+import { Trash2, Clock, Plus, X } from 'lucide-react';
 import { commonStyles, cn } from '@/styles';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -15,8 +16,6 @@ interface URDFPreset {
 }
 
 interface URDFSettingsProps {
-  isOpen: boolean;
-  onClose: () => void;
   onLoadPreset: (preset: Omit<URDFPreset, 'name'>) => void;
   pointCloudTopics?: string[];
   onPointCloudTopicsChange?: (topics: string[]) => void;
@@ -78,9 +77,11 @@ function TopicChipList({
           onChange={(e) => onInputChange(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder={placeholder}
+          aria-label={`Add topic (${placeholder})`}
           className={cn(commonStyles.input.base, 'py-1.5 text-xs')}
         />
         <button
+          aria-label={`Add topic to ${placeholder}`}
           onClick={onAdd}
           type="button"
           className="shrink-0 rounded-lg bg-gray-700 px-3 py-1.5 text-xs font-medium text-gray-200 transition-colors hover:bg-gray-600"
@@ -97,6 +98,7 @@ function TopicChipList({
             >
               <span className="max-w-[180px] truncate">{t}</span>
               <button
+                aria-label={`Remove ${t}`}
                 onClick={() => onRemove(t)}
                 type="button"
                 className="text-gray-500 transition-colors hover:text-red-400"
@@ -116,8 +118,6 @@ function TopicChipList({
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function URDFSettings({
-  isOpen,
-  onClose,
   onLoadPreset,
   pointCloudTopics = [],
   onPointCloudTopicsChange,
@@ -154,8 +154,6 @@ export default function URDFSettings({
     }
   }, []);
 
-  if (!isOpen) return null;
-
   // ── Presets ──
   const handleLoadPreset = (preset: URDFPreset) => {
     onLoadPreset({
@@ -163,7 +161,6 @@ export default function URDFSettings({
       meshBaseUrl: preset.meshBaseUrl,
       packageMapping: preset.packageMapping,
     });
-    onClose();
   };
 
   const handleDeletePreset = (index: number, e: ReactMouseEvent) => {
@@ -195,37 +192,23 @@ export default function URDFSettings({
   };
 
   return (
-    <div className="absolute inset-0 z-20 flex flex-col overflow-hidden rounded-lg bg-gray-950/95 backdrop-blur-sm">
-      {/* ── Header ── */}
-      <div className="flex shrink-0 items-center gap-2 border-b border-gray-800 px-4 py-3">
-        <Settings className="h-3.5 w-3.5 text-gray-500" />
-        <span className="flex-1 text-sm font-semibold text-gray-200">Scene Settings</span>
-        <button
-          onClick={onClose}
-          className="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-800/50 hover:text-gray-300"
-          aria-label="Close settings"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
-      </div>
-
+    <div className="flex flex-col">
       {/* ── Body ── */}
-      <div className="flex-1 space-y-5 overflow-y-auto p-4">
+      <div className="settings-groups">
         {/* Joint States Topic */}
-        <div>
-          <SectionLabel>Joint States Topic</SectionLabel>
+        <SettingsSection title="Joint States Topic">
           <input
             type="text"
+            aria-label="Joint States Topic"
             value={jointStatesTopic}
             onChange={(e) => onJointStatesTopicChange(e.target.value)}
             placeholder="/robot_inbound/joint_states"
             className={cn(commonStyles.input.base, 'text-xs')}
           />
-        </div>
+        </SettingsSection>
 
         {/* TF Topics */}
-        <div>
-          <SectionLabel>TF Topics</SectionLabel>
+        <SettingsSection title="TF Topics">
           <TopicChipList
             topics={tfTopics}
             inputValue={newTfTopicInput}
@@ -235,30 +218,41 @@ export default function URDFSettings({
             onRemove={(t) => onTfTopicsChange(tfTopics.filter((x) => x !== t))}
             onKeyDown={(e) => e.key === 'Enter' && handleAddTf()}
           />
-        </div>
+        </SettingsSection>
 
         {/* Point Cloud Topics */}
-        <div>
-          <SectionLabel>Point Cloud Topics</SectionLabel>
-          <TopicChipList
-            topics={pointCloudTopics}
-            inputValue={newPointTopicInput}
-            placeholder="/camera/depth/points"
-            onInputChange={setNewPointTopicInput}
-            onAdd={handleAddPointCloud}
-            onRemove={(t) => onPointCloudTopicsChange?.(pointCloudTopics.filter((x) => x !== t))}
-            onKeyDown={(e) => e.key === 'Enter' && handleAddPointCloud()}
-          />
-        </div>
+        {onPointCloudTopicsChange && (
+          <SettingsSection title="Point Cloud Topics">
+            <TopicChipList
+              topics={pointCloudTopics}
+              inputValue={newPointTopicInput}
+              placeholder="/camera/depth/points"
+              onInputChange={setNewPointTopicInput}
+              onAdd={handleAddPointCloud}
+              onRemove={(t) => onPointCloudTopicsChange?.(pointCloudTopics.filter((x) => x !== t))}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddPointCloud()}
+            />
+          </SettingsSection>
+        )}
 
         {/* Presets */}
-        <div>
-          <SectionLabel>Presets</SectionLabel>
+        <SettingsSection title="Presets">
           <div className="space-y-1.5">
             {presets.map((preset, i) => (
               <div
                 key={`${preset.name}-${i}`}
                 className="group flex cursor-pointer items-center gap-2 rounded-lg border border-gray-700 bg-gray-800/50 px-3 py-2 transition-colors hover:border-gray-600 hover:bg-gray-800"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(event) => {
+                  if (
+                    event.target === event.currentTarget &&
+                    (event.key === 'Enter' || event.key === ' ')
+                  ) {
+                    event.preventDefault();
+                    handleLoadPreset(preset);
+                  }
+                }}
                 onClick={() => handleLoadPreset(preset)}
               >
                 <div className="min-w-0 flex-1">
@@ -277,7 +271,7 @@ export default function URDFSettings({
               </div>
             ))}
           </div>
-        </div>
+        </SettingsSection>
 
         {/* Recent URLs */}
         {recentUrls.length > 0 && (
@@ -312,13 +306,6 @@ export default function URDFSettings({
           <span className="font-medium text-cyan-500">Tip:</span> Enable CORS on your web server to
           load remote URDF files.
         </p>
-      </div>
-
-      {/* ── Footer ── */}
-      <div className="shrink-0 border-t border-gray-800 px-4 py-3">
-        <button onClick={onClose} className={cn(commonStyles.button.primary, 'w-full text-sm')}>
-          Apply
-        </button>
       </div>
     </div>
   );

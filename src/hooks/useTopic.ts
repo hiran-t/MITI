@@ -12,6 +12,8 @@ export function useTopic<T = unknown>(
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
   useEffect(() => {
+    setData(null);
+    setLastUpdate(null);
     if (!client || !topic) return;
 
     const callback = (message: unknown) => {

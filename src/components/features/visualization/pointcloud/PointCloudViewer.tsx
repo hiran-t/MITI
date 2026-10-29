@@ -71,11 +71,16 @@ export default function PointCloudViewer({
   const [pointCount, setPointCount] = useState(0);
 
   useEffect(() => {
-    if (!pointCloudData) return;
+    if (!pointCloudData) {
+      setPoints([]);
+      setPointCount(0);
+      setParsing(false);
+      return;
+    }
 
     setParsing(true);
     // Parse point cloud in a non-blocking way
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       try {
         const parsed = parsePointCloud2(pointCloudData);
         setPoints(parsed);
@@ -86,6 +91,7 @@ export default function PointCloudViewer({
         setParsing(false);
       }
     }, 0);
+    return () => clearTimeout(timer);
   }, [pointCloudData]);
 
   return (
@@ -104,9 +110,9 @@ export default function PointCloudViewer({
       {!pointCloudData ? (
         <div className={visualizationStyles.pointcloud.centerContent}>
           <div className={visualizationStyles.pointcloud.loadingContainer}>
-            <Loader2 className={visualizationStyles.pointcloud.loadingSpinner} />
+            {client && <Loader2 className={visualizationStyles.pointcloud.loadingSpinner} />}
             <p className={visualizationStyles.pointcloud.loadingText}>
-              Waiting for {topic} topic...
+              {client ? `Waiting for ${topic} topic…` : 'Connect to ROS to view point cloud data'}
             </p>
           </div>
         </div>

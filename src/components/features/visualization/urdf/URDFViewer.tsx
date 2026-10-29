@@ -1,15 +1,20 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import WidgetSettingsPortal, { SettingsSection } from '../../layout/WidgetSettingsPortal';
+import type { URDFWidgetProps } from '@/types/widget';
 import { ROSBridge } from '@/lib/rosbridge/client';
 import { useTopic } from '@/hooks/useTopic';
 import { useTF } from '@/hooks/useTF';
 import Scene3D from './Scene3D';
-import { Loader2, Download, Settings } from 'lucide-react';
 import URDFSourceSelector from './URDFSourceSelector';
 import URDFSettings from './URDFSettings';
 import URDFLoadStatus from './URDFLoadStatus';
-import PointCloudRenderer from '../pointcloud/PointCloudRenderer';
+import SceneLayer from '../scene/SceneLayer';
+import LayerSettings from '../scene/LayerSettings';
+import { lookupTransform } from '@/lib/scene/transforms';
+import type { SceneLayerConfig, LayerStatus } from '@/types/scene';
+import type { TopicInfo } from '@/lib/rosbridge/types';
 import TFVisualizer from '../tf/TFVisualizer';
 import URDFModel from './URDFModel';
 import { useUrdfUrlLoader } from '../hooks/useUrdfUrlLoader';
@@ -18,67 +23,59 @@ import * as THREE from 'three';
 import { visualizationStyles } from '@/styles';
 import { TF_TOPICS } from '@/constants/ros-topics';
 
+const DEFAULT_TF_TOPICS = [TF_TOPICS.DYNAMIC, TF_TOPICS.STATIC];
+const EMPTY_POINT_CLOUD_TOPICS: string[] = [];
+
 interface URDFViewerProps {
   client: ROSBridge | null;
-  // Mode selection
-  mode?: 'topic' | 'url';
-  // For topic mode
-  topic?: string;
-  // For URL mode
-  urdfUrl?: string;
-  meshBaseUrl?: string;
-  packageMapping?: Record<string, string>;
-  // Point cloud topics
-  pointCloudTopics?: string[];
-  // Callbacks
-  onModeChange?: (mode: 'topic' | 'url') => void;
-  onTopicChange?: (topic: string) => void;
-  onUrdfUrlChange?: (url: string) => void;
-  onMeshBaseUrlChange?: (url: string) => void;
-  onPackageMappingChange?: (mapping: Record<string, string>) => void;
-  onPointCloudTopicsChange?: (topics: string[]) => void;
+  config: URDFWidgetProps;
+  topics?: TopicInfo[];
+  onConfigChange: (config: Partial<URDFWidgetProps>) => void;
 }
 
 export default function URDFViewer({
   client,
-  mode: initialMode = 'topic',
-  topic: initialTopic = '/robot_description',
-  urdfUrl: initialUrdfUrl = '',
-  meshBaseUrl: initialMeshBaseUrl = '',
-  packageMapping: initialPackageMapping = {},
-  pointCloudTopics: initialPointCloudTopics = [],
-  onModeChange,
-  onTopicChange,
-  onUrdfUrlChange,
-  onMeshBaseUrlChange,
-  onPackageMappingChange,
-  onPointCloudTopicsChange,
+  config,
+  onConfigChange,
+  topics = [],
 }: URDFViewerProps) {
-  const [currentMode, setCurrentMode] = useState<'topic' | 'url'>(initialMode);
-  const [currentTopic, setCurrentTopic] = useState(initialTopic);
-  const [currentUrdfUrl, setCurrentUrdfUrl] = useState(initialUrdfUrl);
-  const [currentMeshBaseUrl, setCurrentMeshBaseUrl] = useState(initialMeshBaseUrl);
-  const [currentPackageMapping, setCurrentPackageMapping] = useState(initialPackageMapping);
-  const [currentPointCloudTopics, setCurrentPointCloudTopics] =
-    useState<string[]>(initialPointCloudTopics);
+  const {
+    mode: currentMode,
+    topic: currentTopic,
+    urdfUrl: currentUrdfUrl,
+    meshBaseUrl: currentMeshBaseUrl,
+    packageMapping: currentPackageMapping,
+    pointCloudTopics: currentPointCloudTopics = EMPTY_POINT_CLOUD_TOPICS,
+    jointStatesTopic = '/robot_inbound/joint_states',
+    tfTopics = DEFAULT_TF_TOPICS,
+    showTF = true,
+    fixedFrame = 'base_link',
+    robotFrame = 'base_link',
+    syncTransforms = true,
+  } = config;
   const [modelLoading, setModelLoading] = useState(false);
-  // Dynamic joint_states topic
-  const [jointStatesTopic, setJointStatesTopic] = useState('/robot_inbound/joint_states');
-  // Dynamic tf topics
-  const [tfTopics, setTfTopics] = useState<string[]>([TF_TOPICS.DYNAMIC, TF_TOPICS.STATIC]);
-  const [showTF, setShowTF] = useState(true);
-  const [showSettings, setShowSettings] = useState(false);
-  const [baseLinkTransform, setBaseLinkTransform] = useState<{
-    position: THREE.Vector3;
-    quaternion: THREE.Quaternion;
-  } | null>(null);
-  const [tfSettings, setTfSettings] = useState({
-    showAxes: true,
-    showConnections: true,
-    showLabels: false,
-    axisLength: 0.15, // size of coordinate axes
-  });
-
+  const [statuses, setStatuses] = useState<Record<string, LayerStatus>>({});
+  const [modelError, setModelError] = useState('');
+  const layers = useMemo<SceneLayerConfig[]>(
+    () =>
+      config.layers ??
+      currentPointCloudTopics.map((topic, index) => ({
+        id: `legacy-cloud-${index}`,
+        type: 'pointcloud',
+        topic,
+        enabled: true,
+      })),
+    [config.layers, currentPointCloudTopics]
+  );
+  const reportStatus = useCallback(
+    (id: string, status: LayerStatus) =>
+      setStatuses((previous) =>
+        previous[id]?.level === status.level && previous[id]?.message === status.message
+          ? previous
+          : { ...previous, [id]: status }
+      ),
+    []
+  );
   const urlLoader = useUrdfUrlLoader();
   // Extract stable functions to use in dependency arrays
   const { loadFromUrl, reset, setLoadProgress } = urlLoader;
@@ -86,15 +83,16 @@ export default function URDFViewer({
   // Subscribe to TF topics
   const { tfTree } = useTF({
     rosbridgeClient: client,
-    enabled: showTF,
+    enabled: true,
     tfTopics,
+    staticTopics: config.staticTfTopics,
   });
 
   // Use topic subscription for topic mode
   const { data: urdfData } = useTopic<{ data: string }>(
     currentMode === 'topic' ? client : null,
     currentTopic,
-    'std_msgs/String'
+    'std_msgs/msg/String'
   );
 
   // Get URDF string based on current mode
@@ -104,20 +102,30 @@ export default function URDFViewer({
   const { data: jointStatesData } = useTopic<sensor_msgs.JointState>(
     urdfString ? client : null,
     jointStatesTopic,
-    'sensor_msgs/JointState'
+    'sensor_msgs/msg/JointState'
   );
 
+  useEffect(() => {
+    if (currentMode !== 'url') return;
+    reset();
+    if (!currentUrdfUrl.trim()) return;
+    const timer = setTimeout(
+      () =>
+        loadFromUrl({
+          urdfUrl: currentUrdfUrl,
+          meshBaseUrl: currentMeshBaseUrl,
+          packageMapping: currentPackageMapping,
+        }),
+      500
+    );
+    return () => clearTimeout(timer);
+  }, [currentMode, currentUrdfUrl, currentMeshBaseUrl, currentPackageMapping, loadFromUrl, reset]);
+
   // Handle mode change
-  const handleModeChange = useCallback(
-    (newMode: 'topic' | 'url') => {
-      setCurrentMode(newMode);
-      reset();
-      if (onModeChange) {
-        onModeChange(newMode);
-      }
-    },
-    [onModeChange, reset]
-  );
+  const handleModeChange = (mode: 'topic' | 'url') => {
+    reset();
+    onConfigChange({ mode });
+  };
 
   // Handle URL loading
   const handleLoadFromUrl = useCallback(() => {
@@ -128,46 +136,28 @@ export default function URDFViewer({
     });
   }, [currentUrdfUrl, currentMeshBaseUrl, currentPackageMapping, loadFromUrl]);
 
-  // Auto-load URDF from URL when mode is 'url' and urdfUrl is set and client is connected
-  useEffect(() => {
-    if (
-      currentMode === 'url' &&
-      currentUrdfUrl &&
-      client?.isConnected &&
-      !urlLoader.urdfContent &&
-      !urlLoader.loading
-    ) {
-      loadFromUrl({
-        urdfUrl: currentUrdfUrl,
-        meshBaseUrl: currentMeshBaseUrl,
-        packageMapping: currentPackageMapping,
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentMode, currentUrdfUrl, client?.isConnected]);
-
-  // Handle preset loading
-  const handleLoadPreset = useCallback(
-    (preset: { urdfUrl: string; meshBaseUrl: string; packageMapping: Record<string, string> }) => {
-      setCurrentUrdfUrl(preset.urdfUrl);
-      setCurrentMeshBaseUrl(preset.meshBaseUrl);
-      setCurrentPackageMapping(preset.packageMapping);
-    },
-    []
-  );
+  const handleLoadPreset = (preset: {
+    urdfUrl: string;
+    meshBaseUrl: string;
+    packageMapping: Record<string, string>;
+  }) => {
+    reset();
+    onConfigChange({ ...preset, mode: 'url' });
+  };
 
   // Memoize callbacks to prevent unnecessary URDFModel reloads
   const handleModelLoadStart = useCallback(() => {
     setModelLoading(true);
+    setModelError('');
   }, []);
 
   const handleModelLoadComplete = useCallback(() => {
     setModelLoading(false);
   }, []);
 
-  const handleModelLoadError = useCallback(() => {
+  const handleModelLoadError = useCallback((error: Error) => {
     setModelLoading(false);
-    // Error is already handled by URDFModel internally
+    setModelError(error.message);
   }, []);
 
   const handleModelLoadProgress = useCallback(
@@ -177,78 +167,31 @@ export default function URDFViewer({
     [setLoadProgress]
   );
 
-  const handleBaseLinkTransform = useCallback(
-    (position: THREE.Vector3, quaternion: THREE.Quaternion) => {
-      setBaseLinkTransform({ position, quaternion });
-    },
-    []
+  const robotTransform = useMemo(() => {
+    try {
+      return { matrix: lookupTransform(tfTree, fixedFrame, robotFrame), error: '' };
+    } catch (error) {
+      return {
+        matrix: null,
+        error: error instanceof Error ? error.message : 'Missing robot transform',
+      };
+    }
+  }, [tfTree, fixedFrame, robotFrame]);
+  const frames = Array.from(
+    new Set([
+      fixedFrame,
+      ...Array.from(tfTree.frames.keys()),
+      ...Array.from(tfTree.frames.values()).flatMap((frame) =>
+        frame.parent ? [frame.parent] : []
+      ),
+    ])
+  ).sort();
+  const layerProblems = layers.filter(
+    (layer) => layer.enabled && statuses[layer.id]?.level === 'error'
   );
-
-  // Removed auto-load - now requires manual "Load URDF" button press
 
   return (
     <div className={visualizationStyles.urdfViewer.container}>
-      {/* Header */}
-      <div className={visualizationStyles.urdfViewer.headerBar}>
-        <div className={visualizationStyles.urdfViewer.headerLeft}>
-          <div className={visualizationStyles.urdfViewer.badge}>
-            URDF Viewer
-            {currentMode === 'topic' && urdfData && (
-              <span className={visualizationStyles.urdfViewer.badgeConnected}>• Connected</span>
-            )}
-            {currentMode === 'url' && urlLoader.urdfContent && (
-              <span className={visualizationStyles.urdfViewer.badgeLoaded}>• Loaded</span>
-            )}
-          </div>
-
-          <URDFSourceSelector
-            mode={currentMode}
-            onModeChange={handleModeChange}
-            topic={currentTopic}
-            onTopicChange={(topic) => {
-              setCurrentTopic(topic);
-              if (onTopicChange) onTopicChange(topic);
-            }}
-            urdfUrl={currentUrdfUrl}
-            onUrdfUrlChange={(url) => {
-              setCurrentUrdfUrl(url);
-              if (onUrdfUrlChange) onUrdfUrlChange(url);
-            }}
-            meshBaseUrl={currentMeshBaseUrl}
-            onMeshBaseUrlChange={(url) => {
-              setCurrentMeshBaseUrl(url);
-              if (onMeshBaseUrlChange) onMeshBaseUrlChange(url);
-            }}
-            onLoadUrl={handleLoadFromUrl}
-            isLoadingUrl={urlLoader.loading}
-          />
-
-          {/* moved joint_states and tf topic config to settings */}
-        </div>
-
-        {/* TF Visualization Toggle */}
-        <button
-          onClick={() => setShowTF(!showTF)}
-          className={`${visualizationStyles.urdfViewer.tfToggleButton} ${
-            showTF
-              ? visualizationStyles.urdfViewer.tfToggleActive
-              : visualizationStyles.urdfViewer.tfToggleInactive
-          }`}
-          title="Toggle TF visualization"
-        >
-          🔗 TF
-        </button>
-
-        {/* Settings trigger — unified style */}
-        <button
-          onClick={() => setShowSettings(true)}
-          className="rounded-md border border-gray-800 bg-gray-900/90 p-1.5 text-gray-400 transition-colors hover:bg-gray-800/90 hover:text-gray-200"
-          aria-label="Scene settings"
-        >
-          <Settings className="h-3.5 w-3.5" />
-        </button>
-      </div>
-
       {/* Loading/Error Status */}
       {(urlLoader.loading || urlLoader.error || modelLoading) && (
         <URDFLoadStatus
@@ -262,77 +205,146 @@ export default function URDFViewer({
         />
       )}
 
-      {/* 3D Scene */}
-      {!urdfString ? (
-        <div className={visualizationStyles.urdfViewer.emptyState}>
-          <div className={visualizationStyles.urdfViewer.emptyContent}>
-            {currentMode === 'topic' ? (
-              <>
-                <Loader2 className={visualizationStyles.urdfViewer.emptyIconSpin} />
-                <p className={visualizationStyles.urdfViewer.emptyText}>
-                  Waiting for {currentTopic} topic...
-                </p>
-              </>
-            ) : (
-              <>
-                <Download className={visualizationStyles.urdfViewer.emptyIcon} />
-                <p className={visualizationStyles.urdfViewer.emptyText}>
-                  Enter a URDF URL and click Load
-                </p>
-              </>
-            )}
-          </div>
-        </div>
-      ) : (
-        <Scene3D>
-          <URDFModel
-            urdfString={urdfString}
-            meshBaseUrl={currentMeshBaseUrl || undefined}
-            packageMapping={currentPackageMapping}
-            jointStates={jointStatesData}
-            onLoadStart={handleModelLoadStart}
-            onLoadComplete={handleModelLoadComplete}
-            onLoadError={handleModelLoadError}
-            onLoadProgress={handleModelLoadProgress}
-            onBaseLinkTransform={handleBaseLinkTransform}
-          />
-
-          {/* Render point clouds from configured topics */}
-          {currentPointCloudTopics.map((topic) => (
-            <PointCloudRenderer key={topic} client={client} topic={topic} />
-          ))}
-
-          {/* TF Visualization */}
-          {showTF && baseLinkTransform && (
-            <TFVisualizer
-              tfTree={tfTree}
-              showAxes={tfSettings.showAxes}
-              showConnections={tfSettings.showConnections}
-              showLabels={tfSettings.showLabels}
-              axisLength={tfSettings.axisLength}
-              baseFrame="base_link"
-              baseLinkPosition={baseLinkTransform.position}
-              baseLinkQuaternion={baseLinkTransform.quaternion}
+      <Scene3D>
+        {urdfString && robotTransform.matrix && (
+          <group matrix={robotTransform.matrix} matrixAutoUpdate={false}>
+            <URDFModel
+              urdfString={urdfString}
+              meshBaseUrl={currentMeshBaseUrl || undefined}
+              packageMapping={currentPackageMapping}
+              jointStates={jointStatesData}
+              onLoadStart={handleModelLoadStart}
+              onLoadComplete={handleModelLoadComplete}
+              onLoadError={handleModelLoadError}
+              onLoadProgress={handleModelLoadProgress}
             />
-          )}
-        </Scene3D>
-      )}
+          </group>
+        )}
+        {layers.map((layer) => (
+          <SceneLayer
+            key={layer.id}
+            layer={layer}
+            client={client}
+            tree={tfTree}
+            fixedFrame={fixedFrame}
+            sync={syncTransforms}
+            onStatus={reportStatus}
+            meshBaseUrl={currentMeshBaseUrl}
+            packages={currentPackageMapping}
+          />
+        ))}
+        {showTF && <TFVisualizer tfTree={tfTree} fixedFrame={fixedFrame} />}
+      </Scene3D>
+      <div className="scene-status-overlay" role="status">
+        <span>
+          {client ? 'ROS connected' : 'Disconnected'} · Fixed frame: {fixedFrame || 'Not set'}
+        </span>
+        {!urdfString && (
+          <span>
+            Robot: {currentMode === 'url' ? 'Choose a URDF URL' : 'waiting for robot description'} ·
+            Other layers remain available
+          </span>
+        )}
+        {urdfString && robotTransform.error && (
+          <span className="text-amber-300">{robotTransform.error}</span>
+        )}
+        {modelError && <span className="text-red-300">Robot: {modelError}</span>}
+        {layerProblems.length > 0 && (
+          <span className="text-amber-300">
+            {layerProblems.length} layer error(s) · Open Panel settings for details
+          </span>
+        )}
+      </div>
 
-      {/* Settings overlay — shared panel shell */}
-      <URDFSettings
-        isOpen={showSettings}
-        onClose={() => setShowSettings(false)}
-        onLoadPreset={handleLoadPreset}
-        pointCloudTopics={currentPointCloudTopics}
-        onPointCloudTopicsChange={(topics) => {
-          setCurrentPointCloudTopics(topics);
-          onPointCloudTopicsChange?.(topics);
-        }}
-        jointStatesTopic={jointStatesTopic}
-        onJointStatesTopicChange={setJointStatesTopic}
-        tfTopics={tfTopics}
-        onTfTopicsChange={setTfTopics}
-      />
+      <WidgetSettingsPortal>
+        <SettingsSection title="Robot source" keywords="ROS topic name URDF URL mesh base mode">
+          <URDFSourceSelector
+            mode={currentMode}
+            onModeChange={handleModeChange}
+            topic={currentTopic}
+            onTopicChange={(topic) => onConfigChange({ topic })}
+            urdfUrl={currentUrdfUrl}
+            onUrdfUrlChange={(urdfUrl) => onConfigChange({ urdfUrl })}
+            meshBaseUrl={currentMeshBaseUrl}
+            onMeshBaseUrlChange={(meshBaseUrl) => onConfigChange({ meshBaseUrl })}
+            onLoadUrl={handleLoadFromUrl}
+            isLoadingUrl={urlLoader.loading}
+          />
+        </SettingsSection>
+        <SettingsSection title="Frame" keywords="fixed robot root sync transforms TF">
+          <label className="scene-field">
+            Fixed frame
+            <input
+              list="scene-frames"
+              value={fixedFrame}
+              onChange={(e) => onConfigChange({ fixedFrame: e.target.value })}
+            />
+          </label>
+          <datalist id="scene-frames">
+            {frames.map((frame) => (
+              <option key={frame} value={frame} />
+            ))}
+          </datalist>
+          <label className="scene-field">
+            Robot root frame
+            <input
+              value={robotFrame}
+              onChange={(e) => onConfigChange({ robotFrame: e.target.value })}
+            />
+          </label>
+          <label className="scene-field">
+            Static TF topics
+            <input
+              value={(
+                config.staticTfTopics ?? tfTopics.filter((topic) => topic.includes('static'))
+              ).join(',')}
+              onChange={(e) =>
+                onConfigChange({
+                  staticTfTopics: e.target.value.split(',').map((topic) => topic.trim()),
+                })
+              }
+            />
+          </label>
+          <p className="text-xs text-gray-400">
+            Comma-separated static transform topics; these do not expire.
+          </p>
+          <label className="flex items-center gap-2 py-2">
+            <input
+              type="checkbox"
+              checked={syncTransforms}
+              onChange={(e) => onConfigChange({ syncTransforms: e.target.checked })}
+            />
+            Use message timestamps for TF
+          </label>
+          <p className="text-xs text-gray-400">
+            Disable timestamp matching only when your source does not provide synchronized
+            timestamps.
+          </p>
+        </SettingsSection>
+        <SettingsSection title="Scene" keywords="show TF frames">
+          <label className="flex items-center gap-2 px-4 py-3 text-sm">
+            <input
+              type="checkbox"
+              checked={showTF}
+              onChange={(event) => onConfigChange({ showTF: event.target.checked })}
+            />
+            Show TF frames
+          </label>
+        </SettingsSection>
+        <URDFSettings
+          onLoadPreset={handleLoadPreset}
+          jointStatesTopic={jointStatesTopic}
+          onJointStatesTopicChange={(jointStatesTopic) => onConfigChange({ jointStatesTopic })}
+          tfTopics={tfTopics}
+          onTfTopicsChange={(tfTopics) => onConfigChange({ tfTopics })}
+        />
+        <LayerSettings
+          layers={layers}
+          topics={topics}
+          statuses={statuses}
+          onChange={(layers) => onConfigChange({ layers })}
+        />
+      </WidgetSettingsPortal>
     </div>
   );
 }

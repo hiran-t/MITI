@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import WidgetSettingsPortal, { SettingsSection } from '../../layout/WidgetSettingsPortal';
 import { ROSBridge } from '@/lib/rosbridge/client';
 import { useTopic } from '@/hooks/useTopic';
-import { Activity, GitBranch, Clock, Settings, X, Loader2 } from 'lucide-react';
+import { Activity, GitBranch, Clock, Loader2 } from 'lucide-react';
 import { commonStyles } from '@/styles';
 import { STATE_MACHINE_TOPICS } from '@/constants/ros-topics';
 
@@ -11,6 +12,7 @@ interface StateMachineMonitorProps {
   client: ROSBridge | null;
   smaccTopic?: string;
   btStatusTopic?: string;
+  onConfigChange: (config: { smaccTopic?: string; btStatusTopic?: string }) => void;
 }
 
 // SMACC2 types
@@ -351,28 +353,15 @@ function SettingsPanel({
   btTopic,
   onSmaccTopicChange,
   onBtTopicChange,
-  onClose,
 }: {
   smaccTopic: string;
   btTopic: string;
   onSmaccTopicChange: (t: string) => void;
   onBtTopicChange: (t: string) => void;
-  onClose: () => void;
 }) {
   return (
-    <div className="absolute inset-0 z-20 flex flex-col overflow-hidden rounded-lg bg-gray-950/95 backdrop-blur-sm">
+    <div className="flex flex-col">
       {/* Header */}
-      <div className="flex shrink-0 items-center gap-2 border-b border-gray-800 px-4 py-3">
-        <Settings className="h-3.5 w-3.5 text-gray-500" />
-        <span className="flex-1 text-sm font-semibold text-gray-200">Configure Topics</span>
-        <button
-          onClick={onClose}
-          className="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-800/50 hover:text-gray-300"
-          aria-label="Close settings"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
-      </div>
 
       {/* Body */}
       <div className="flex-1 space-y-4 overflow-y-auto p-4">
@@ -380,6 +369,7 @@ function SettingsPanel({
           <label className={commonStyles.input.label}>SMACC2 Status Topic</label>
           <input
             type="text"
+            aria-label="SMACC2 Status Topic"
             value={smaccTopic}
             onChange={(e) => onSmaccTopicChange(e.target.value)}
             className={commonStyles.input.base}
@@ -390,19 +380,13 @@ function SettingsPanel({
           <label className={commonStyles.input.label}>BehaviorTree Status Topic</label>
           <input
             type="text"
+            aria-label="BehaviorTree Status Topic"
             value={btTopic}
             onChange={(e) => onBtTopicChange(e.target.value)}
             className={commonStyles.input.base}
             placeholder="/behavior_tree/execution_status"
           />
         </div>
-      </div>
-
-      {/* Footer */}
-      <div className="shrink-0 border-t border-gray-800 px-4 py-3">
-        <button onClick={onClose} className={`w-full ${commonStyles.button.primary} text-sm`}>
-          Apply
-        </button>
       </div>
     </div>
   );
@@ -412,13 +396,11 @@ function SettingsPanel({
 
 export default function StateMachineMonitor({
   client,
-  smaccTopic: initialSmaccTopic = STATE_MACHINE_TOPICS.SMACC2,
-  btStatusTopic: initialBtTopic = STATE_MACHINE_TOPICS.BEHAVIOR_TREE,
+  smaccTopic = STATE_MACHINE_TOPICS.SMACC2,
+  btStatusTopic: btTopic = STATE_MACHINE_TOPICS.BEHAVIOR_TREE,
+  onConfigChange,
 }: StateMachineMonitorProps) {
   const [activeTab, setActiveTab] = useState<TabType>('smacc2');
-  const [smaccTopic, setSmaccTopic] = useState(initialSmaccTopic);
-  const [btTopic, setBtTopic] = useState(initialBtTopic);
-  const [showSettings, setShowSettings] = useState(false);
 
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden rounded-lg border border-gray-800 bg-gray-950">
@@ -438,13 +420,6 @@ export default function StateMachineMonitor({
             {tab.label}
           </button>
         ))}
-        <button
-          onClick={() => setShowSettings(true)}
-          className="ml-auto rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-800/50 hover:text-gray-300"
-          aria-label="Configure topics"
-        >
-          <Settings className="h-3.5 w-3.5" />
-        </button>
       </div>
 
       {/* Content */}
@@ -454,15 +429,16 @@ export default function StateMachineMonitor({
       </div>
 
       {/* Settings overlay */}
-      {showSettings && (
-        <SettingsPanel
-          smaccTopic={smaccTopic}
-          btTopic={btTopic}
-          onSmaccTopicChange={setSmaccTopic}
-          onBtTopicChange={setBtTopic}
-          onClose={() => setShowSettings(false)}
-        />
-      )}
+      <WidgetSettingsPortal>
+        <SettingsSection title="General" keywords="SMACC2 BehaviorTree status topic">
+          <SettingsPanel
+            smaccTopic={smaccTopic}
+            btTopic={btTopic}
+            onSmaccTopicChange={(smaccTopic) => onConfigChange({ smaccTopic })}
+            onBtTopicChange={(btStatusTopic) => onConfigChange({ btStatusTopic })}
+          />
+        </SettingsSection>
+      </WidgetSettingsPortal>
     </div>
   );
 }

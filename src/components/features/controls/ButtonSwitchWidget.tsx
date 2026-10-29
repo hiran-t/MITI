@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import { Settings, Power, X, Radio, Zap, Loader2 } from 'lucide-react';
+import { Power, Radio, Zap, Loader2 } from 'lucide-react';
+import WidgetSettingsPortal, { SettingsSection } from '../layout/WidgetSettingsPortal';
 import type { ROSBridge } from '@/lib/rosbridge/client';
 import type { ButtonSwitchWidgetProps, ButtonSwitchMode } from '@/types/widget';
 import { commonStyles, cn } from '@/styles';
 
 // ─── Settings Panel ──────────────────────────────────────────────────────────
-// Follows the shared settings-panel shell used across all widgets:
-// absolute inset-0  |  header (icon + title + ✕)  |  scrollable body  |  footer (Apply)
+// Rendered in the selected widget inspector; runtime controls stay in the panel.
 
 interface SettingsPanelProps {
   label: string;
@@ -29,7 +29,6 @@ interface SettingsPanelProps {
   onServiceChange: (v: string) => void;
   onArgsChange: (v: string) => void;
   offArgsChange: (v: string) => void;
-  onClose: () => void;
 }
 
 function SettingsPanel({
@@ -51,22 +50,10 @@ function SettingsPanel({
   onServiceChange,
   onArgsChange,
   offArgsChange,
-  onClose,
 }: SettingsPanelProps) {
   return (
-    <div className="absolute inset-0 z-20 flex flex-col overflow-hidden rounded-lg bg-gray-950/95 backdrop-blur-sm">
+    <div className="flex flex-col">
       {/* ── Header ── */}
-      <div className="flex shrink-0 items-center gap-2 border-b border-gray-800 px-4 py-3">
-        <Settings className="h-3.5 w-3.5 text-gray-500" />
-        <span className="flex-1 text-sm font-semibold text-gray-200">Configure Switch</span>
-        <button
-          onClick={onClose}
-          className="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-800/50 hover:text-gray-300"
-          aria-label="Close settings"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
-      </div>
 
       {/* ── Body ── */}
       <div className="flex-1 space-y-4 overflow-y-auto p-4">
@@ -75,6 +62,7 @@ function SettingsPanel({
           <label className={commonStyles.input.label}>Button Label</label>
           <input
             type="text"
+            aria-label="Button Label"
             value={label}
             onChange={(e) => onLabelChange(e.target.value)}
             className={commonStyles.input.base}
@@ -116,6 +104,7 @@ function SettingsPanel({
               <label className={commonStyles.input.label}>Topic</label>
               <input
                 type="text"
+                aria-label="Topic"
                 value={topic}
                 onChange={(e) => onTopicChange(e.target.value)}
                 className={commonStyles.input.base}
@@ -126,6 +115,7 @@ function SettingsPanel({
               <label className={commonStyles.input.label}>Message Type</label>
               <input
                 type="text"
+                aria-label="Message Type"
                 value={messageType}
                 onChange={(e) => onMessageTypeChange(e.target.value)}
                 className={commonStyles.input.base}
@@ -136,6 +126,7 @@ function SettingsPanel({
               <div>
                 <label className={commonStyles.input.label}>ON Payload</label>
                 <textarea
+                  aria-label="ON Payload"
                   value={onPayload}
                   onChange={(e) => onPayloadChange(e.target.value)}
                   className={cn(commonStyles.input.base, 'h-16 resize-none font-mono text-xs')}
@@ -145,6 +136,7 @@ function SettingsPanel({
               <div>
                 <label className={commonStyles.input.label}>OFF Payload</label>
                 <textarea
+                  aria-label="OFF Payload"
                   value={offPayload}
                   onChange={(e) => offPayloadChange(e.target.value)}
                   className={cn(commonStyles.input.base, 'h-16 resize-none font-mono text-xs')}
@@ -162,6 +154,7 @@ function SettingsPanel({
               <label className={commonStyles.input.label}>Service</label>
               <input
                 type="text"
+                aria-label="Service"
                 value={service}
                 onChange={(e) => onServiceChange(e.target.value)}
                 className={commonStyles.input.base}
@@ -172,6 +165,7 @@ function SettingsPanel({
               <div>
                 <label className={commonStyles.input.label}>ON Args</label>
                 <textarea
+                  aria-label="ON Args"
                   value={onArgs}
                   onChange={(e) => onArgsChange(e.target.value)}
                   className={cn(commonStyles.input.base, 'h-16 resize-none font-mono text-xs')}
@@ -181,6 +175,7 @@ function SettingsPanel({
               <div>
                 <label className={commonStyles.input.label}>OFF Args</label>
                 <textarea
+                  aria-label="OFF Args"
                   value={offArgs}
                   onChange={(e) => offArgsChange(e.target.value)}
                   className={cn(commonStyles.input.base, 'h-16 resize-none font-mono text-xs')}
@@ -191,13 +186,6 @@ function SettingsPanel({
           </>
         )}
       </div>
-
-      {/* ── Footer ── */}
-      <div className="shrink-0 border-t border-gray-800 px-4 py-3">
-        <button onClick={onClose} className={cn(commonStyles.button.primary, 'w-full text-sm')}>
-          Apply
-        </button>
-      </div>
     </div>
   );
 }
@@ -207,24 +195,28 @@ function SettingsPanel({
 interface ButtonSwitchWidgetComponentProps {
   client: ROSBridge | null;
   props?: ButtonSwitchWidgetProps;
+  onConfigChange: (config: Partial<ButtonSwitchWidgetProps>) => void;
 }
 
-export default function ButtonSwitchWidget({ client, props }: ButtonSwitchWidgetComponentProps) {
+export default function ButtonSwitchWidget({
+  client,
+  props,
+  onConfigChange,
+}: ButtonSwitchWidgetComponentProps) {
   // ── Config ──
-  const [label, setLabel] = useState(props?.label ?? 'Switch');
-  const [mode, setMode] = useState<ButtonSwitchMode>(props?.mode ?? 'topic');
-  const [topic, setTopic] = useState(props?.topic ?? '');
-  const [messageType, setMessageType] = useState(props?.messageType ?? 'std_msgs/Bool');
-  const [onPayload, setOnPayload] = useState(props?.onPayload ?? '{"data": true}');
-  const [offPayload, setOffPayload] = useState(props?.offPayload ?? '{"data": false}');
-  const [service, setService] = useState(props?.service ?? '');
-  const [onArgs, setOnArgs] = useState(props?.onArgs ?? '{"data": true}');
-  const [offArgs, setOffArgs] = useState(props?.offArgs ?? '{"data": false}');
+  const label = props?.label ?? 'Switch';
+  const mode = props?.mode ?? 'topic';
+  const topic = props?.topic ?? '';
+  const messageType = props?.messageType ?? 'std_msgs/Bool';
+  const onPayload = props?.onPayload ?? '{"data": true}';
+  const offPayload = props?.offPayload ?? '{"data": false}';
+  const service = props?.service ?? '';
+  const onArgs = props?.onArgs ?? '{"data": true}';
+  const offArgs = props?.offArgs ?? '{"data": false}';
 
   // ── Runtime ──
   const [isOn, setIsOn] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(null);
 
   const advertisedTopics = useRef<Set<string>>(new Set());
@@ -233,16 +225,6 @@ export default function ButtonSwitchWidget({ client, props }: ButtonSwitchWidget
     setFeedback({ ok, text });
     const id = setTimeout(() => setFeedback(null), 2000);
     return () => clearTimeout(id);
-  }, []);
-
-  const handleTopicChange = useCallback((v: string) => {
-    setTopic(v);
-    advertisedTopics.current.delete(v);
-  }, []);
-
-  const handleMessageTypeChange = useCallback((v: string) => {
-    setMessageType(v);
-    advertisedTopics.current.clear();
   }, []);
 
   const handleToggle = useCallback(async () => {
@@ -301,18 +283,11 @@ export default function ButtonSwitchWidget({ client, props }: ButtonSwitchWidget
 
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden">
-      {/* ── Top bar: label + gear ── */}
+      {/* ── Label ── */}
       <div className="flex shrink-0 items-center justify-between px-3 pb-1 pt-3">
         <span className="truncate text-xs font-semibold uppercase tracking-wider text-gray-400">
           {label}
         </span>
-        <button
-          onClick={() => setShowSettings(true)}
-          className="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-800/50 hover:text-gray-300"
-          title="Configure"
-        >
-          <Settings className="h-3.5 w-3.5" />
-        </button>
       </div>
 
       {/* ── Toggle button (fills remaining space) ── */}
@@ -386,30 +361,34 @@ export default function ButtonSwitchWidget({ client, props }: ButtonSwitchWidget
         </div>
       )}
 
-      {/* ── Settings overlay ── */}
-      {showSettings && (
-        <SettingsPanel
-          label={label}
-          mode={mode}
-          topic={topic}
-          messageType={messageType}
-          onPayload={onPayload}
-          offPayload={offPayload}
-          service={service}
-          onArgs={onArgs}
-          offArgs={offArgs}
-          onLabelChange={setLabel}
-          onModeChange={setMode}
-          onTopicChange={handleTopicChange}
-          onMessageTypeChange={handleMessageTypeChange}
-          onPayloadChange={setOnPayload}
-          offPayloadChange={setOffPayload}
-          onServiceChange={setService}
-          onArgsChange={setOnArgs}
-          offArgsChange={setOffArgs}
-          onClose={() => setShowSettings(false)}
-        />
-      )}
+      {/* ── Sidebar settings ── */}
+      <WidgetSettingsPortal>
+        <SettingsSection
+          title="General"
+          keywords="button label action mode topic service message type ON OFF payload args"
+        >
+          <SettingsPanel
+            label={label}
+            mode={mode}
+            topic={topic}
+            messageType={messageType}
+            onPayload={onPayload}
+            offPayload={offPayload}
+            service={service}
+            onArgs={onArgs}
+            offArgs={offArgs}
+            onLabelChange={(label) => onConfigChange({ label })}
+            onModeChange={(mode) => onConfigChange({ mode })}
+            onTopicChange={(topic) => onConfigChange({ topic })}
+            onMessageTypeChange={(messageType) => onConfigChange({ messageType })}
+            onPayloadChange={(onPayload) => onConfigChange({ onPayload })}
+            offPayloadChange={(offPayload) => onConfigChange({ offPayload })}
+            onServiceChange={(service) => onConfigChange({ service })}
+            onArgsChange={(onArgs) => onConfigChange({ onArgs })}
+            offArgsChange={(offArgs) => onConfigChange({ offArgs })}
+          />
+        </SettingsSection>
+      </WidgetSettingsPortal>
     </div>
   );
 }

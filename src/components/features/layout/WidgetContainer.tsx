@@ -1,97 +1,137 @@
 'use client';
 
-import React from 'react';
-import { WidgetConfig } from '@/types/widget';
-import { ROSBridge } from '@/lib/rosbridge/client';
+import type { WidgetConfig } from '@/types/widget';
+import { DEFAULT_URDF_CONFIG } from '@/types/urdf-config';
+import { CAMERA_TOPICS } from '@/constants/ros-topics';
+import type { ROSBridge } from '@/lib/rosbridge/client';
+import type { TopicInfo } from '@/lib/rosbridge/types';
 import TopicList from '../topic-viewer/TopicList';
 import URDFViewer from '../visualization/urdf/URDFViewer';
 import PointCloudViewer from '../visualization/pointcloud/PointCloudViewer';
 import CameraViewer from '../visualization/camera/CameraViewer';
 import StateMachineMonitor from '../visualization/state-machine/StateMachineMonitor';
 import ButtonSwitchWidget from '../controls/ButtonSwitchWidget';
-import type { TopicInfo } from '@/lib/rosbridge/types';
-import type { URDFConfig } from '@/types/urdf-config';
-import { widgetStyles } from '@/styles';
+import WidgetSettingsPortal, {
+  WidgetSettingsContext,
+  SettingsSection,
+} from './WidgetSettingsPortal';
+import { widgetStyles, commonStyles } from '@/styles';
 
 interface WidgetContainerProps {
   widget: WidgetConfig;
   client: ROSBridge | null;
-  // Additional props for specific widgets
-  topics?: TopicInfo[];
-  topicsLoading?: boolean;
-  onRefreshTopics?: () => void;
-  urdfConfig?: URDFConfig;
-  onUrdfConfigChange?: {
-    onModeChange: (mode: 'topic' | 'url') => void;
-    onTopicChange: (topic: string) => void;
-    onUrdfUrlChange: (url: string) => void;
-    onMeshBaseUrlChange: (url: string) => void;
-    onPackageMappingChange: (mapping: Record<string, string>) => void;
-  };
+  topics: TopicInfo[];
+  topicsLoading: boolean;
+  onRefreshTopics: () => void;
+  settingsTarget: HTMLElement | null;
+  onCloseSettings: () => void;
+  onUpdateWidget: (id: string, updates: Partial<WidgetConfig>) => void;
 }
 
 export default function WidgetContainer({
   widget,
   client,
-  topics = [],
-  topicsLoading = false,
+  topics,
+  topicsLoading,
   onRefreshTopics,
-  urdfConfig,
-  onUrdfConfigChange,
+  settingsTarget,
+  onCloseSettings,
+  onUpdateWidget,
 }: WidgetContainerProps) {
   const renderWidget = () => {
     switch (widget.type) {
       case 'topics':
         return (
-          <TopicList
+          <>
+            <TopicList
+              topics={topics}
+              loading={topicsLoading}
+              onRefresh={onRefreshTopics}
+              client={client}
+            />
+            <WidgetSettingsPortal>
+              <SettingsSection title="Topics" keywords="search subscribe configuration">
+                <p className="p-4 text-xs text-gray-400">
+                  Search and subscribe to topics directly in this panel. No additional configuration
+                  is needed.
+                </p>
+              </SettingsSection>
+            </WidgetSettingsPortal>
+          </>
+        );
+      case 'urdf-viewer':
+        return (
+          <URDFViewer
             topics={topics}
-            loading={topicsLoading}
-            onRefresh={onRefreshTopics || (() => {})}
             client={client}
+            config={{ ...DEFAULT_URDF_CONFIG, ...widget.props }}
+            onConfigChange={(updates) =>
+              onUpdateWidget(widget.i, {
+                props: { ...DEFAULT_URDF_CONFIG, ...widget.props, ...updates },
+              })
+            }
           />
         );
-
-      case 'urdf-viewer':
-        return urdfConfig && onUrdfConfigChange ? (
-          <URDFViewer
-            client={client}
-            mode={urdfConfig.mode}
-            topic={urdfConfig.topic}
-            urdfUrl={urdfConfig.urdfUrl}
-            meshBaseUrl={urdfConfig.meshBaseUrl}
-            packageMapping={urdfConfig.packageMapping}
-            onModeChange={onUrdfConfigChange.onModeChange}
-            onTopicChange={onUrdfConfigChange.onTopicChange}
-            onUrdfUrlChange={onUrdfConfigChange.onUrdfUrlChange}
-            onMeshBaseUrlChange={onUrdfConfigChange.onMeshBaseUrlChange}
-            onPackageMappingChange={onUrdfConfigChange.onPackageMappingChange}
-          />
-        ) : null;
-
-      case 'pointcloud-viewer':
-        return <PointCloudViewer client={client} />;
-
+      case 'pointcloud-viewer': {
+        const topic = widget.props?.topic ?? CAMERA_TOPICS.DEPTH_POINTS;
+        return (
+          <>
+            <PointCloudViewer client={client} topic={topic} />
+            <WidgetSettingsPortal>
+              <SettingsSection title="General" keywords="Point Cloud Topic">
+                <label className="block p-4 text-sm">
+                  Point Cloud Topic
+                  <input
+                    className={`${commonStyles.input.base} mt-2`}
+                    value={topic}
+                    onChange={(event) =>
+                      onUpdateWidget(widget.i, { props: { topic: event.target.value } })
+                    }
+                  />
+                </label>
+              </SettingsSection>
+            </WidgetSettingsPortal>
+          </>
+        );
+      }
       case 'camera-viewer':
-        return <CameraViewer client={client} topic={widget.props.topic} />;
-
+        return (
+          <CameraViewer
+            client={client}
+            topic={widget.props.topic}
+            onTopicChange={(topic) =>
+              onUpdateWidget(widget.i, { props: { ...widget.props, topic } })
+            }
+          />
+        );
       case 'state-machine':
         return (
           <StateMachineMonitor
             client={client}
             smaccTopic={widget.props?.smaccTopic}
             btStatusTopic={widget.props?.btStatusTopic}
+            onConfigChange={(updates) =>
+              onUpdateWidget(widget.i, { props: { ...widget.props, ...updates } })
+            }
           />
         );
-
       case 'button-switch':
-        return <ButtonSwitchWidget client={client} props={widget.props} />;
-
-      default: {
-        void (widget satisfies never);
-        return <div className={widgetStyles.types.unknown}>Unknown widget type</div>;
-      }
+        return (
+          <ButtonSwitchWidget
+            client={client}
+            props={widget.props}
+            onConfigChange={(updates) =>
+              onUpdateWidget(widget.i, { props: { ...widget.props, ...updates } })
+            }
+          />
+        );
+      default:
+        return null;
     }
   };
-
-  return <div className={widgetStyles.content.inner}>{renderWidget()}</div>;
+  return (
+    <WidgetSettingsContext.Provider value={{ target: settingsTarget, close: onCloseSettings }}>
+      <div className={widgetStyles.content.inner}>{renderWidget()}</div>
+    </WidgetSettingsContext.Provider>
+  );
 }

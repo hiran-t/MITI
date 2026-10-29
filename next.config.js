@@ -1,29 +1,26 @@
 /** @type {import('next').NextConfig} */
-const isElectron = process.env.ELECTRON_BUILD === 'true';
 const isStandalone = process.env.STANDALONE_BUILD === 'true';
 
 const nextConfig = {
-  // Electron: static export (no server needed, loads from app:// protocol)
   // Standalone: Next.js standalone server for Docker/self-hosted
-  output: isElectron ? 'export' : isStandalone ? 'standalone' : undefined,
+  output: isStandalone ? 'standalone' : undefined,
   compress: true,
   poweredByHeader: false,
 
-  // Experimental features (server-side only, not relevant for Electron static export)
+  // Server-side packages
   experimental: {
     serverComponentsExternalPackages: ['three'],
   },
 
-  // Image optimization — must be unoptimized for static export / Electron
+  // Standalone deployments serve images without an optimization service
   images: {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
-    unoptimized: isElectron || isStandalone,
+    unoptimized: isStandalone,
   },
 
-  // Headers — not supported in static export mode
+  // Security headers
   async headers() {
-    if (isElectron) return [];
     return [
       {
         source: '/:path*',

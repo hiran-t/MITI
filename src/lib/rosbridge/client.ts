@@ -20,6 +20,8 @@ export class ROSBridge {
   private reconnectInterval: number = 3000;
   private reconnectTimer: NodeJS.Timeout | null = null;
   private messageQueue: ROSMessage[] = [];
+  private retainedTfTopics = new Set<string>();
+  private staticTransformCache = new Map<string, Map<string, unknown>>();
   private subscriptions: Map<string, Set<MessageCallback>> = new Map();
   private serviceCallbacks: Map<
     string,
@@ -73,6 +75,7 @@ export class ROSBridge {
 
         this.ws.onclose = () => {
           this.connected = false;
+          this.staticTransformCache.clear();
           console.log('Disconnected from rosbridge');
           this.disconnectionCallbacks.forEach((cb) => cb());
 
@@ -116,6 +119,27 @@ export class ROSBridge {
 
     if (msg.op === 'publish' && 'topic' in msg) {
       const { topic, msg: payload } = msg as { op: string; topic: string; msg?: unknown };
+      // Static transforms are latched: a second scene must receive transforms that
+      // arrived before its callback was attached to the shared subscription.
+      if (
+        (topic.includes('static') || this.retainedTfTopics.has(topic)) &&
+        payload &&
+        typeof payload === 'object' &&
+        'transforms' in payload &&
+        Array.isArray(payload.transforms)
+      ) {
+        const cached = this.staticTransformCache.get(topic) ?? new Map<string, unknown>();
+        for (const transform of payload.transforms) {
+          if (
+            transform &&
+            typeof transform === 'object' &&
+            'child_frame_id' in transform &&
+            typeof transform.child_frame_id === 'string'
+          )
+            cached.set(transform.child_frame_id, transform);
+        }
+        this.staticTransformCache.set(topic, cached);
+      }
       const callbacks = this.subscriptions.get(topic);
       if (callbacks) callbacks.forEach((cb) => cb(payload));
       return;
@@ -153,13 +177,16 @@ export class ROSBridge {
     topic: string,
     callback: MessageCallback,
     type?: string,
-    options?: { throttle_rate?: number }
+    options?: { throttle_rate?: number; retainTransforms?: boolean }
   ): void {
+    if (options?.retainTransforms) this.retainedTfTopics.add(topic);
     if (!this.subscriptions.has(topic)) {
       this.subscriptions.set(topic, new Set());
       this.send(createSubscribeMessage(topic, type, options?.throttle_rate));
     }
     this.subscriptions.get(topic)?.add(callback);
+    const cached = this.staticTransformCache.get(topic);
+    if (cached?.size) callback({ transforms: Array.from(cached.values()) });
   }
 
   unsubscribe(topic: string, callback?: MessageCallback): void {

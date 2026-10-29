@@ -9,9 +9,47 @@ import {
   WIDGET_TYPES,
   WidgetType,
 } from '@/types/widget';
+import { DEFAULT_URDF_CONFIG } from '@/types/urdf-config';
 import { CAMERA_TOPICS } from '@/constants/ros-topics';
 
 const STORAGE_KEY = 'miti_layout_config';
+
+/** Preserve widget settings while bringing legacy geometry into the 12-column grid. */
+export function normalizeLayout(value: unknown): LayoutConfig {
+  if (!value || typeof value !== 'object' || !('widgets' in value) || !Array.isArray(value.widgets))
+    return DEFAULT_LAYOUT;
+  const ids = new Set<string>();
+  const widgets = value.widgets
+    .filter((widget): widget is WidgetConfig => {
+      if (
+        !widget ||
+        typeof widget !== 'object' ||
+        typeof widget.i !== 'string' ||
+        ids.has(widget.i) ||
+        !WIDGET_TYPES.some(({ type }) => type === widget.type) ||
+        typeof widget.title !== 'string'
+      )
+        return false;
+      if (widget.type === 'camera-viewer' && typeof widget.props?.topic !== 'string') return false;
+      ids.add(widget.i);
+      return true;
+    })
+    .map((widget) => {
+      const finite = (value: number | undefined, fallback: number) =>
+        typeof value === 'number' && Number.isFinite(value) ? Math.round(value) : fallback;
+      const w = Math.max(1, Math.min(12, finite(widget.w, 4)));
+      return {
+        ...widget,
+        w,
+        x: Math.max(0, Math.min(12 - w, finite(widget.x, 0))),
+        y: Math.max(0, finite(widget.y, 0)),
+        h: Math.max(1, finite(widget.h, 8)),
+        minW: Math.max(1, Math.min(w, finite(widget.minW, 1))),
+        minH: Math.max(1, Math.min(Math.max(1, finite(widget.h, 8)), finite(widget.minH, 1))),
+      };
+    });
+  return { widgets };
+}
 
 /**
  * Hook for managing widget layout configuration with add/remove support
@@ -19,27 +57,46 @@ const STORAGE_KEY = 'miti_layout_config';
 export function useLayoutConfig() {
   const [layout, setLayout] = useState<LayoutConfig>(DEFAULT_LAYOUT);
 
+  const [hydrated, setHydrated] = useState(false);
+
   // Load layout from localStorage on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        const restored = stored ? normalizeLayout(JSON.parse(stored)) : DEFAULT_LAYOUT;
+        let legacy = DEFAULT_URDF_CONFIG;
         try {
-          const parsed = JSON.parse(stored);
-          setLayout(parsed);
-        } catch (e) {
-          console.error('Failed to parse layout config:', e);
+          const saved = JSON.parse(localStorage.getItem('miti_urdf_config') || 'null');
+          if (saved && typeof saved === 'object') legacy = { ...legacy, ...saved };
+        } catch {
+          /* Keep defaults when legacy settings cannot be read. */
         }
+        setLayout({
+          widgets: restored.widgets.map((widget) =>
+            widget.type === 'urdf-viewer' && !widget.props
+              ? { ...widget, props: { ...legacy } }
+              : widget
+          ),
+        });
+      } catch (e) {
+        console.error('Failed to read layout config:', e);
+      } finally {
+        setHydrated(true);
       }
     }
   }, []);
 
   // Save layout to localStorage whenever it changes
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(layout));
+    if (hydrated) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(layout));
+      } catch (e) {
+        console.error('Failed to save layout:', e);
+      }
     }
-  }, [layout]);
+  }, [layout, hydrated]);
 
   const updateWidget = useCallback((widgetId: string, updates: Partial<WidgetConfig>) => {
     setLayout((prev) => ({
@@ -64,29 +121,9 @@ export function useLayoutConfig() {
         newId = `${type}-${counter}`;
       }
 
-      // Find the rightmost position to place new widget horizontally
-      let maxX = 0;
-      let maxXY = { x: 0, y: 0, w: 0, h: 0 };
-
-      layout.widgets.forEach((widget) => {
-        const rightEdge = widget.x + widget.w;
-        if (rightEdge > maxX) {
-          maxX = rightEdge;
-          maxXY = { x: widget.x, y: widget.y, w: widget.w, h: widget.h };
-        }
-      });
-
-      // Place new widget to the right of the rightmost widget
-      // If it would exceed grid width (12 cols), wrap to next row
       const newW = widgetInfo.defaultSize.w;
-      let newX = maxX;
-      let newY = maxXY.y;
-
-      if (newX + newW > 12) {
-        // Would exceed grid, place at start of next row
-        newX = 0;
-        newY = maxXY.y + maxXY.h;
-      }
+      const newX = 0;
+      const newY = Math.max(0, ...layout.widgets.map((widget) => widget.y + widget.h));
 
       const base = {
         i: newId,
@@ -152,6 +189,7 @@ export function useLayoutConfig() {
   }, []);
 
   return {
+    hydrated,
     layout,
     updateWidget,
     addWidget,
