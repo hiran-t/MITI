@@ -14,12 +14,12 @@ This document describes the architecture and design decisions of MITI.
 
 ## Overview
 
-MITI is a modern web application for visualizing ROS2 robots and sensor data in real-time. It uses WebSocket connections via rosbridge_server to communicate with ROS2 systems.
+MITI is a modern web application for visualizing ROS2 robots and sensor data in real-time. It connects over WebSocket to foxglove_bridge (Foxglove WebSocket protocol) on the robot and decodes the CDR messages in the browser using the schemas the bridge advertises.
 
 ```
 ┌─────────────┐         WebSocket         ┌──────────────┐
-│   MITI Web  │ ◄──────────────────────►  │  rosbridge   │
-│ Application │        (Port 9090)        │   server     │
+│   MITI Web  │ ◄──────────────────────►  │  foxglove_   │
+│ Application │        (Port 8765)        │   bridge     │
 └─────────────┘                           └──────────────┘
                                                  ▲
                                                  │
@@ -33,8 +33,8 @@ OR
 
 ```
 ┌─────────────┐         ROS DDS           ┌──────────────┐
-│  rosbridge  │ ◄──────────────────────►  │     ROS2     │
-│   server    │                           │   Systems    │
+│  foxglove_  │ ◄──────────────────────►  │     ROS2     │
+│   bridge    │                           │   Systems    │
 └─────────────┘                           └──────────────┘
         ▲
         │
@@ -69,8 +69,9 @@ OR
 
 ### ROS2 Integration
 
-- **rosbridge_suite**: WebSocket bridge to ROS2
-- **Custom rosbridge client**: TypeScript client implementation
+- **foxglove_bridge**: WebSocket bridge to ROS2 (Foxglove WebSocket protocol, subprotocol `foxglove.sdk.v1` with `foxglove.websocket.v1` fallback)
+- **@foxglove/ws-protocol**: Protocol client used by `BridgeClient`
+- **@foxglove/rosmsg2-serialization**: CDR decoding/encoding from the advertised schemas
 
 ## Project Structure
 
@@ -90,7 +91,7 @@ src/
 │       └── visualization/ # 3D viewers
 │
 ├── hooks/                 # Custom React hooks
-│   ├── useRosbridge.ts   # WebSocket connection
+│   ├── useBridge.ts      # WebSocket connection
 │   ├── useTopic.ts       # Topic subscription
 │   ├── useTopicList.ts   # Topic discovery
 │   ├── useTF.ts          # Transform handling
@@ -99,10 +100,11 @@ src/
 │   └── useLocalStorage.ts # Persistent storage
 │
 ├── lib/                   # Library code
-│   ├── rosbridge/        # ROS bridge client
-│   │   ├── client.ts     # WebSocket client
-│   │   ├── types.ts      # Type definitions
-│   │   └── messages.ts   # Message builders
+│   ├── bridge/           # foxglove_bridge client
+│   │   ├── client.ts     # BridgeClient (WebSocket client)
+│   │   ├── codec.ts      # CDR decoders/encoders from schemas
+│   │   ├── topics.ts     # Topic name/type helpers
+│   │   └── types.ts      # Type definitions
 │   └── parsers/          # Data parsers
 │       ├── image-parser.ts
 │       ├── pointcloud-parser.ts
@@ -126,19 +128,21 @@ src/
 ### 1. Connection Establishment
 
 ```typescript
-useRosbridge(url) → ROSBridge.connect() → WebSocket connection
+useBridge(url) → BridgeClient.connect() → WebSocket (foxglove.sdk.v1) → serverInfo + channel advertisements
 ```
 
 ### 2. Topic Subscription
 
 ```typescript
-useTopic(topic, client) → client.subscribe() → Message callback
+useTopic(client, topic) → client.subscribe() → bridge subscription to the advertised channel → CDR decode → Message callback
 ```
+
+Subscriptions are shared per topic and rebind automatically when the bridge re-advertises the topic (reconnects, node restarts). The Foxglove protocol has no server-side throttling, so `useTopic` throttles React updates in the browser.
 
 ### 3. Data Processing
 
 ```typescript
-Raw ROS message → Parser (image/pointcloud/etc) → React state → UI update
+Decoded ROS message → Parser (image/pointcloud/etc) → React state → UI update
 ```
 
 ### 4. 3D Rendering
@@ -158,14 +162,17 @@ The main application container that manages:
 - Widget management
 - Topic list
 
-### 2. ROSBridge Client
+### 2. BridgeClient
 
-Custom WebSocket client with features:
+`BridgeClient` (`src/lib/bridge/client.ts`) is the foxglove_bridge client:
 
-- Auto-reconnection
-- Message queuing
-- Subscription management
-- Type-safe message handling
+- Stream modes (Connection Settings → Streaming). The bridge queues each client's messages in order. **Synchronized** (default) keeps every topic on one connection, as the Foxglove app does, so cameras, TF and the 3D scene show the same moment. **Prioritize robot motion** gives every heavy topic (images, point clouds, maps) a connection of its own: TF stays real-time and point clouds are not queued behind camera frames on a slow link, but panels drift apart in time. Robot asset downloads always use a separate connection.
+- Auto-reconnection (every 3 s, per connection)
+- Shared per-topic subscriptions that rebind when the bridge advertises the topic
+- Optional per-subscriber rate caps (`maxRate`): messages that arrive sooner are dropped before decoding. Subscriptions are never paused to throttle the robot — measured on a real robot, resubscribing between frames lost frames (a 10 Hz camera dropped to 2.7 fps)
+- CDR decoding with the schemas the bridge advertises
+- Static transform retention for late subscribers
+- Publishing (JSON, requires the bridge's `clientPublish` capability), service calls, parameter reads and `package://`/`file://` asset fetching
 
 ### 3. Widget System
 
@@ -267,8 +274,8 @@ Used for:
 Encapsulate complex logic:
 
 ```typescript
-const { client, connected } = useRosbridge(url);
-const { data, loading } = useTopic(topic, client);
+const { client, connected } = useBridge(url);
+const { data, lastUpdate } = useTopic(client, topic);
 ```
 
 ### 2. Render Props
@@ -287,17 +294,19 @@ Flexible component composition:
 Related components working together:
 
 ```typescript
-<URDFViewer>
-  <URDFSettings />
-  <Scene3D />
-</URDFViewer>
+<SceneViewer>
+  <SceneCanvas>{/* layers: RobotLayer, SceneLayer, GridLayer, TFVisualizer */}</SceneCanvas>
+  <WidgetSettingsPortal>
+    <SceneSettings />
+  </WidgetSettingsPortal>
+</SceneViewer>
 ```
 
 ## Error Handling
 
 ### 1. Connection Errors
 
-- Auto-reconnection with exponential backoff
+- Auto-reconnection to foxglove_bridge (retries every 3 s)
 - User-friendly error messages
 - Connection status indicators
 

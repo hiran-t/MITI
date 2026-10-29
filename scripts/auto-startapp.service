@@ -8,6 +8,9 @@ User=__USER__
 WorkingDirectory=__WORKDIR__
 Environment="PORT=3000"
 Environment="HOSTNAME=0.0.0.0"
+# ROS package directories for package:// robot meshes (colon-separated). Not needed when the
+# service is started with the ROS workspace sourced (AMENT_PREFIX_PATH is used then).
+# Environment="MITI_PACKAGE_PATH=/opt/ros/humble/share:/home/__USER__/ros2_ws/install"
 ExecStart=__BUN_PATH__ server.js
 Restart=always
 RestartSec=10

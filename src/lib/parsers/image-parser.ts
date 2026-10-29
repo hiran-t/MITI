@@ -4,6 +4,7 @@
  */
 
 import type { sensor_msgs } from '@/types/ros-messages';
+import { decodeBytes } from './bytes';
 
 /**
  * Apply RViz-style rainbow colormap (Axis color)
@@ -60,251 +61,177 @@ function applyRainbowColormap(value: number): { r: number; g: number; b: number 
   };
 }
 
-/**
- * Parse a ROS Image message and convert it to a data URL
- * @param imageMsg - ROS sensor_msgs/Image message
- * @returns Data URL string that can be used as img src
- */
-export function parseImageMessage(imageMsg: sensor_msgs.Image): string {
-  const { width, height, encoding, data } = imageMsg;
+const BYTES_PER_PIXEL: Record<string, number> = {
+  rgb8: 3,
+  bgr8: 3,
+  rgba8: 4,
+  bgra8: 4,
+  mono8: 1,
+  mono16: 2,
+  '16uc1': 2,
+  '32fc1': 4,
+  depth: 4,
+};
 
-  // console.log('Parsing image:', { width, height, encoding, dataLength: data?.length });
+/** Reads one scalar per pixel, walking rows by `step` so padded rows stay aligned. */
+function readValues(
+  width: number,
+  height: number,
+  step: number,
+  bpp: number,
+  read: (offset: number) => number
+): Float32Array {
+  const values = new Float32Array(width * height);
+  for (let row = 0, i = 0; row < height; row++)
+    for (let col = 0, offset = row * step; col < width; col++, offset += bpp, i++)
+      values[i] = read(offset);
+  return values;
+}
 
-  if (!data || data.length === 0) {
-    throw new Error('Image data is empty');
+/** Grayscale with histogram stretching, so dim mono images remain readable. */
+function writeStretchedGray(values: Float32Array, out: Uint8ClampedArray): void {
+  let min = Infinity;
+  let max = -Infinity;
+  for (let i = 0; i < values.length; i++) {
+    if (values[i] < min) min = values[i];
+    if (values[i] > max) max = values[i];
   }
+  const range = max - min || 1;
+  for (let i = 0; i < values.length; i++) {
+    const gray = Math.floor(((values[i] - min) / range) * 255);
+    out[i * 4] = out[i * 4 + 1] = out[i * 4 + 2] = gray;
+    out[i * 4 + 3] = 255;
+  }
+}
 
-  // Handle base64-encoded data from rosbridge
-  let imageDataArray: Uint8Array;
-  if (typeof data === 'string') {
-    // Data is base64 encoded
-    // console.log('Decoding base64 data...')
-    const binaryString = atob(data);
-    imageDataArray = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      imageDataArray[i] = binaryString.charCodeAt(i);
+/** Depth with an RViz-style rainbow; zero and non-finite depths are invalid and drawn black. */
+function writeRainbowDepth(values: Float32Array, out: Uint8ClampedArray): void {
+  let min = Infinity;
+  let max = -Infinity;
+  for (let i = 0; i < values.length; i++) {
+    const depth = values[i];
+    if (Number.isFinite(depth) && depth > 0) {
+      if (depth < min) min = depth;
+      if (depth > max) max = depth;
     }
-  } else if (Array.isArray(data)) {
-    // Data is already an array
-    imageDataArray = new Uint8Array(data);
-  } else {
-    throw new Error('Unsupported data format');
   }
-
-  // console.log('Image data array length:', imageDataArray.length);
-
-  // Create a canvas to render the image
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext('2d');
-
-  if (!ctx) {
-    throw new Error('Failed to get canvas 2D context');
+  const range = max - min || 1;
+  for (let i = 0; i < values.length; i++) {
+    const depth = values[i];
+    const valid = Number.isFinite(depth) && depth > 0;
+    const color = valid ? applyRainbowColormap((depth - min) / range) : { r: 0, g: 0, b: 0 };
+    out[i * 4] = color.r;
+    out[i * 4 + 1] = color.g;
+    out[i * 4 + 2] = color.b;
+    out[i * 4 + 3] = 255;
   }
+}
 
-  // Create ImageData object
-  const imageData = ctx.createImageData(width, height);
-  const pixels = imageData.data;
+/**
+ * Decode a ROS sensor_msgs/Image into RGBA pixels, honouring row padding (`step`) and
+ * `is_bigendian`.
+ */
+export function decodeImagePixels(imageMsg: sensor_msgs.Image): Uint8ClampedArray<ArrayBuffer> {
+  const { width, height } = imageMsg;
+  const encoding = imageMsg.encoding.toLowerCase();
+  const bpp = BYTES_PER_PIXEL[encoding];
+  if (!bpp) throw new Error(`Unsupported image encoding: ${imageMsg.encoding}`);
+  if (!imageMsg.data || imageMsg.data.length === 0) throw new Error('Image data is empty');
 
-  // Parse based on encoding type
-  switch (encoding.toLowerCase()) {
+  const bytes = decodeBytes(imageMsg.data);
+  const step = imageMsg.step || width * bpp;
+  if (step < width * bpp || bytes.length < step * (height - 1) + width * bpp)
+    throw new Error(`Image data is too short for ${width}×${height} ${imageMsg.encoding}`);
+
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const littleEndian = !imageMsg.is_bigendian;
+  const pixels = new Uint8ClampedArray(width * height * 4);
+
+  switch (encoding) {
     case 'rgb8':
-      // RGB8: 8-bit per channel, 3 channels
-      for (let i = 0; i < width * height; i++) {
-        const srcIdx = i * 3;
-        const dstIdx = i * 4;
-        pixels[dstIdx] = imageDataArray[srcIdx]; // R
-        pixels[dstIdx + 1] = imageDataArray[srcIdx + 1]; // G
-        pixels[dstIdx + 2] = imageDataArray[srcIdx + 2]; // B
-        pixels[dstIdx + 3] = 255; // A
-      }
-      break;
-
     case 'bgr8':
-      // BGR8: 8-bit per channel, 3 channels (swapped R and B)
-      for (let i = 0; i < width * height; i++) {
-        const srcIdx = i * 3;
-        const dstIdx = i * 4;
-        pixels[dstIdx] = imageDataArray[srcIdx + 2]; // R (from B)
-        pixels[dstIdx + 1] = imageDataArray[srcIdx + 1]; // G
-        pixels[dstIdx + 2] = imageDataArray[srcIdx]; // B (from R)
-        pixels[dstIdx + 3] = 255; // A
-      }
-      break;
-
     case 'rgba8':
-      // RGBA8: 8-bit per channel, 4 channels
-      for (let i = 0; i < width * height * 4; i++) {
-        pixels[i] = imageDataArray[i];
-      }
+    case 'bgra8': {
+      const red = encoding.startsWith('bgr') ? 2 : 0;
+      const blue = 2 - red;
+      for (let row = 0, i = 0; row < height; row++)
+        for (let col = 0, src = row * step; col < width; col++, src += bpp, i += 4) {
+          pixels[i] = bytes[src + red];
+          pixels[i + 1] = bytes[src + 1];
+          pixels[i + 2] = bytes[src + blue];
+          pixels[i + 3] = bpp === 4 ? bytes[src + 3] : 255;
+        }
       break;
-
-    case 'bgra8':
-      // BGRA8: 8-bit per channel, 4 channels (swapped R and B)
-      for (let i = 0; i < width * height; i++) {
-        const srcIdx = i * 4;
-        const dstIdx = i * 4;
-        pixels[dstIdx] = imageDataArray[srcIdx + 2]; // R (from B)
-        pixels[dstIdx + 1] = imageDataArray[srcIdx + 1]; // G
-        pixels[dstIdx + 2] = imageDataArray[srcIdx]; // B (from R)
-        pixels[dstIdx + 3] = imageDataArray[srcIdx + 3]; // A
-      }
-      break;
-
+    }
     case 'mono8':
-      // MONO8: 8-bit grayscale with auto brightness/contrast enhancement
-      let minVal8 = 255;
-      let maxVal8 = 0;
-
-      // Find min and max values for histogram stretching
-      for (let i = 0; i < width * height; i++) {
-        const value = imageDataArray[i];
-        if (value < minVal8) minVal8 = value;
-        if (value > maxVal8) maxVal8 = value;
-      }
-
-      // Calculate stretch parameters
-      const range8 = maxVal8 - minVal8 || 1;
-
-      // Apply histogram stretching for better contrast
-      for (let i = 0; i < width * height; i++) {
-        const value = imageDataArray[i];
-        // Stretch and enhance
-        const stretched = Math.min(255, Math.floor(((value - minVal8) / range8) * 255));
-        const dstIdx = i * 4;
-        pixels[dstIdx] = stretched; // R
-        pixels[dstIdx + 1] = stretched; // G
-        pixels[dstIdx + 2] = stretched; // B
-        pixels[dstIdx + 3] = 255; // A
-      }
+      writeStretchedGray(
+        readValues(width, height, step, bpp, (offset) => bytes[offset]),
+        pixels
+      );
       break;
-
     case 'mono16':
-      // MONO16: 16-bit grayscale with auto brightness/contrast enhancement
-      let minVal16 = 65535;
-      let maxVal16 = 0;
-      const values16: number[] = [];
-
-      // Read all 16-bit values and find min/max for histogram stretching
-      for (let i = 0; i < width * height; i++) {
-        const srcIdx = i * 2;
-        const value16 = imageDataArray[srcIdx] | (imageDataArray[srcIdx + 1] << 8);
-        values16.push(value16);
-        if (value16 < minVal16) minVal16 = value16;
-        if (value16 > maxVal16) maxVal16 = value16;
-      }
-
-      // Calculate stretch parameters
-      const range16 = maxVal16 - minVal16 || 1;
-
-      // Apply histogram stretching for better contrast
-      for (let i = 0; i < width * height; i++) {
-        const value16 = values16[i];
-        // Stretch to full 0-255 range
-        const stretched = Math.min(255, Math.floor(((value16 - minVal16) / range16) * 255));
-        const dstIdx = i * 4;
-        pixels[dstIdx] = stretched; // R
-        pixels[dstIdx + 1] = stretched; // G
-        pixels[dstIdx + 2] = stretched; // B
-        pixels[dstIdx + 3] = 255; // A
-      }
+      writeStretchedGray(
+        readValues(width, height, step, bpp, (offset) => view.getUint16(offset, littleEndian)),
+        pixels
+      );
       break;
-
     case '16uc1':
-      // 16UC1: 16-bit depth data (typical ROS depth camera format)
-      // Values are in millimeters, apply rainbow colormap
-      let minDepth16 = Infinity;
-      let maxDepth16 = -Infinity;
-      const depthValues16: number[] = [];
-
-      // Read all 16-bit depth values and find min/max
-      for (let i = 0; i < width * height; i++) {
-        const srcIdx = i * 2;
-        const depth = imageDataArray[srcIdx] | (imageDataArray[srcIdx + 1] << 8);
-        depthValues16.push(depth);
-
-        if (depth > 0) {
-          minDepth16 = Math.min(minDepth16, depth);
-          maxDepth16 = Math.max(maxDepth16, depth);
-        }
-      }
-
-      // Apply rainbow colormap to depth data
-      const depthRange16 = maxDepth16 - minDepth16 || 1;
-      for (let i = 0; i < width * height; i++) {
-        const depth = depthValues16[i];
-        const dstIdx = i * 4;
-
-        if (depth === 0) {
-          // Invalid depth (0 or too far) - show as black
-          pixels[dstIdx] = 0;
-          pixels[dstIdx + 1] = 0;
-          pixels[dstIdx + 2] = 0;
-          pixels[dstIdx + 3] = 255;
-        } else {
-          // Normalize depth to 0-1 range
-          const normalized = (depth - minDepth16) / depthRange16;
-          // Apply RViz-style rainbow colormap
-          const color = applyRainbowColormap(normalized);
-          pixels[dstIdx] = color.r;
-          pixels[dstIdx + 1] = color.g;
-          pixels[dstIdx + 2] = color.b;
-          pixels[dstIdx + 3] = 255;
-        }
-      }
+      // Typical depth camera output in millimetres
+      writeRainbowDepth(
+        readValues(width, height, step, bpp, (offset) => view.getUint16(offset, littleEndian)),
+        pixels
+      );
       break;
-
-    case '32fc1':
-    case 'depth':
-      // 32-bit float depth data - normalize and visualize
-      const depthData = new Float32Array(imageDataArray.buffer);
-      let minDepth = Infinity;
-      let maxDepth = -Infinity;
-
-      // Find min and max depth values (excluding invalid values)
-      for (let i = 0; i < width * height; i++) {
-        const depth = depthData[i];
-        if (isFinite(depth) && depth > 0) {
-          minDepth = Math.min(minDepth, depth);
-          maxDepth = Math.max(maxDepth, depth);
-        }
-      }
-
-      // Normalize and colorize depth data with RViz-style rainbow colormap
-      const depthRange = maxDepth - minDepth || 1;
-      for (let i = 0; i < width * height; i++) {
-        const depth = depthData[i];
-        const dstIdx = i * 4;
-
-        if (!isFinite(depth) || depth <= 0) {
-          // Invalid depth - show as black
-          pixels[dstIdx] = 0;
-          pixels[dstIdx + 1] = 0;
-          pixels[dstIdx + 2] = 0;
-          pixels[dstIdx + 3] = 255;
-        } else {
-          // Normalize depth to 0-1 range
-          const normalized = (depth - minDepth) / depthRange;
-          // Apply RViz-style rainbow colormap (Axis color)
-          const color = applyRainbowColormap(normalized);
-          pixels[dstIdx] = color.r;
-          pixels[dstIdx + 1] = color.g;
-          pixels[dstIdx + 2] = color.b;
-          pixels[dstIdx + 3] = 255;
-        }
-      }
-      break;
-
     default:
-      throw new Error(`Unsupported image encoding: ${encoding}`);
+      // 32FC1 / depth: metres as 32-bit floats
+      writeRainbowDepth(
+        readValues(width, height, step, bpp, (offset) => view.getFloat32(offset, littleEndian)),
+        pixels
+      );
+  }
+  return pixels;
+}
+
+function fitCanvas(canvas: HTMLCanvasElement, width: number, height: number): void {
+  // Assigning a size clears the canvas, so only do it when the image size changes.
+  if (canvas.width !== width) canvas.width = width;
+  if (canvas.height !== height) canvas.height = height;
+}
+
+/**
+ * Draw a raw or compressed image message onto `canvas`, sized to the image. Drawing directly
+ * avoids re-encoding every frame as a PNG data URL.
+ */
+export async function drawImageMessage(
+  canvas: HTMLCanvasElement,
+  imageMsg: sensor_msgs.Image | sensor_msgs.CompressedImage
+): Promise<{ width: number; height: number }> {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Failed to get canvas 2D context');
+
+  if ('encoding' in imageMsg) {
+    const { width, height } = imageMsg;
+    const pixels = decodeImagePixels(imageMsg);
+    fitCanvas(canvas, width, height);
+    ctx.putImageData(new ImageData(pixels, width, height), 0, 0);
+    return { width, height };
   }
 
-  // Put the image data on the canvas
-  ctx.putImageData(imageData, 0, 0);
-
-  // Convert canvas to data URL
-  return canvas.toDataURL('image/png');
+  if (!imageMsg.data || imageMsg.data.length === 0) throw new Error('Image data is empty');
+  const type = imageMsg.format.includes('png') ? 'image/png' : 'image/jpeg';
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(new Blob([decodeBytes(imageMsg.data)], { type }));
+  } catch {
+    throw new Error(`Cannot decode compressed image (${imageMsg.format})`);
+  }
+  try {
+    fitCanvas(canvas, bitmap.width, bitmap.height);
+    ctx.drawImage(bitmap, 0, 0);
+    return { width: bitmap.width, height: bitmap.height };
+  } finally {
+    bitmap.close();
+  }
 }
 
 /**

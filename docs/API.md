@@ -3,6 +3,7 @@
 This document provides detailed information about the MITI API, including hooks, components, and utilities.
 
 ## Table of Contents
+
 - [Hooks](#hooks)
 - [Components](#components)
 - [Types](#types)
@@ -10,119 +11,131 @@ This document provides detailed information about the MITI API, including hooks,
 
 ## Hooks
 
-### useRosbridge
+### useBridge
 
-Connect to a ROS2 system via rosbridge WebSocket.
+Connect to a ROS2 system via foxglove_bridge (Foxglove WebSocket protocol).
 
 ```typescript
-function useRosbridge(url?: string): {
-  client: ROSBridge | null;
+function useBridge(url?: string): {
+  client: BridgeClient | null;
   connected: boolean;
   error: Error | null;
-}
+};
 ```
 
 **Parameters:**
-- `url` (optional): WebSocket URL. Defaults to `NEXT_PUBLIC_ROSBRIDGE_URL` or `ws://localhost:9090`
+
+- `url` (optional): WebSocket URL. Defaults to `NEXT_PUBLIC_BRIDGE_URL` or `ws://localhost:8765`
 
 **Returns:**
-- `client`: ROSBridge client instance
+
+- `client`: BridgeClient instance (a new URL replaces the client and resets the state)
 - `connected`: Connection status
 - `error`: Last error encountered
 
 **Example:**
+
 ```typescript
-const { client, connected, error } = useRosbridge('ws://192.168.1.100:9090');
+const { client, connected, error } = useBridge('ws://192.168.1.100:8765');
 ```
 
 ---
 
 ### useTopic
 
-Subscribe to a ROS2 topic and receive messages.
+Subscribe to a ROS2 topic and receive decoded messages.
 
 ```typescript
-function useTopic<T = any>(
-  topic: string | null,
-  rosbridgeClient: ROSBridge | null,
+function useTopic<T = unknown>(
+  client: BridgeClient | null,
+  topic: string,
+  messageType?: string,
   options?: { throttleRate?: number }
 ): {
   data: T | null;
-  loading: boolean;
-  error: Error | null;
-  messageCount: number;
-}
+  lastUpdate: Date | null;
+};
 ```
 
 **Parameters:**
+
+- `client`: BridgeClient instance
 - `topic`: Topic name to subscribe to
-- `rosbridgeClient`: ROSBridge client instance
-- `options.throttleRate` (optional): Message rate limit in ms
+- `messageType` (optional): Only bind to a channel of this type (`pkg/Type` or `pkg/msg/Type`)
+- `options.throttleRate` (optional): Minimum ms between React updates. The Foxglove protocol has no server-side throttling, so messages in between are dropped in the browser except the newest
 
 **Returns:**
-- `data`: Latest message data
-- `loading`: Loading state
-- `error`: Subscription error
-- `messageCount`: Total messages received
+
+- `data`: Latest message
+- `lastUpdate`: Time the latest message was delivered
 
 **Example:**
+
 ```typescript
-const { data, messageCount } = useTopic('/camera/image_raw', client);
+const { data, lastUpdate } = useTopic(client, '/camera/image_raw/compressed', undefined, {
+  throttleRate: 100,
+});
 ```
 
 ---
 
 ### useTopicList
 
-Get list of available ROS2 topics.
+Get the list of topics advertised by foxglove_bridge. The list updates live as the bridge advertises or removes topics.
 
 ```typescript
-function useTopicList(
-  rosbridgeClient: ROSBridge | null
-): {
+function useTopicList(client: BridgeClient | null): {
   topics: TopicInfo[];
   loading: boolean;
   error: Error | null;
   refreshTopics: () => void;
-}
+};
 ```
 
 **Returns:**
-- `topics`: Array of available topics
-- `loading`: Loading state
-- `error`: Fetch error
-- `refreshTopics`: Function to refresh topic list
+
+- `topics`: Advertised topics, sorted by name
+- `loading`: Always `false` (the list comes from bridge advertisements)
+- `error`: Always `null`
+- `refreshTopics`: Re-read the current list from the client
 
 **Example:**
+
 ```typescript
-const { topics, refreshTopics } = useTopicList(client);
+const { topics } = useTopicList(client);
 ```
 
 ---
 
 ### useTF
 
-Subscribe to TF (transform) data.
+Subscribe to TF (transform) data and build the transform tree.
 
 ```typescript
-function useTF(
-  rosbridgeClient: ROSBridge | null,
-  enabled?: boolean
-): {
-  transforms: Map<string, TFTransform>;
-  loading: boolean;
-  error: Error | null;
-}
+function useTF(options: {
+  client: BridgeClient | null;
+  maxAge?: number;
+  enabled?: boolean;
+  tfTopics?: string[];
+  staticTopics?: string[];
+}): {
+  tfTree: TFTree;
+  isLoading: boolean;
+};
 ```
 
 **Parameters:**
-- `rosbridgeClient`: ROSBridge client instance
-- `enabled` (optional): Enable/disable TF subscription
+
+- `client`: BridgeClient instance
+- `maxAge` (optional): Drop dynamic frames not updated for this many ms (default: `30000`)
+- `enabled` (optional): Enable/disable TF subscription (default: `true`)
+- `tfTopics` (optional): TF topics (default: `['/tf', '/tf_static']`)
+- `staticTopics` (optional): Topics treated as static; their transforms never expire and are replayed to later subscribers (default: topics in `tfTopics` whose name contains `static`)
 
 **Returns:**
-- `transforms`: Map of transform data
-- `loading`: Loading state
-- `error`: Subscription error
+
+- `tfTree`: Frames by name and the root frame
+- `isLoading`: `true` until the first TF message arrives
 
 ---
 
@@ -138,10 +151,11 @@ function useLayoutConfig(): {
   updateLayout: (layouts: Layout[]) => void;
   resetLayout: () => void;
   toggleLock: (id: string) => void;
-}
+};
 ```
 
 **Returns:**
+
 - `layout`: Current layout state
 - `addWidget`: Add new widget
 - `removeWidget`: Remove widget by ID
@@ -163,7 +177,7 @@ function useUrdfConfig(): {
   setUrdfUrl: (url: string) => void;
   setMeshBaseUrl: (url: string) => void;
   setPackageMapping: (mapping: Record<string, string>) => void;
-}
+};
 ```
 
 ---
@@ -173,17 +187,16 @@ function useUrdfConfig(): {
 Persist state in browser localStorage.
 
 ```typescript
-function useLocalStorage<T>(
-  key: string,
-  initialValue: T
-): [T, (value: T) => void]
+function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T) => void];
 ```
 
 **Parameters:**
+
 - `key`: Storage key
 - `initialValue`: Default value
 
 **Returns:**
+
 - `[value, setValue]`: Current value and setter function
 
 ---
@@ -195,10 +208,11 @@ function useLocalStorage<T>(
 Main application component.
 
 ```typescript
-function Dashboard(): JSX.Element
+function Dashboard(): JSX.Element;
 ```
 
 **Features:**
+
 - Connection management
 - Widget layout
 - Topic list
@@ -217,29 +231,23 @@ interface ConnectionStatusProps {
   onUrlChange: (url: string) => void;
 }
 
-function ConnectionStatus(props: ConnectionStatusProps): JSX.Element
+function ConnectionStatus(props: ConnectionStatusProps): JSX.Element;
 ```
 
 ---
 
-### URDFViewer
+### SceneViewer
 
-3D robot model viewer.
+The 3D Scene panel (widget type `urdf-viewer`). Settings are grouped like Foxglove's 3D panel; see [3D Scene](3d-scene.md).
 
 ```typescript
-interface URDFViewerProps {
-  config: UrdfConfig;
-  client: ROSBridge | null;
-  onConfigChange: {
-    onModeChange: (mode: 'topic' | 'url') => void;
-    onTopicChange: (topic: string) => void;
-    onUrdfUrlChange: (url: string) => void;
-    onMeshBaseUrlChange: (url: string) => void;
-    onPackageMapping: (mapping: Record<string, string>) => void;
-  };
-}
-
-function URDFViewer(props: URDFViewerProps): JSX.Element
+function SceneViewer(props: {
+  client: BridgeClient | null;
+  topics?: TopicInfo[];
+  /** Stored widget props; MITI 2.0 layouts are migrated by normalizeSceneConfig. */
+  props: unknown;
+  onPropsChange: (config: SceneConfig) => void;
+}): JSX.Element;
 ```
 
 ---
@@ -251,10 +259,10 @@ Point cloud visualization component.
 ```typescript
 interface PointCloudViewerProps {
   topic: string;
-  client: ROSBridge | null;
+  client: BridgeClient | null;
 }
 
-function PointCloudViewer(props: PointCloudViewerProps): JSX.Element
+function PointCloudViewer(props: PointCloudViewerProps): JSX.Element;
 ```
 
 ---
@@ -266,10 +274,10 @@ Camera image display component.
 ```typescript
 interface CameraViewerProps {
   topic: string;
-  client: ROSBridge | null;
+  client: BridgeClient | null;
 }
 
-function CameraViewer(props: CameraViewerProps): JSX.Element
+function CameraViewer(props: CameraViewerProps): JSX.Element;
 ```
 
 ---
@@ -285,32 +293,30 @@ interface TopicListProps {
   onRefresh: () => void;
 }
 
-function TopicList(props: TopicListProps): JSX.Element
+function TopicList(props: TopicListProps): JSX.Element;
 ```
 
 ---
 
 ## Types
 
-### ROSBridge Types
+### Bridge Types
 
 ```typescript
+// src/lib/bridge/types.ts
 interface TopicInfo {
-  name: string;
+  topic: string;
   type: string;
 }
 
-interface ROSMessage {
-  op: string;
-  topic?: string;
-  type?: string;
-  msg?: any;
-  [key: string]: any;
-}
-
-type MessageCallback = (message: any) => void;
+type MessageCallback = (message: unknown) => void;
 type ConnectionCallback = () => void;
 type ErrorCallback = (error: Error) => void;
+
+interface SubscribeOptions {
+  /** Keep transforms from this TF topic and replay them to later subscribers. */
+  retainTransforms?: boolean;
+}
 ```
 
 ---
@@ -318,7 +324,7 @@ type ErrorCallback = (error: Error) => void;
 ### Widget Types
 
 ```typescript
-type WidgetType = 
+type WidgetType =
   | 'topic-list'
   | 'urdf-viewer'
   | 'pointcloud-viewer'
@@ -364,7 +370,7 @@ interface CompressedImage {
     frame_id: string;
   };
   format: string;
-  data: number[];
+  data: Uint8Array; // CDR-decoded uint8[]
 }
 
 // Point cloud message
@@ -379,7 +385,7 @@ interface PointCloud2 {
   is_bigendian: boolean;
   point_step: number;
   row_step: number;
-  data: number[];
+  data: Uint8Array; // CDR-decoded uint8[]
   is_dense: boolean;
 }
 
@@ -393,51 +399,46 @@ interface TFMessage {
 
 ## Utilities
 
-### Package Path Resolver
+### Resource URLs
 
-Resolve ROS package paths to URLs.
+Resolve robot resource URIs to URLs the browser can fetch (`src/lib/scene/resources.ts`). Meshes are normally fetched through foxglove_bridge (`loadMeshResource` in `src/lib/scene/mesh-loader.ts`); these URLs are the fallback.
 
 ```typescript
-function resolvePackagePath(
-  packagePath: string,
-  meshBaseUrl: string,
-  packageMapping: Record<string, string>
-): string
+function resolveResourceUrl(
+  uri: string,
+  options?: { meshBaseUrl?: string; packageMapping?: Record<string, string> }
+): string;
 ```
 
-**Parameters:**
-- `packagePath`: ROS package path (e.g., `package://robot_description/meshes/base.stl`)
-- `meshBaseUrl`: Base URL for mesh files
-- `packageMapping`: Map of package names to URLs
+- `package://pkg/path` → `packageMapping[pkg]/path`, else `meshBaseUrl/path`, else MITI's `/api/package/pkg/path`
+- `file:///abs/path` → MITI's `/api/file?path=…`
+- other URLs are returned unchanged
 
-**Returns:**
-- Resolved absolute URL
-
-**Example:**
 ```typescript
-const url = resolvePackagePath(
-  'package://my_robot/meshes/base.stl',
-  'http://localhost:8000',
-  { my_robot: 'http://localhost:8000/robots/my_robot' }
-);
-// Returns: 'http://localhost:8000/robots/my_robot/meshes/base.stl'
+resolveResourceUrl('package://my_robot/meshes/base.stl', {
+  packageMapping: { my_robot: 'http://robot:8000/my_robot' },
+});
+// Returns: 'http://robot:8000/my_robot/meshes/base.stl'
 ```
 
 ---
 
 ### Image Parser
 
-Parse ROS image messages to displayable format.
+Decode `sensor_msgs/Image` and `CompressedImage` messages (`src/lib/parsers/image-parser.ts`).
 
 ```typescript
-function parseCompressedImage(data: number[]): string
+/** RGBA pixels for a raw image, honouring `step` and `is_bigendian`. */
+function decodeImagePixels(image: sensor_msgs.Image): Uint8ClampedArray;
+
+/** Draw a raw or compressed image onto a canvas, sized to the image. */
+function drawImageMessage(
+  canvas: HTMLCanvasElement,
+  image: sensor_msgs.Image | sensor_msgs.CompressedImage
+): Promise<{ width: number; height: number }>;
 ```
 
-**Parameters:**
-- `data`: Compressed image data array
-
-**Returns:**
-- Base64 encoded image data URL
+Supported raw encodings: rgb8, bgr8, rgba8, bgra8, mono8, mono16, 16UC1, 32FC1.
 
 ---
 
@@ -449,71 +450,51 @@ Parse ROS PointCloud2 messages.
 function parsePointCloud2(message: PointCloud2): {
   positions: Float32Array;
   colors: Float32Array;
-}
+};
 ```
 
 **Parameters:**
+
 - `message`: PointCloud2 message
 
 **Returns:**
+
 - Object with positions and colors arrays
 
 ---
 
-## ROSBridge Client API
+## BridgeClient API
+
+`BridgeClient` (`src/lib/bridge/client.ts`) connects to foxglove_bridge with the WebSocket subprotocol `foxglove.sdk.v1` (falling back to `foxglove.websocket.v1` for older bridges). Messages arrive as CDR and are decoded with the schemas the bridge advertises. Subscriptions are shared per topic and survive reconnects and node restarts: they bind to a channel whenever the bridge advertises the topic. After a lost connection the client reconnects every 3 seconds until `disconnect()` is called.
+
+```typescript
+const client = new BridgeClient('ws://localhost:8765');
+```
 
 ### Methods
 
 #### connect()
+
 ```typescript
 connect(): Promise<void>
 ```
 
-Connect to rosbridge server.
+Connect to foxglove_bridge. Resolves when the bridge sends its server info (capabilities are known from then).
 
 ---
 
 #### disconnect()
+
 ```typescript
 disconnect(): void
 ```
 
-Disconnect from server and cleanup.
-
----
-
-#### subscribe()
-```typescript
-subscribe(
-  topic: string,
-  messageType: string,
-  callback: MessageCallback
-): () => void
-```
-
-Subscribe to a topic and return unsubscribe function.
-
----
-
-#### unsubscribe()
-```typescript
-unsubscribe(topic: string): void
-```
-
-Unsubscribe from a topic.
-
----
-
-#### getTopics()
-```typescript
-getTopics(): Promise<TopicInfo[]>
-```
-
-Get list of available topics.
+Disconnect from the bridge and stop reconnecting.
 
 ---
 
 #### isConnected()
+
 ```typescript
 isConnected(): boolean
 ```
@@ -522,9 +503,115 @@ Check connection status.
 
 ---
 
+#### hasCapability()
+
+```typescript
+hasCapability(capability: string): boolean
+```
+
+Check a capability advertised by the bridge, e.g. `clientPublish`, `parameters`, `services` or `assets`.
+
+---
+
+#### getTopics()
+
+```typescript
+getTopics(): TopicInfo[]
+```
+
+Topics currently advertised by the bridge, sorted by name.
+
+---
+
+#### onTopicsChanged()
+
+```typescript
+onTopicsChanged(callback: (topics: TopicInfo[]) => void): () => void
+```
+
+Register a handler for topic advertisement changes; returns an unregister function.
+
+---
+
+#### subscribe()
+
+```typescript
+subscribe(
+  topic: string,
+  callback: MessageCallback,
+  type?: string,
+  options?: SubscribeOptions
+): void
+```
+
+Subscribe to a topic. With `type`, only a channel of that type is bound. `options.retainTransforms` keeps the transforms of a TF topic and replays them to later subscribers (always on for topics whose name contains `static`).
+
+---
+
+#### unsubscribe()
+
+```typescript
+unsubscribe(topic: string, callback?: MessageCallback): void
+```
+
+Remove one callback, or every callback when omitted. The bridge subscription ends when the last callback is removed.
+
+---
+
+#### advertise()
+
+```typescript
+advertise(topic: string, type: string): void
+```
+
+Declare a topic to publish on. Repeated calls are free and the advertisement survives reconnects.
+
+---
+
+#### publish()
+
+```typescript
+publish(topic: string, message: unknown): void
+```
+
+Publish a message (JSON encoding) on an advertised topic. Requires the bridge's `clientPublish` capability; throws when not connected, not advertised or not allowed.
+
+---
+
+#### callService()
+
+```typescript
+callService(name: string, args?: unknown): Promise<unknown>
+```
+
+Call a ROS service advertised by the bridge. The request and response are CDR-encoded with the service schema. Rejects after 5 seconds without a response.
+
+---
+
+#### getParameter()
+
+```typescript
+getParameter(name: string): Promise<unknown>
+```
+
+Read a ROS parameter named `/node.parameter`, e.g. `/robot_state_publisher.robot_description`. Requires the bridge's `parameters` capability.
+
+---
+
+#### fetchAsset()
+
+```typescript
+fetchAsset(uri: string): Promise<Uint8Array>
+```
+
+Fetch a `package://` or `file://` resource from the robot, as foxglove_bridge resolves it. Requires the bridge's `assets` capability.
+
+---
+
 ### Event Handlers
 
 #### onConnection()
+
 ```typescript
 onConnection(callback: ConnectionCallback): () => void
 ```
@@ -534,6 +621,7 @@ Register connection event handler.
 ---
 
 #### onDisconnection()
+
 ```typescript
 onDisconnection(callback: ConnectionCallback): () => void
 ```
@@ -543,6 +631,7 @@ Register disconnection event handler.
 ---
 
 #### onError()
+
 ```typescript
 onError(callback: ErrorCallback): () => void
 ```
@@ -556,11 +645,12 @@ Register error event handler.
 ### Complete Example: Custom Widget
 
 ```typescript
-import { useRosbridge, useTopic } from '@/hooks';
+import { useBridge } from '@/hooks/useBridge';
+import { useTopic } from '@/hooks/useTopic';
 
 function MyCustomWidget() {
-  const { client, connected } = useRosbridge();
-  const { data, messageCount } = useTopic('/my_topic', client);
+  const { client, connected } = useBridge();
+  const { data, lastUpdate } = useTopic(client, '/my_topic');
 
   if (!connected) {
     return <div>Not connected</div>;
@@ -569,7 +659,7 @@ function MyCustomWidget() {
   return (
     <div>
       <h3>My Custom Widget</h3>
-      <p>Messages: {messageCount}</p>
+      <p>Last update: {lastUpdate?.toLocaleTimeString() ?? 'waiting'}</p>
       <pre>{JSON.stringify(data, null, 2)}</pre>
     </div>
   );
@@ -580,23 +670,20 @@ function MyCustomWidget() {
 
 ```typescript
 import { useState, useEffect } from 'react';
-import { ROSBridge } from '@/lib/rosbridge/client';
+import type { BridgeClient } from '@/lib/bridge/client';
 
-function useCustomRosHook(client: ROSBridge | null) {
-  const [state, setState] = useState(null);
+function useCustomRosHook(client: BridgeClient | null) {
+  const [state, setState] = useState<string | null>(null);
 
   useEffect(() => {
     if (!client) return;
 
-    const unsubscribe = client.subscribe(
-      '/my_topic',
-      'std_msgs/String',
-      (message) => {
-        setState(message.data);
-      }
-    );
+    const callback = (message: unknown) => {
+      setState((message as { data: string }).data);
+    };
+    client.subscribe('/my_topic', callback, 'std_msgs/msg/String');
 
-    return () => unsubscribe();
+    return () => client.unsubscribe('/my_topic', callback);
   }, [client]);
 
   return state;

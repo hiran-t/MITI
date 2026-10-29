@@ -1,46 +1,27 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { ROSBridge } from '@/lib/rosbridge/client';
-import type { TopicInfo } from '@/lib/rosbridge/types';
+import { BridgeClient } from '@/lib/bridge/client';
+import type { TopicInfo } from '@/lib/bridge/types';
 
-export function useTopicList(client: ROSBridge | null): {
+/** Topics advertised by foxglove_bridge; the list updates as the bridge advertises changes. */
+export function useTopicList(client: BridgeClient | null): {
   topics: TopicInfo[];
   loading: boolean;
   error: Error | null;
-  refreshTopics: () => Promise<void>;
+  refreshTopics: () => void;
 } {
   const [topics, setTopics] = useState<TopicInfo[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
 
-  const refreshTopics = useCallback(async () => {
-    if (!client || !client.isConnected()) return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const topicList = await client.getTopics();
-      setTopics(topicList);
-    } catch (err) {
-      setError(err as Error);
-      console.error('Error fetching topics:', err);
-    } finally {
-      setLoading(false);
-    }
+  const refreshTopics = useCallback(() => {
+    setTopics(client?.getTopics() ?? []);
   }, [client]);
 
   useEffect(() => {
-    if (client && client.isConnected()) {
-      refreshTopics();
-    }
+    refreshTopics();
+    if (!client) return;
+    return client.onTopicsChanged(setTopics);
   }, [client, refreshTopics]);
 
-  return {
-    topics,
-    loading,
-    error,
-    refreshTopics,
-  };
+  return { topics, loading: false, error: null, refreshTopics };
 }

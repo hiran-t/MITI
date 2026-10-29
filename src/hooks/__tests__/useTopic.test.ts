@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { useTopic } from '../useTopic';
-import type { ROSBridge } from '@/lib/rosbridge/client';
+import type { BridgeClient } from '@/lib/bridge/client';
 
 test('changing a widget source clears old data and unsubscribes only its callback', () => {
   let receive: (message: unknown) => void = () => {};
@@ -8,7 +8,7 @@ test('changing a widget source clears old data and unsubscribes only its callbac
     receive = callback;
   });
   const unsubscribe = jest.fn();
-  const client = { subscribe, unsubscribe } as unknown as ROSBridge;
+  const client = { subscribe, unsubscribe } as unknown as BridgeClient;
   const hook = renderHook(({ topic }) => useTopic(client, topic), {
     initialProps: { topic: '/a' },
   });

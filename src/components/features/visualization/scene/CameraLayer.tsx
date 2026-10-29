@@ -4,9 +4,9 @@ import { Line } from '@react-three/drei';
 import * as THREE from 'three';
 import type { Header, SceneLayerConfig } from '@/types/scene';
 import type { sensor_msgs } from '@/types/ros-messages';
-import type { ROSBridge } from '@/lib/rosbridge/client';
+import type { BridgeClient } from '@/lib/bridge/client';
 import { useTopic } from '@/hooks/useTopic';
-import { parseImageMessage } from '@/lib/parsers/image-parser';
+import { drawImageMessage } from '@/lib/parsers/image-parser';
 import { frameName } from '@/lib/scene/transforms';
 export interface CameraInfo {
   header: Header;
@@ -19,6 +19,9 @@ export interface CameraInfo {
   binning_y?: number;
   roi?: { x_offset: number; y_offset: number; width: number; height: number };
 }
+// Image frames are throttled like other sensor layers; only the newest frame is queued.
+const IMAGE_OPTIONS = { throttleRate: 100 };
+
 export function cameraCorners(info: CameraInfo, depth: number): [number, number, number][] {
   const p = info.p,
     k = info.k;
@@ -58,15 +61,14 @@ export default function CameraLayer({
 }: {
   info: CameraInfo;
   layer: SceneLayerConfig;
-  client: ROSBridge | null;
+  client: BridgeClient | null;
   onError: (message: string) => void;
 }) {
-  const { data, lastUpdate } = useTopic<
-    sensor_msgs.Image | { data: string | number[]; format: string; header: Header }
-  >(
+  const { data, lastUpdate } = useTopic<sensor_msgs.Image | sensor_msgs.CompressedImage>(
     client,
     layer.imageTopic ?? '',
-    layer.imageMode === 'compressed' ? 'sensor_msgs/msg/CompressedImage' : 'sensor_msgs/msg/Image'
+    layer.imageMode === 'compressed' ? 'sensor_msgs/msg/CompressedImage' : 'sensor_msgs/msg/Image',
+    { ...IMAGE_OPTIONS, maxRate: layer.maxRate || undefined }
   );
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
   const corners = useMemo(() => cameraCorners(info, layer.size ?? 1), [info, layer.size]);
@@ -78,46 +80,33 @@ export default function CameraLayer({
     return g;
   }, [corners]);
   useEffect(() => () => geometry.dispose(), [geometry]);
+  useEffect(() => setTexture(null), [layer.imageTopic]);
+  // Dispose each texture once it is replaced or the layer unmounts.
+  useEffect(() => () => texture?.dispose(), [texture]);
   useEffect(() => {
-    setTexture(null);
     if (!data) return;
-    let live = true,
-      url = '',
-      image: THREE.Texture | undefined;
+    let live = true;
+    const canvas = document.createElement('canvas');
     try {
       if (frameName(data.header.frame_id) !== frameName(info.header.frame_id))
         throw new Error('Image and CameraInfo must use the same optical frame');
-      if ('encoding' in data) url = parseImageMessage(data);
-      else {
-        const bytes =
-          typeof data.data === 'string'
-            ? Uint8Array.from(atob(data.data), (c) => c.charCodeAt(0))
-            : new Uint8Array(data.data);
-        url = URL.createObjectURL(
-          new Blob([bytes], { type: data.format.includes('png') ? 'image/png' : 'image/jpeg' })
-        );
-      }
-      image = new THREE.TextureLoader().load(
-        url,
-        (t) => {
-          if (live) {
-            t.colorSpace = THREE.SRGBColorSpace;
-            setTexture(t);
-            onError('');
-          } else t.dispose();
-        },
-        undefined,
-        () => {
-          if (live) onError('Failed to decode image');
-        }
-      );
+      // Keep showing the previous texture until this frame is drawn, so the plane never blinks.
+      drawImageMessage(canvas, data)
+        .then(() => {
+          if (!live) return;
+          const next = new THREE.CanvasTexture(canvas);
+          next.colorSpace = THREE.SRGBColorSpace;
+          setTexture(next);
+          onError('');
+        })
+        .catch((error) => {
+          if (live) onError(error instanceof Error ? error.message : 'Failed to decode image');
+        });
     } catch (error) {
       onError(error instanceof Error ? error.message : 'Invalid image');
     }
     return () => {
       live = false;
-      image?.dispose();
-      if (url.startsWith('blob:')) URL.revokeObjectURL(url);
     };
   }, [data, info.header.frame_id, onError]);
   useEffect(() => {

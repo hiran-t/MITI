@@ -70,7 +70,7 @@ case $choice in
             echo "🚀 Starting MITI..."
             docker run -d \
               -p 3000:3000 \
-              -e NEXT_PUBLIC_ROSBRIDGE_URL=ws://localhost:9090 \
+              -e NEXT_PUBLIC_BRIDGE_URL=ws://localhost:8765 \
               --name miti \
               --restart unless-stopped \
               "$IMAGE_NAME"

@@ -1,16 +1,16 @@
 'use client';
 
 import type { WidgetConfig } from '@/types/widget';
-import { DEFAULT_URDF_CONFIG } from '@/types/urdf-config';
 import { CAMERA_TOPICS } from '@/constants/ros-topics';
-import type { ROSBridge } from '@/lib/rosbridge/client';
-import type { TopicInfo } from '@/lib/rosbridge/types';
+import type { BridgeClient } from '@/lib/bridge/client';
+import type { TopicInfo } from '@/lib/bridge/types';
 import TopicList from '../topic-viewer/TopicList';
-import URDFViewer from '../visualization/urdf/URDFViewer';
+import SceneViewer from '../visualization/scene/SceneViewer';
 import PointCloudViewer from '../visualization/pointcloud/PointCloudViewer';
 import CameraViewer from '../visualization/camera/CameraViewer';
 import StateMachineMonitor from '../visualization/state-machine/StateMachineMonitor';
 import ButtonSwitchWidget from '../controls/ButtonSwitchWidget';
+import TopicInput from '../topic-viewer/TopicInput';
 import WidgetSettingsPortal, {
   WidgetSettingsContext,
   SettingsSection,
@@ -19,7 +19,7 @@ import { widgetStyles, commonStyles } from '@/styles';
 
 interface WidgetContainerProps {
   widget: WidgetConfig;
-  client: ROSBridge | null;
+  client: BridgeClient | null;
   topics: TopicInfo[];
   topicsLoading: boolean;
   onRefreshTopics: () => void;
@@ -61,15 +61,11 @@ export default function WidgetContainer({
         );
       case 'urdf-viewer':
         return (
-          <URDFViewer
+          <SceneViewer
             topics={topics}
             client={client}
-            config={{ ...DEFAULT_URDF_CONFIG, ...widget.props }}
-            onConfigChange={(updates) =>
-              onUpdateWidget(widget.i, {
-                props: { ...DEFAULT_URDF_CONFIG, ...widget.props, ...updates },
-              })
-            }
+            props={widget.props}
+            onPropsChange={(props) => onUpdateWidget(widget.i, { props })}
           />
         );
       case 'pointcloud-viewer': {
@@ -81,12 +77,12 @@ export default function WidgetContainer({
               <SettingsSection title="General" keywords="Point Cloud Topic">
                 <label className="block p-4 text-sm">
                   Point Cloud Topic
-                  <input
+                  <TopicInput
                     className={`${commonStyles.input.base} mt-2`}
                     value={topic}
-                    onChange={(event) =>
-                      onUpdateWidget(widget.i, { props: { topic: event.target.value } })
-                    }
+                    onCommit={(next) => onUpdateWidget(widget.i, { props: { topic: next } })}
+                    topics={topics}
+                    messageType="sensor_msgs/msg/PointCloud2"
                   />
                 </label>
               </SettingsSection>
@@ -99,8 +95,13 @@ export default function WidgetContainer({
           <CameraViewer
             client={client}
             topic={widget.props.topic}
+            topics={topics}
             onTopicChange={(topic) =>
               onUpdateWidget(widget.i, { props: { ...widget.props, topic } })
+            }
+            maxFps={widget.props.maxFps}
+            onMaxFpsChange={(maxFps) =>
+              onUpdateWidget(widget.i, { props: { ...widget.props, maxFps } })
             }
           />
         );

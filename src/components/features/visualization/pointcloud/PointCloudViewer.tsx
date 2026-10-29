@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useMemo } from 'react';
-import { ROSBridge } from '@/lib/rosbridge/client';
+import { BridgeClient } from '@/lib/bridge/client';
 import { useTopic } from '@/hooks/useTopic';
 import Scene3D from '../urdf/Scene3D';
 import { Loader2 } from 'lucide-react';
@@ -12,7 +12,7 @@ import { visualizationStyles } from '@/styles';
 import { CAMERA_TOPICS } from '@/constants/ros-topics';
 
 interface PointCloudViewerProps {
-  client: ROSBridge | null;
+  client: BridgeClient | null;
   topic?: string;
 }
 

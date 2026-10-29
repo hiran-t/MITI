@@ -3,20 +3,46 @@
 import { useState, useEffect, useRef } from 'react';
 import { Settings, X } from 'lucide-react';
 import { connectionStyles } from '@/styles';
+import { DEFAULT_BRIDGE_URL } from '@/hooks/useBridge';
+import type { StreamMode } from '@/lib/bridge/client';
 
 interface ConnectionSettingsProps {
   currentUrl: string;
   onUrlChange: (url: string) => void;
+  currentMode?: StreamMode;
+  onModeChange?: (mode: StreamMode) => void;
 }
 
-export default function ConnectionSettings({ currentUrl, onUrlChange }: ConnectionSettingsProps) {
+const STREAM_MODES: { value: StreamMode; label: string; hint: string }[] = [
+  {
+    value: 'synchronized',
+    label: 'Synchronized (like Foxglove)',
+    hint: 'One connection: cameras, TF and the 3D scene show the same moment.',
+  },
+  {
+    value: 'separate',
+    label: 'Prioritize robot motion',
+    hint: 'Images and point clouds on their own connections: the robot stays real-time on a slow link, but cameras lag behind it.',
+  },
+];
+
+export default function ConnectionSettings({
+  currentUrl,
+  onUrlChange,
+  currentMode = 'synchronized',
+  onModeChange,
+}: ConnectionSettingsProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [url, setUrl] = useState(currentUrl);
+  const [mode, setMode] = useState(currentMode);
 
   useEffect(() => {
     setUrl(currentUrl);
   }, [currentUrl]);
+  useEffect(() => {
+    setMode(currentMode);
+  }, [currentMode]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -28,7 +54,7 @@ export default function ConnectionSettings({ currentUrl, onUrlChange }: Connecti
         setIsOpen(false);
       }
       if (event.key === 'Tab') {
-        const elements = dialogRef.current?.querySelectorAll<HTMLElement>('button, input');
+        const elements = dialogRef.current?.querySelectorAll<HTMLElement>('button, input, select');
         if (!elements?.length) return;
         const first = elements[0],
           last = elements[elements.length - 1];
@@ -50,12 +76,13 @@ export default function ConnectionSettings({ currentUrl, onUrlChange }: Connecti
 
   const handleSave = () => {
     onUrlChange(url);
+    onModeChange?.(mode);
     setIsOpen(false);
   };
 
   const handleReset = () => {
-    const defaultUrl = process.env.NEXT_PUBLIC_ROSBRIDGE_URL || 'ws://localhost:9090';
-    setUrl(defaultUrl);
+    setUrl(DEFAULT_BRIDGE_URL);
+    setMode('synchronized');
   };
 
   if (!isOpen) {
@@ -94,37 +121,54 @@ export default function ConnectionSettings({ currentUrl, onUrlChange }: Connecti
         {/* Content */}
         <div className={connectionStyles.modal.content}>
           <div>
-            <label htmlFor="rosbridge-url" className={connectionStyles.form.label}>
-              Rosbridge Server URL
+            <label htmlFor="bridge-url" className={connectionStyles.form.label}>
+              foxglove_bridge URL
             </label>
             <input
-              id="rosbridge-url"
+              id="bridge-url"
               type="text"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="ws://192.168.10.27:9090"
+              placeholder="ws://<robot-ip>:8765"
               className={connectionStyles.form.input}
             />
             <p className={connectionStyles.form.hint}>
-              Enter the WebSocket URL of your rosbridge server
+              WebSocket address of foxglove_bridge on the robot (default port 8765)
             </p>
           </div>
+
+          {onModeChange && (
+            <div>
+              <label htmlFor="stream-mode" className={connectionStyles.form.label}>
+                Streaming
+              </label>
+              <select
+                id="stream-mode"
+                value={mode}
+                onChange={(e) => setMode(e.target.value as StreamMode)}
+                className={connectionStyles.form.input}
+              >
+                {STREAM_MODES.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <p className={connectionStyles.form.hint}>
+                {STREAM_MODES.find((option) => option.value === mode)?.hint}
+              </p>
+            </div>
+          )}
 
           {/* Examples */}
           <div className={connectionStyles.examples.container}>
             <p className={connectionStyles.examples.title}>Examples:</p>
             <div className={connectionStyles.examples.list}>
               <button
-                onClick={() => setUrl('ws://localhost:9090')}
+                onClick={() => setUrl('ws://localhost:8765')}
                 className={connectionStyles.examples.link}
               >
-                ws://localhost:9090
-              </button>
-              <button
-                onClick={() => setUrl('ws://192.168.10.27:9090')}
-                className={connectionStyles.examples.link}
-              >
-                ws://192.168.10.27:9090
+                ws://localhost:8765
               </button>
             </div>
           </div>

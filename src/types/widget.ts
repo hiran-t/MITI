@@ -3,6 +3,7 @@
  */
 
 import type { URDFConfig } from './urdf-config';
+import type { SceneConfig } from './scene-config';
 import { CAMERA_TOPICS } from '@/constants/ros-topics';
 
 // ─── Base ────────────────────────────────────────────────────────────────────
@@ -23,6 +24,8 @@ interface WidgetBase {
 
 export interface CameraWidgetProps {
   topic: string;
+  /** Frames per second requested from the bridge; 0 receives every frame. */
+  maxFps?: number;
 }
 
 export interface StateMachineWidgetProps {
@@ -55,7 +58,8 @@ export interface ButtonSwitchWidgetProps {
   offArgs?: string;
 }
 
-export interface URDFWidgetProps extends URDFConfig {
+/** MITI ≤ 2.0 3D Scene props; read through normalizeSceneConfig. */
+export interface LegacyURDFWidgetProps extends URDFConfig {
   pointCloudTopics?: string[];
   jointStatesTopic?: string;
   tfTopics?: string[];
@@ -70,6 +74,7 @@ export interface URDFWidgetProps extends URDFConfig {
 // ─── Discriminated union variants ────────────────────────────────────────────
 
 export type TopicsWidgetConfig = WidgetBase & { type: 'topics' };
+export type URDFWidgetProps = SceneConfig | LegacyURDFWidgetProps;
 export type URDFWidgetConfig = WidgetBase & { type: 'urdf-viewer'; props?: URDFWidgetProps };
 export type PointCloudWidgetConfig = WidgetBase & {
   type: 'pointcloud-viewer';

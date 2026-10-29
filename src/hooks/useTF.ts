@@ -1,18 +1,22 @@
 'use client';
 import { useEffect, useState } from 'react';
 import type { TFMessage, TFTree, TFFrame } from '@/types/tf-messages';
-import type { ROSBridge } from '@/lib/rosbridge/client';
+import type { BridgeClient } from '@/lib/bridge/client';
 import { frameName, stampSeconds, transformMatrix } from '@/lib/scene/transforms';
 const DEFAULT_TOPICS = ['/tf', '/tf_static'];
+/** TF history kept per frame, in message time and samples. */
+const HISTORY_SECONDS = 30;
+const HISTORY_SAMPLES = 3000;
+const TRIM_BATCH = 64;
 interface UseTFOptions {
-  rosbridgeClient: ROSBridge | null;
+  client: BridgeClient | null;
   maxAge?: number;
   enabled?: boolean;
   tfTopics?: string[];
   staticTopics?: string[];
 }
 export function useTF({
-  rosbridgeClient,
+  client,
   maxAge = 30000,
   enabled = true,
   tfTopics = DEFAULT_TOPICS,
@@ -27,9 +31,22 @@ export function useTF({
   const topicKey = JSON.stringify(tfTopics);
   useEffect(() => {
     const frames = new Map<string, TFFrame>();
+    // Publish at most once per animation frame, and only when frames changed: robots and the
+    // camera move as smoothly as TF arrives, without re-rendering scenes for nothing.
+    let scheduled: ReturnType<typeof requestAnimationFrame> | null = null;
+    const publish = () => {
+      scheduled = null;
+      const roots = Array.from(frames.values())
+        .map((f) => f.parent)
+        .filter((p) => p && !frames.has(p));
+      setTree({ frames: new Map(frames), rootFrame: roots[0] ?? null });
+    };
+    const schedule = () => {
+      scheduled ??= requestAnimationFrame(publish);
+    };
     setTree({ frames: new Map(), rootFrame: null });
     setLoading(true);
-    if (!enabled || !rosbridgeClient) return;
+    if (!enabled || !client) return;
     const staticList: string[] = JSON.parse(staticKey);
     const topics: string[] = Array.from(
       new Set<string>([...JSON.parse(topicKey), ...staticList])
@@ -47,16 +64,24 @@ export function useTF({
             if (!name || !parent || name === parent) continue;
             const previous = frames.get(name),
               time = stampSeconds(item.header.stamp);
+            // Appended in place: copying thousands of samples for every transform of every
+            // message would dominate CPU. Published trees share the array and only read it.
             let history =
-              previous?.parent === parent && !previous.isStatic
-                ? [...(previous.history ?? [])]
-                : [];
+              previous?.parent === parent && !previous.isStatic ? (previous.history ?? []) : [];
             if (!isStatic) {
-              history = history.filter((s) => s.time !== time);
-              history.push({ time, transform: item.transform });
-              history.sort((a, b) => a.time - b.time);
+              const last = history[history.length - 1];
+              if (last && time <= last.time) {
+                // Rare: an out-of-order or repeated stamp.
+                history = history.filter((s) => s.time !== time);
+                history.push({ time, transform: item.transform });
+                history.sort((a, b) => a.time - b.time);
+              } else history.push({ time, transform: item.transform });
+              // Long enough to place sensor data that arrives seconds late on a slow link;
+              // trimmed in batches to keep each message cheap.
               const newest = history[history.length - 1].time;
-              history = history.filter((s) => s.time >= newest - 30).slice(-300);
+              const keepFrom = history.findIndex((s) => s.time >= newest - HISTORY_SECONDS);
+              const drop = Math.max(keepFrom, history.length - HISTORY_SAMPLES);
+              if (drop >= TRIM_BATCH) history.splice(0, drop);
             }
             frames.set(name, {
               name,
@@ -67,13 +92,14 @@ export function useTF({
               isStatic,
               history,
             });
+            schedule();
           } catch {
             /* Ignore invalid TF packets; consumers report missing transforms. */
           }
         }
         setLoading(false);
       };
-      rosbridgeClient.subscribe(topic, callback, 'tf2_msgs/msg/TFMessage', {
+      client.subscribe(topic, callback, 'tf2_msgs/msg/TFMessage', {
         retainTransforms: isStatic,
       });
       return { topic, callback };
@@ -81,17 +107,14 @@ export function useTF({
     const timer = setInterval(() => {
       const now = Date.now();
       frames.forEach((frame, name) => {
-        if (!frame.isStatic && now - frame.timestamp > maxAge) frames.delete(name);
+        if (!frame.isStatic && now - frame.timestamp > maxAge && frames.delete(name)) schedule();
       });
-      const roots = Array.from(frames.values())
-        .map((f) => f.parent)
-        .filter((p) => p && !frames.has(p));
-      setTree({ frames: new Map(frames), rootFrame: roots[0] ?? null });
-    }, 100);
+    }, 250);
     return () => {
       clearInterval(timer);
-      subscriptions.forEach(({ topic, callback }) => rosbridgeClient.unsubscribe(topic, callback));
+      if (scheduled !== null) cancelAnimationFrame(scheduled);
+      subscriptions.forEach(({ topic, callback }) => client.unsubscribe(topic, callback));
     };
-  }, [rosbridgeClient, enabled, topicKey, staticKey, maxAge]);
+  }, [client, enabled, topicKey, staticKey, maxAge]);
   return { tfTree, isLoading };
 }

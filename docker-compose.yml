@@ -10,29 +10,30 @@ services:
     ports:
       - "3000:3000"
     environment:
-      # Point this at your ROS2 machine running rosbridge_server
-      # If using the rosbridge service below, keep ws://rosbridge:9090
-      # If using an external robot, change to ws://<robot-ip>:9090
-      - NEXT_PUBLIC_ROSBRIDGE_URL=ws://rosbridge:9090
+      # Point this at your ROS2 machine running foxglove_bridge
+      # If using the foxglove-bridge service below, keep ws://foxglove-bridge:8765
+      # If using an external robot, change to ws://<robot-ip>:8765
+      - NEXT_PUBLIC_BRIDGE_URL=ws://foxglove-bridge:8765
     networks:
       - miti-network
     restart: unless-stopped
 
-  # Rosbridge Server (optional)
-  # Uncomment to run rosbridge inside Docker alongside MITI
+  # foxglove_bridge (optional)
+  # Uncomment to run foxglove_bridge inside Docker alongside MITI
   # Note: requires a running ROS2 environment on the host
-  # rosbridge:
+  # Use ros:jazzy for Jazzy; $$ROS_DISTRO is escaped so the container's value is used
+  # foxglove-bridge:
   #   image: ros:humble
-  #   container_name: miti-rosbridge
+  #   container_name: miti-foxglove-bridge
   #   command: >
   #     bash -c "
   #       apt-get update &&
-  #       apt-get install -y ros-humble-rosbridge-suite &&
-  #       source /opt/ros/humble/setup.bash &&
-  #       ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+  #       apt-get install -y ros-$$ROS_DISTRO-foxglove-bridge &&
+  #       source /opt/ros/$$ROS_DISTRO/setup.bash &&
+  #       ros2 launch foxglove_bridge foxglove_bridge_launch.xml
   #     "
   #   ports:
-  #     - "9090:9090"
+  #     - "8765:8765"
   #   networks:
   #     - miti-network
   #   restart: unless-stopped

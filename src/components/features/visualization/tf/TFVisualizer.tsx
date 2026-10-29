@@ -3,52 +3,60 @@ import { useMemo } from 'react';
 import { Line, Html } from '@react-three/drei';
 import { Vector3 } from 'three';
 import type { TFTree } from '@/types/tf-messages';
+import type { TransformSettings } from '@/types/scene-config';
 import { lookupTransform } from '@/lib/scene/transforms';
+
+const AXIS_LENGTH = 0.15;
+
 export default function TFVisualizer({
   tfTree,
   fixedFrame,
-  showLabels = true,
-  axisLength = 0.15,
+  settings,
+  labelScale = 1,
 }: {
   tfTree: TFTree;
   fixedFrame: string;
-  showLabels?: boolean;
-  axisLength?: number;
+  settings: TransformSettings;
+  labelScale?: number;
 }) {
-  const frames = useMemo(
-    () =>
-      Array.from(tfTree.frames.values()).flatMap((frame) => {
+  const frames = useMemo(() => {
+    const names = new Set<string>();
+    tfTree.frames.forEach((frame) => {
+      names.add(frame.name);
+      if (frame.parent) names.add(frame.parent);
+    });
+    return Array.from(names).flatMap((name) => {
+      if (settings.frames[name]?.visible === false) return [];
+      try {
+        const matrix = lookupTransform(tfTree, fixedFrame, name);
+        const parentName = tfTree.frames.get(name)?.parent;
+        let parent: Vector3 | null = null;
         try {
-          const matrix = lookupTransform(tfTree, fixedFrame, frame.name);
-          const parent = frame.parent
-            ? new Vector3().setFromMatrixPosition(lookupTransform(tfTree, fixedFrame, frame.parent))
+          parent = parentName
+            ? new Vector3().setFromMatrixPosition(lookupTransform(tfTree, fixedFrame, parentName))
             : null;
-          return [
-            {
-              name: frame.name,
-              matrix,
-              parent,
-              position: new Vector3().setFromMatrixPosition(matrix),
-            },
-          ];
         } catch {
-          return [];
+          parent = null;
         }
-      }),
-    [tfTree, fixedFrame]
-  );
+        return [{ name, matrix, parent, position: new Vector3().setFromMatrixPosition(matrix) }];
+      } catch {
+        return [];
+      }
+    });
+  }, [tfTree, fixedFrame, settings.frames]);
+  const axisLength = AXIS_LENGTH * settings.axisScale;
   return (
     <>
       {frames.map((frame) => (
         <group key={frame.name}>
           <group matrix={frame.matrix} matrixAutoUpdate={false}>
             <axesHelper args={[axisLength]} />
-            {showLabels && (
+            {settings.showLabels && (
               <Html
                 position={[0, 0, axisLength]}
                 style={{
                   pointerEvents: 'none',
-                  fontSize: 10,
+                  fontSize: settings.labelSize * labelScale,
                   color: '#e8eaf0',
                   whiteSpace: 'nowrap',
                 }}
@@ -58,7 +66,11 @@ export default function TFVisualizer({
             )}
           </group>
           {frame.parent && (
-            <Line points={[frame.position, frame.parent]} color="#a78bfa" lineWidth={1} />
+            <Line
+              points={[frame.position, frame.parent]}
+              color={settings.lineColor}
+              lineWidth={settings.lineWidth}
+            />
           )}
         </group>
       ))}

@@ -22,7 +22,15 @@ export function transformMatrix(t: Transform) {
 function sample(frame: TFFrame, time: number) {
   if (frame.isStatic || !time || !frame.history?.length) return transformMatrix(frame.transform);
   const history = frame.history;
-  const after = history.findIndex((s) => s.time >= time);
+  // First sample at or after `time` (binary search; histories hold thousands of samples).
+  let low = 0,
+    high = history.length;
+  while (low < high) {
+    const mid = (low + high) >> 1;
+    if (history[mid].time < time) low = mid + 1;
+    else high = mid;
+  }
+  const after = low === history.length ? -1 : low;
   if (after === -1) {
     if (time - history[history.length - 1].time > 0.2)
       throw new Error(`TF is too old: ${frame.name}`);

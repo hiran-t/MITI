@@ -3,14 +3,23 @@
 import { Wifi, WifiOff } from 'lucide-react';
 import ConnectionSettings from './ConnectionSettings';
 import { connectionStyles } from '@/styles';
+import type { StreamMode } from '@/lib/bridge/client';
 
 interface ConnectionStatusProps {
   connected: boolean;
   url: string;
   onUrlChange?: (url: string) => void;
+  streamMode?: StreamMode;
+  onStreamModeChange?: (mode: StreamMode) => void;
 }
 
-export default function ConnectionStatus({ connected, url, onUrlChange }: ConnectionStatusProps) {
+export default function ConnectionStatus({
+  connected,
+  url,
+  onUrlChange,
+  streamMode,
+  onStreamModeChange,
+}: ConnectionStatusProps) {
   return (
     <div className={connectionStyles.status.container}>
       <div className={connectionStyles.status.statusWrapper}>
@@ -32,7 +41,12 @@ export default function ConnectionStatus({ connected, url, onUrlChange }: Connec
       {onUrlChange && (
         <>
           <div className={connectionStyles.status.divider} />
-          <ConnectionSettings currentUrl={url} onUrlChange={onUrlChange} />
+          <ConnectionSettings
+            currentUrl={url}
+            onUrlChange={onUrlChange}
+            currentMode={streamMode}
+            onModeChange={onStreamModeChange}
+          />
         </>
       )}
     </div>

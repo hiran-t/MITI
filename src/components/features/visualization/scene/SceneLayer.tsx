@@ -3,7 +3,9 @@ import { Component, useCallback, useEffect, useMemo, useState, type ReactNode } 
 import { Line } from '@react-three/drei';
 import * as THREE from 'three';
 import { useTopic } from '@/hooks/useTopic';
-import type { ROSBridge } from '@/lib/rosbridge/client';
+import type { BridgeClient } from '@/lib/bridge/client';
+import type { TopicInfo } from '@/lib/bridge/types';
+import { topicTypeMismatch } from '@/lib/bridge/topics';
 import { parsePointCloud2 } from '@/lib/parsers/pointcloud-parser';
 import {
   laserPoints,
@@ -47,6 +49,10 @@ class LayerBoundary extends Component<
   }
 }
 const EMPTY_PACKAGES: Record<string, string> = {};
+const EMPTY_TOPICS: TopicInfo[] = [];
+// Sensor streams can exceed what the main thread can parse and render; ~10 Hz with the newest
+// message winning keeps the scene live. Markers must not be dropped.
+const HEAVY_TOPIC = { throttleRate: 100 };
 export default function SceneLayer({
   layer,
   client,
@@ -56,21 +62,35 @@ export default function SceneLayer({
   onStatus,
   meshBaseUrl = '',
   packages = EMPTY_PACKAGES,
+  topics = EMPTY_TOPICS,
+  onFrame,
 }: {
   layer: SceneLayerConfig;
-  client: ROSBridge | null;
+  client: BridgeClient | null;
   tree: TFTree;
   fixedFrame: string;
   sync: boolean;
   onStatus: (id: string, status: LayerStatus) => void;
   meshBaseUrl?: string;
   packages?: Record<string, string>;
+  topics?: TopicInfo[];
+  /** Reports the frame_id of incoming messages, e.g. to choose a fixed frame without TF. */
+  onFrame?: (frameId: string) => void;
 }) {
   const { data, lastUpdate } = useTopic<unknown>(
     layer.enabled ? client : null,
     layer.topic,
-    LAYER_TYPES[layer.type]?.message
+    LAYER_TYPES[layer.type]?.message,
+    {
+      ...(['pointcloud', 'scan'].includes(layer.type) ? HEAVY_TOPIC : {}),
+      maxRate: layer.maxRate || undefined,
+    }
   );
+  const actualType = topicTypeMismatch(topics, layer.topic, LAYER_TYPES[layer.type]?.message);
+  const frameId = (data as { header?: Header } | null)?.header?.frame_id;
+  useEffect(() => {
+    if (frameId) onFrame?.(frameId);
+  }, [frameId, onFrame]);
   const [now, setNow] = useState(Date.now);
   const [markers, setMarkers] = useState(new Map<string, StoredMarker>());
   const [renderError, setRenderError] = useState('');
@@ -355,6 +375,12 @@ export default function SceneLayer({
     else if (!client) status = { level: 'waiting', message: 'Disconnected' };
     else if (!layer.topic) status = { level: 'waiting', message: 'Choose a topic' };
     else if (error) status = { level: 'error', message: error };
+    // A topic of another type is never subscribed, so explain why no data arrives.
+    else if (!data && actualType)
+      status = {
+        level: 'error',
+        message: `${layer.topic} publishes ${actualType}; this layer shows ${LAYER_TYPES[layer.type].message}`,
+      };
     else if (!data) status = { level: 'waiting', message: 'Waiting for message' };
     else if (prepared.empty) status = { level: 'waiting', message: 'Empty data' };
     else if (
@@ -367,7 +393,18 @@ export default function SceneLayer({
       status = { level: 'stale', message: 'Stale · no recent message' };
     else status = { level: 'ok', message: 'Receiving' };
     onStatus(layer.id, status);
-  }, [layer, client, data, lastUpdate, now, prepared.error, prepared.empty, renderError, onStatus]);
+  }, [
+    layer,
+    client,
+    data,
+    lastUpdate,
+    now,
+    prepared.error,
+    prepared.empty,
+    renderError,
+    actualType,
+    onStatus,
+  ]);
   return (
     <LayerBoundary resetKey={data} onError={onError}>
       {prepared.node}

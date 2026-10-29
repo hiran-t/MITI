@@ -3,9 +3,10 @@
 import { useState, useCallback, useRef } from 'react';
 import { Power, Radio, Zap, Loader2 } from 'lucide-react';
 import WidgetSettingsPortal, { SettingsSection } from '../layout/WidgetSettingsPortal';
-import type { ROSBridge } from '@/lib/rosbridge/client';
+import type { BridgeClient } from '@/lib/bridge/client';
 import type { ButtonSwitchWidgetProps, ButtonSwitchMode } from '@/types/widget';
 import { commonStyles, cn } from '@/styles';
+import TopicInput from '../topic-viewer/TopicInput';
 
 // ─── Settings Panel ──────────────────────────────────────────────────────────
 // Rendered in the selected widget inspector; runtime controls stay in the panel.
@@ -102,11 +103,10 @@ function SettingsPanel({
           <>
             <div>
               <label className={commonStyles.input.label}>Topic</label>
-              <input
-                type="text"
+              <TopicInput
                 aria-label="Topic"
                 value={topic}
-                onChange={(e) => onTopicChange(e.target.value)}
+                onCommit={onTopicChange}
                 className={commonStyles.input.base}
                 placeholder="/cmd_vel"
               />
@@ -193,7 +193,7 @@ function SettingsPanel({
 // ─── Main Widget ─────────────────────────────────────────────────────────────
 
 interface ButtonSwitchWidgetComponentProps {
-  client: ROSBridge | null;
+  client: BridgeClient | null;
   props?: ButtonSwitchWidgetProps;
   onConfigChange: (config: Partial<ButtonSwitchWidgetProps>) => void;
 }

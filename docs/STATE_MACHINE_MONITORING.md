@@ -18,13 +18,13 @@ MITI provides two monitoring modes:
 
 ```typescript
 interface SMACC2StateMachineStatus {
-  machine_id: string
-  current_state: string
-  previous_state?: string
-  timestamp: int64
-  is_running: bool
-  states: SMACC2State[]
-  transition_history: SMACC2Transition[]
+  machine_id: string;
+  current_state: string;
+  previous_state?: string;
+  timestamp: int64;
+  is_running: bool;
+  states: SMACC2State[];
+  transition_history: SMACC2Transition[];
 }
 ```
 
@@ -50,26 +50,28 @@ interface SMACC2StateMachineStatus {
 2. Topics should follow these message structures:
 
 **Tree Structure Topic** (`/behavior_tree/tree_structure`):
+
 ```typescript
 interface BehaviorTreeNode {
-  id: string
-  name: string
-  type: NodeType // Root, Sequence, Selector, Action, etc.
-  status: NodeStatus // IDLE, RUNNING, SUCCESS, FAILURE
-  children?: BehaviorTreeNode[]
+  id: string;
+  name: string;
+  type: NodeType; // Root, Sequence, Selector, Action, etc.
+  status: NodeStatus; // IDLE, RUNNING, SUCCESS, FAILURE
+  children?: BehaviorTreeNode[];
 }
 ```
 
 **Execution Status Topic** (`/behavior_tree/execution_status`):
+
 ```typescript
 interface BehaviorTreeStatus {
-  tree_id: string
-  root_node: BehaviorTreeNode
-  current_executions: BehaviorTreeExecutionInfo[]
-  execution_history: BehaviorTreeExecutionInfo[]
-  is_running: bool
-  total_ticks: int32
-  timestamp: int64
+  tree_id: string;
+  root_node: BehaviorTreeNode;
+  current_executions: BehaviorTreeExecutionInfo[];
+  execution_history: BehaviorTreeExecutionInfo[];
+  is_running: bool;
+  total_ticks: int32;
+  timestamp: int64;
 }
 ```
 
@@ -98,15 +100,18 @@ interface BehaviorTreeStatus {
 You can configure custom topic names:
 
 ### SMACC2
+
 - Status topic: Customize in monitor settings
 
 ### BehaviorTree
+
 - Status topic: Customize in monitor settings
 - Structure topic: Customize in monitor settings
 
 ## Example: Publishing from ROS2 Package
 
 ### SMACC2 Example
+
 ```cpp
 #include "rclcpp/rclcpp.hpp"
 #include "your_msgs/SMACC2StateMachineStatus.hpp"
@@ -116,14 +121,14 @@ public:
   SMACCPublisher() : Node("smacc_status_publisher") {
     publisher_ = this->create_publisher<your_msgs::SMACC2StateMachineStatus>(
       "/smacc2/status", 10);
-    
+
     // Publish state machine status
     auto msg = your_msgs::SMACC2StateMachineStatus();
     msg.machine_id = "robot_sm";
     msg.current_state = "State1";
     msg.timestamp = this->now().nanoseconds();
     msg.is_running = true;
-    
+
     publisher_->publish(msg);
   }
 
@@ -133,6 +138,7 @@ private:
 ```
 
 ### BehaviorTree Example
+
 ```cpp
 #include "rclcpp/rclcpp.hpp"
 #include "your_msgs/BehaviorTreeStatus.hpp"
@@ -170,11 +176,12 @@ private:
 
 - Verify message structure matches expected interface
 - Check that all required fields are populated
-- Try reconnecting to rosbridge
+- Try reconnecting to foxglove_bridge
 
 ## Widget Configuration
 
 The State Machine Monitor widget is registered as:
+
 - **Type**: `state_machine`
 - **Default Size**: 6×4 (width × height)
 - **Available Modes**: SMACC2, BehaviorTree

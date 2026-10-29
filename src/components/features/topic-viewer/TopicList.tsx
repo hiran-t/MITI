@@ -2,8 +2,8 @@
 
 import { useState, useMemo } from 'react';
 import { Search, RefreshCw } from 'lucide-react';
-import type { TopicInfo } from '@/lib/rosbridge/types';
-import { ROSBridge } from '@/lib/rosbridge/client';
+import type { TopicInfo } from '@/lib/bridge/types';
+import { BridgeClient } from '@/lib/bridge/client';
 import TopicCard from './TopicCard';
 import { topicStyles, cn } from '@/styles';
 
@@ -11,7 +11,7 @@ interface TopicListProps {
   topics: TopicInfo[];
   loading: boolean;
   onRefresh: () => void;
-  client: ROSBridge | null;
+  client: BridgeClient | null;
 }
 
 export default function TopicList({ topics, loading, onRefresh, client }: TopicListProps) {

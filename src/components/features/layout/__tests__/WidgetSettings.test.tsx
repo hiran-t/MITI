@@ -3,7 +3,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import WidgetContainer from '../WidgetContainer';
 import type { WidgetConfig } from '@/types/widget';
 
-jest.mock('../../visualization/urdf/URDFViewer', () => () => null);
+jest.mock('../../visualization/scene/SceneViewer', () => () => null);
 jest.mock('../../visualization/pointcloud/PointCloudViewer', () => () => null);
 jest.mock('../../visualization/state-machine/StateMachineMonitor', () => () => null);
 
@@ -67,29 +67,31 @@ test('only selected camera settings appear in the sidebar; switching and editing
   const inspector = screen.getByRole('complementary', { name: 'Inspector' });
   const originalA = screen.getByTitle('/a');
   fireEvent.click(screen.getByText('Select A'));
-  expect(within(inspector).getAllByRole('textbox')).toHaveLength(1);
+  expect(within(inspector).getAllByRole('combobox', { name: 'Image Topic' })).toHaveLength(1);
   expect(
-    within(screen.getByRole('region', { name: 'Camera A' })).queryByRole('textbox')
+    within(screen.getByRole('region', { name: 'Camera A' })).queryByRole('combobox')
   ).toBeNull();
-  fireEvent.change(within(inspector).getByRole('textbox', { name: 'Image Topic' }), {
-    target: { value: '/a-new' },
-  });
-  expect(screen.getByTitle('/a-new')).toBe(originalA);
-  expect(within(inspector).getByRole('textbox', { name: 'Image Topic' })).toHaveValue('/a-new');
+  const topicA = within(inspector).getByRole('combobox', { name: 'Image Topic' });
+  fireEvent.change(topicA, { target: { value: '/a_new' } });
+  // Typing alone must not resubscribe; leaving the field commits the topic.
+  expect(screen.getByTitle('/a')).toBe(originalA);
+  fireEvent.blur(topicA);
+  expect(screen.getByTitle('/a_new')).toBe(originalA);
+  expect(within(inspector).getByRole('combobox', { name: 'Image Topic' })).toHaveValue('/a_new');
   expect(within(inspector).queryByText('Apply')).toBeNull();
   fireEvent.click(screen.getByText('Select B'));
-  expect(within(inspector).getByRole('textbox', { name: 'Image Topic' })).toHaveValue('/b');
-  fireEvent.change(within(inspector).getByRole('textbox', { name: 'Image Topic' }), {
-    target: { value: '/b-new' },
-  });
-  expect(within(inspector).getByRole('textbox', { name: 'Image Topic' })).toHaveValue('/b-new');
-  expect(screen.getByTitle('/a-new')).toBe(originalA);
-  expect(screen.getByTitle('/b-new')).toBeInTheDocument();
+  expect(within(inspector).getByRole('combobox', { name: 'Image Topic' })).toHaveValue('/b');
+  const topicB = within(inspector).getByRole('combobox', { name: 'Image Topic' });
+  fireEvent.change(topicB, { target: { value: '/b_new' } });
+  fireEvent.keyDown(topicB, { key: 'Enter' });
+  expect(within(inspector).getByRole('combobox', { name: 'Image Topic' })).toHaveValue('/b_new');
+  expect(screen.getByTitle('/a_new')).toBe(originalA);
+  expect(screen.getByTitle('/b_new')).toBeInTheDocument();
   fireEvent.click(screen.getByText('Select A'));
-  expect(within(inspector).getByRole('textbox', { name: 'Image Topic' })).toHaveValue('/a-new');
+  expect(within(inspector).getByRole('combobox', { name: 'Image Topic' })).toHaveValue('/a_new');
   fireEvent.click(within(inspector).getByText('Depth Image'));
   expect(screen.getByTitle('/camera/depth/image_raw')).toBe(originalA);
-  expect(screen.getByTitle('/b-new')).toBeInTheDocument();
+  expect(screen.getByTitle('/b_new')).toBeInTheDocument();
   fireEvent.click(screen.getByText('Close inspector'));
   expect(screen.getByTitle('/camera/depth/image_raw')).toBe(originalA);
 });

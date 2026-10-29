@@ -1,6 +1,6 @@
 {
   "name": "miti",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "author": {
     "name": "MITI Contributors",
@@ -21,6 +21,9 @@
     "prepare": "husky install || true"
   },
   "dependencies": {
+    "@foxglove/rosmsg": "^5.0.5",
+    "@foxglove/rosmsg2-serialization": "^3.1.2",
+    "@foxglove/ws-protocol": "^0.8.0",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
     "clsx": "^2.1.1",

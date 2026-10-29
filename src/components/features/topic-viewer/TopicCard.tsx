@@ -1,13 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ROSBridge } from '@/lib/rosbridge/client';
+import { BridgeClient, isHeavyType } from '@/lib/bridge/client';
 import { topicStyles, cn } from '@/styles';
+import { summarizeMessage } from '@/lib/parsers/message-summary';
+
+// Render at most 4×/s. Stringifying every image or point cloud message would freeze the UI.
+const RENDER_INTERVAL_MS = 250;
 
 interface TopicCardProps {
   topic: string;
   type: string;
-  client: ROSBridge | null;
+  client: BridgeClient | null;
 }
 
 export default function TopicCard({ topic, type, client }: TopicCardProps) {
@@ -18,13 +22,30 @@ export default function TopicCard({ topic, type, client }: TopicCardProps) {
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   useEffect(() => {
     if (!client || !subscribed) return;
+    // Throttle rendering only: the client shares one subscription per topic with other panels.
+    let latest: unknown = null;
+    let received = 0;
+    let receivedAt: Date | null = null;
     const onMessage = (message: unknown) => {
-      setLastMessage(message);
-      setMessageCount((count) => count + 1);
-      setLastUpdate(new Date());
+      latest = message;
+      received += 1;
+      receivedAt = new Date();
     };
-    client.subscribe(topic, onMessage, type);
-    return () => client.unsubscribe(topic, onMessage);
+    const timer = setInterval(() => {
+      if (!receivedAt) return;
+      const count = received;
+      setLastMessage(summarizeMessage(latest));
+      setMessageCount((total) => total + count);
+      setLastUpdate(receivedAt);
+      received = 0;
+      receivedAt = null;
+    }, RENDER_INTERVAL_MS);
+    // The card shows a few updates per second; images and clouds need not cross the link faster.
+    client.subscribe(topic, onMessage, type, isHeavyType(type) ? { maxRate: 2 } : undefined);
+    return () => {
+      clearInterval(timer);
+      client.unsubscribe(topic, onMessage);
+    };
   }, [client, subscribed, topic, type]);
   const handleToggleSubscribe = () => setSubscribed((value) => !value);
 

@@ -12,7 +12,8 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import TopicList from '../topic-viewer/TopicList';
-import { useRosbridge } from '@/hooks/useRosbridge';
+import { DEFAULT_BRIDGE_URL, useBridge } from '@/hooks/useBridge';
+import type { StreamMode } from '@/lib/bridge/client';
 import { useTopicList } from '@/hooks/useTopicList';
 import { useLayoutConfig } from '@/hooks/useLayoutConfig';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
@@ -25,16 +26,29 @@ import { SettingsSearchContext } from '../layout/WidgetSettingsPortal';
 const SIDEBAR_TABS = ['Panel', 'Topics', 'Problems', 'Sources'] as const;
 type SidebarTab = (typeof SIDEBAR_TABS)[number];
 
-const STORAGE_KEY_ROSBRIDGE_URL = 'miti_rosbridge_url';
-const DEFAULT_ROSBRIDGE_URL = process.env.NEXT_PUBLIC_ROSBRIDGE_URL || 'ws://localhost:9090';
+const STORAGE_KEY_BRIDGE_URL = 'miti_bridge_url';
+const STORAGE_KEY_STREAM_MODE = 'miti_stream_mode';
+
+/** Carry a saved rosbridge address over to foxglove_bridge's default port on the same host. */
+function initialBridgeUrl(): string {
+  try {
+    const legacy = JSON.parse(localStorage.getItem('miti_rosbridge_url') ?? 'null');
+    if (typeof legacy === 'string') return legacy.replace(/:9090(\/?)$/, ':8765$1');
+  } catch {
+    /* Use the default when the old setting cannot be read. */
+  }
+  return DEFAULT_BRIDGE_URL;
+}
 
 export default function Dashboard() {
-  const [rosbridgeUrl, setRosbridgeUrl] = useLocalStorage(
-    STORAGE_KEY_ROSBRIDGE_URL,
-    DEFAULT_ROSBRIDGE_URL
+  const [bridgeUrl, setBridgeUrl] = useLocalStorage(STORAGE_KEY_BRIDGE_URL, initialBridgeUrl());
+  const [streamMode, setStreamMode] = useLocalStorage<StreamMode>(
+    STORAGE_KEY_STREAM_MODE,
+    'synchronized'
   );
-  const { client, connected, error } = useRosbridge(rosbridgeUrl);
-  const { topics, loading, refreshTopics } = useTopicList(client);
+  const { client, connected, error } = useBridge(bridgeUrl, streamMode);
+  // The client object is created before it connects; gating it makes the list load on (re)connect.
+  const { topics, loading, refreshTopics } = useTopicList(connected ? client : null);
   const {
     hydrated,
     updateWidget,
@@ -83,7 +97,7 @@ export default function Dashboard() {
     window.addEventListener('keydown', escape);
     return () => window.removeEventListener('keydown', escape);
   }, [sidebarOpen, closeSettings]);
-  const handleUrlChange = (url: string) => setRosbridgeUrl(url);
+  const handleUrlChange = (url: string) => setBridgeUrl(url);
 
   return (
     <SettingsSearchContext.Provider value={settingsSearch}>
@@ -103,8 +117,10 @@ export default function Dashboard() {
           </div>
           <ConnectionStatus
             connected={connected}
-            url={rosbridgeUrl}
+            url={bridgeUrl}
             onUrlChange={handleUrlChange}
+            streamMode={streamMode}
+            onStreamModeChange={setStreamMode}
           />
         </header>
         <div className="workspace-toolbar">
@@ -150,8 +166,8 @@ export default function Dashboard() {
           <div role="status" className="connection-notice">
             <Radio size={14} />
             <span>
-              Connection unavailable — {error.message}. Check your rosbridge address in connection
-              settings.
+              Connection unavailable — {error.message}. Check your foxglove_bridge address in
+              connection settings.
             </span>
           </div>
         )}
@@ -292,7 +308,7 @@ export default function Dashboard() {
                   </summary>
                   <p>{error.message}</p>
                   <p>
-                    Check that the rosbridge server at <code>{rosbridgeUrl}</code> is reachable.
+                    Check that foxglove_bridge at <code>{bridgeUrl}</code> is reachable.
                   </p>
                 </details>
               ) : (
@@ -317,7 +333,7 @@ export default function Dashboard() {
               <details className="source-details" open>
                 <summary>
                   <Radio size={14} />
-                  <span>{rosbridgeUrl}</span>
+                  <span>{bridgeUrl}</span>
                 </summary>
                 <dl>
                   <dt>Protocol</dt>
@@ -329,7 +345,12 @@ export default function Dashboard() {
                 </dl>
                 <div className="source-settings">
                   <span>Connection settings</span>
-                  <ConnectionSettings currentUrl={rosbridgeUrl} onUrlChange={handleUrlChange} />
+                  <ConnectionSettings
+                    currentUrl={bridgeUrl}
+                    onUrlChange={handleUrlChange}
+                    currentMode={streamMode}
+                    onModeChange={setStreamMode}
+                  />
                 </div>
               </details>
             </div>

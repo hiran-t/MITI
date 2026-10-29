@@ -30,3 +30,10 @@ global.IntersectionObserver = jest.fn().mockImplementation(() => ({
   unobserve: jest.fn(),
   disconnect: jest.fn(),
 })) as any;
+
+// Browsers provide TextEncoder/TextDecoder (used to decode bridge messages); jsdom does not.
+import { TextDecoder as NodeTextDecoder, TextEncoder as NodeTextEncoder } from 'util';
+Object.assign(globalThis, {
+  TextEncoder: globalThis.TextEncoder ?? NodeTextEncoder,
+  TextDecoder: globalThis.TextDecoder ?? NodeTextDecoder,
+});

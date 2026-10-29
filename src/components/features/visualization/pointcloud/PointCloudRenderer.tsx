@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { ROSBridge } from '@/lib/rosbridge/client';
+import { BridgeClient } from '@/lib/bridge/client';
 import { useTopic } from '@/hooks/useTopic';
 import * as THREE from 'three';
 import { parsePointCloud2, type ParsedPoint } from '@/lib/parsers/pointcloud-parser';
@@ -52,7 +52,7 @@ function PointCloud({ points }: PointCloudProps) {
 }
 
 interface PointCloudRendererProps {
-  client: ROSBridge | null;
+  client: BridgeClient | null;
   topic: string;
 }
 

@@ -52,7 +52,7 @@ Built with Next.js 14, React 18, and Three.js.
 
 **Connectivity**
 
-- Real-time ROS2 connection via rosbridge WebSocket
+- Real-time ROS2 connection via [foxglove_bridge](https://github.com/foxglove/foxglove-sdk) (Foxglove WebSocket protocol, messages CDR-decoded in the browser)
 - Auto-reconnection on connection loss
 - Topic discovery, search, and live data monitoring
 
@@ -62,12 +62,13 @@ Built with Next.js 14, React 18, and Three.js.
 
 - **Node.js** 20+ and **npm** (or [Bun](https://bun.sh/))
 - **ROS2** Humble Hawksbill or later
-- **rosbridge_suite** for WebSocket communication
+- **foxglove_bridge** for WebSocket communication
+- **robot_state_publisher** on the robot, if the robot model should load from `/robot_description`
 
-Install rosbridge on Ubuntu:
+Install foxglove_bridge on Ubuntu (replace `humble` with your ROS distro):
 
 ```bash
-sudo apt install ros-humble-rosbridge-suite
+sudo apt install ros-humble-foxglove-bridge
 ```
 
 ---
@@ -91,23 +92,27 @@ cp .env.example .env.local
 Edit `.env.local`:
 
 ```env
-NEXT_PUBLIC_ROSBRIDGE_URL=ws://192.168.10.27:9090
+NEXT_PUBLIC_BRIDGE_URL=ws://192.168.10.27:8765
 ```
 
 **Option B** - UI settings (recommended):
 
-Click the settings icon next to the connection status in the app to change the URL at runtime. The setting persists in localStorage.
+Click the settings icon next to the connection status in the app to change the URL at runtime. The setting persists in localStorage. A rosbridge URL saved by an earlier MITI version is migrated to the same host on port 8765.
 
 ---
 
 ## Usage
 
-### 1. Start rosbridge
+### 1. Start foxglove_bridge
+
+On the robot:
 
 ```bash
 source /opt/ros/humble/setup.bash
-ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+ros2 launch foxglove_bridge foxglove_bridge_launch.xml
 ```
+
+The bridge listens on port 8765 by default.
 
 ### 2. Start MITI
 
@@ -139,8 +144,8 @@ miti/
 │   │   ├── layout/              #   Grid layout, widget container
 │   │   ├── topic-viewer/        #   Topic list, cards, data display
 │   │   └── visualization/       #   Camera, point cloud, URDF, TF, state machine
-│   ├── hooks/                   # React hooks (useRosbridge, useTopic, useTF, etc.)
-│   ├── lib/                     # Core libraries (rosbridge client, parsers)
+│   ├── hooks/                   # React hooks (useBridge, useTopic, useTF, etc.)
+│   ├── lib/                     # Core libraries (foxglove_bridge client, parsers)
 │   ├── styles/                  # Centralized Tailwind style modules
 │   ├── types/                   # TypeScript definitions
 │   └── constants/               # ROS topic constants
@@ -237,7 +242,7 @@ All styles are centralized in `src/styles/`. Edit the relevant module:
 
 | Method       | File / Location                 | Persists       |
 | ------------ | ------------------------------- | -------------- |
-| `.env.local` | `NEXT_PUBLIC_ROSBRIDGE_URL`     | Per deployment |
+| `.env.local` | `NEXT_PUBLIC_BRIDGE_URL`        | Per deployment |
 | UI settings  | Settings icon in the header bar | localStorage   |
 
 ---
@@ -270,17 +275,17 @@ npm run format:check
 
 ## Troubleshooting
 
-### Cannot connect to rosbridge
+### Cannot connect to foxglove_bridge
 
-- Verify rosbridge is running: `ros2 node list | grep rosbridge`
-- Check the WebSocket URL (default: `ws://localhost:9090`)
-- Check firewall settings for port 9090
+- Verify foxglove_bridge is running: `ros2 node list | grep foxglove_bridge`
+- Check the WebSocket URL (default: `ws://localhost:8765`)
+- Check firewall settings for port 8765
 
 ### Topics list is empty
 
 - Verify ROS2 nodes are running: `ros2 topic list`
 - Click the refresh button in the topic browser
-- Check rosbridge logs for errors
+- Check foxglove_bridge logs for errors
 
 ### URDF not loading from URL
 
@@ -321,7 +326,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 ## Acknowledgments
 
 - [ROS2](https://docs.ros.org/) and the robotics community
-- [rosbridge_suite](https://github.com/RobotWebTools/rosbridge_suite)
+- [foxglove_bridge](https://github.com/foxglove/foxglove-sdk) (MIT)
 - [Three.js](https://threejs.org/) and [React Three Fiber](https://docs.pmnd.rs/react-three-fiber/)
 - [Next.js](https://nextjs.org/)
 - [Tailwind CSS](https://tailwindcss.com/)

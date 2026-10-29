@@ -2,9 +2,9 @@
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { WidgetConfig } from '@/types/widget';
-import { ROSBridge } from '@/lib/rosbridge/client';
+import { BridgeClient } from '@/lib/bridge/client';
 import WidgetContainer from './WidgetContainer';
-import type { TopicInfo } from '@/lib/rosbridge/types';
+import type { TopicInfo } from '@/lib/bridge/types';
 import { X, GripVertical, Lock, Unlock, Maximize2, Minimize2 } from 'lucide-react';
 import PanelIcon from './PanelIcon';
 import { widgetStyles, cn } from '@/styles';
@@ -27,7 +27,7 @@ interface DraggableGridLayoutProps {
   onLayoutChange: (layout: readonly ReactGridLayout.Layout[]) => void;
   onRemoveWidget: (widgetId: string) => void;
   onToggleLock: (widgetId: string) => void;
-  client: ROSBridge | null;
+  client: BridgeClient | null;
   topics: TopicInfo[];
   topicsLoading: boolean;
   onRefreshTopics: () => void;

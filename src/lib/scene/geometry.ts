@@ -42,7 +42,7 @@ export function laserPoints(
   }
   return points;
 }
-export function occupancyPixels(width: number, height: number, data: number[] | string) {
+export function occupancyPixels(width: number, height: number, data: ArrayLike<number> | string) {
   if (
     !Number.isInteger(width) ||
     !Number.isInteger(height) ||
@@ -51,8 +51,9 @@ export function occupancyPixels(width: number, height: number, data: number[] | 
     width * height > 16777216
   )
     throw new Error('Invalid map dimensions (maximum 16M cells)');
-  const cells = typeof data === 'string' ? Array.from(atob(data), (c) => c.charCodeAt(0)) : data;
-  if (!Array.isArray(cells) || cells.length < width * height)
+  const cells: ArrayLike<number> =
+    typeof data === 'string' ? Array.from(atob(data), (c) => c.charCodeAt(0)) : data;
+  if (!cells || typeof cells.length !== 'number' || cells.length < width * height)
     throw new Error('Map data is truncated');
   const pixels = new Uint8Array(width * height * 4);
   for (let i = 0; i < width * height; i++) {

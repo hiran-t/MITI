@@ -31,7 +31,7 @@ export namespace sensor_msgs {
     is_bigendian: boolean;
     point_step: number;
     row_step: number;
-    data: number[] | string;
+    data: Uint8Array | number[] | string;
     is_dense: boolean;
   }
 
@@ -42,7 +42,13 @@ export namespace sensor_msgs {
     encoding: string;
     is_bigendian: number;
     step: number;
-    data: number[] | string; // Can be array or base64 string from rosbridge
+    data: Uint8Array | number[] | string; // Uint8Array from CDR; arrays or base64 from JSON
+  }
+
+  export interface CompressedImage {
+    header: std_msgs.Header;
+    format: string;
+    data: Uint8Array | number[] | string; // Uint8Array from CDR; arrays or base64 from JSON
   }
 
   export interface JointState {

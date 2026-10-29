@@ -24,6 +24,8 @@ export interface SceneLayerConfig {
   imageTopic?: string;
   imageMode?: 'raw' | 'compressed';
   staleAfter?: number;
+  /** Messages per second requested from the bridge; undefined or 0 receives every message. */
+  maxRate?: number;
 }
 export interface Header {
   frame_id: string;

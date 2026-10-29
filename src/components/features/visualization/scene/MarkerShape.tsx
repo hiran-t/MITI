@@ -2,27 +2,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
-import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
-import { ColladaLoader } from 'three/examples/jsm/loaders/ColladaLoader.js';
 import type { Marker } from '@/types/scene';
 import { xyz } from '@/lib/scene/geometry';
+import { disposeObject, loadMeshResource, meshErrorMessage } from '@/lib/scene/mesh-loader';
 import { Cloud } from './Primitives';
+import { useSceneDisplay } from './SceneContext';
 const colorString = (c: Marker['color']) => new THREE.Color(c.r, c.g, c.b);
-function disposeObject(object: THREE.Object3D) {
-  object.traverse((child) => {
-    if (child instanceof THREE.Mesh) {
-      child.geometry.dispose();
-      const materials = Array.isArray(child.material) ? child.material : [child.material];
-      materials.forEach((m) => {
-        Object.values(m).forEach((v) => {
-          if (v instanceof THREE.Texture) v.dispose();
-        });
-        m.dispose();
-      });
-    }
-  });
-}
 function MeshResource({
   marker,
   baseUrl,
@@ -36,66 +21,54 @@ function MeshResource({
   packages: Record<string, string>;
   onError: (message: string) => void;
 }) {
-  const resource = marker.mesh_resource;
+  const resource = marker.mesh_resource ?? '';
   const embedded = marker.mesh_use_embedded_materials;
   const { r, g, b, a } = marker.color;
+  const display = useSceneDisplay();
+  const { ignoreColladaUpAxis, meshUpAxis } = display.mesh;
+  const { fetchAsset } = display;
   const [object, setObject] = useState<THREE.Object3D | null>(null);
   useEffect(() => {
     let live = true;
     let loaded: THREE.Object3D | null = null;
     setObject(null);
-    let url = resource ?? '';
-    if (url.startsWith('package://')) {
-      const [, pkg, path] = url.match(/^package:\/\/([^/]+)\/(.*)$/) ?? [];
-      url = `${(packages[pkg] ?? baseUrl).replace(/\/$/, '')}/${path}`;
+    if (!resource || resource.startsWith('embedded://')) {
+      onError('Embedded marker meshes are not supported; use a package://, file:// or HTTP URL');
+      return;
     }
-    const fail = (err: unknown) => {
-      if (live) onError(`Mesh failed: ${err instanceof Error ? err.message : String(err)}`);
-    };
-    const done = (obj: THREE.Object3D) => {
-      loaded = obj;
-      if (!live) {
-        disposeObject(obj);
-        return;
-      }
-      if (!embedded)
-        obj.traverse((child) => {
-          if (child instanceof THREE.Mesh) {
-            const old = Array.isArray(child.material) ? child.material : [child.material];
-            old.forEach((m) => m.dispose());
-            child.material = new THREE.MeshStandardMaterial({
-              color: new THREE.Color(r, g, b),
-              opacity: a * opacity,
-              transparent: a * opacity < 1,
-            });
-          }
-        });
-      setObject(obj);
-      onError('');
-    };
-    try {
-      if (!url || url.startsWith('embedded://') || url.startsWith('file://'))
-        throw new Error('Use an HTTP(S) mesh URL or package mapping');
-      const extension = url.split(/[?#]/)[0].split('.').pop()?.toLowerCase();
-      if (extension === 'stl')
-        new STLLoader().load(
-          url,
-          (g) => done(new THREE.Mesh(g, new THREE.MeshStandardMaterial())),
-          undefined,
-          fail
-        );
-      else if (extension === 'obj') new OBJLoader().load(url, done, undefined, fail);
-      else if (extension === 'dae')
-        new ColladaLoader().load(url, (c) => done(c.scene), undefined, fail);
-      else throw new Error(`Unsupported mesh format: ${extension}`);
-    } catch (e) {
-      fail(e);
-    }
+    loadMeshResource(
+      resource,
+      { meshBaseUrl: baseUrl, packageMapping: packages, fetchAsset },
+      { ignoreColladaUpAxis, meshUpAxis }
+    )
+      .then((mesh) => {
+        loaded = mesh;
+        if (!live) return disposeObject(mesh);
+        setObject(mesh);
+        onError('');
+      })
+      .catch((error) => {
+        if (live) onError(meshErrorMessage(resource, error));
+      });
     return () => {
       live = false;
       if (loaded) disposeObject(loaded);
     };
-  }, [resource, embedded, r, g, b, a, opacity, baseUrl, packages, onError]);
+  }, [resource, baseUrl, packages, ignoreColladaUpAxis, meshUpAxis, fetchAsset, onError]);
+  // Recolour without reloading the mesh.
+  useEffect(() => {
+    if (!object || embedded) return;
+    object.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) return;
+      const old = Array.isArray(child.material) ? child.material : [child.material];
+      old.forEach((m) => m.dispose());
+      child.material = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(r, g, b),
+        opacity: a * opacity,
+        transparent: a * opacity < 1,
+      });
+    });
+  }, [object, embedded, r, g, b, a, opacity]);
   return object ? <primitive object={object} scale={xyz(marker.scale)} /> : null;
 }
 function Triangles({ marker, opacity }: { marker: Marker; opacity: number }) {
@@ -142,6 +115,7 @@ export default function MarkerShape({
   packages: Record<string, string>;
   onError: (message: string) => void;
 }) {
+  const { labelScale } = useSceneDisplay();
   const color = colorString(marker.color),
     alpha = marker.color.a * opacity,
     points = (marker.points ?? []).map(xyz),
@@ -161,7 +135,7 @@ export default function MarkerShape({
     );
   if (marker.type === 9)
     return (
-      <Html center sprite distanceFactor={Math.max(0.01, marker.scale.z) * 10}>
+      <Html center sprite distanceFactor={Math.max(0.01, marker.scale.z) * 10 * labelScale}>
         <span
           style={{
             color: `#${color.getHexString()}`,

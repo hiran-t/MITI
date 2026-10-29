@@ -1,4 +1,5 @@
 import type { sensor_msgs } from '@/types/ros-messages';
+import { decodeBytes } from './bytes';
 
 export interface ParsedPoint {
   x: number;
@@ -29,12 +30,9 @@ export function parsePointCloud2(msg: sensor_msgs.PointCloud2, maxPoints = 20000
     return points;
   }
 
-  // Convert data array to Uint8Array
-  const buffer =
-    typeof msg.data === 'string'
-      ? Uint8Array.from(atob(msg.data), (c) => c.charCodeAt(0))
-      : new Uint8Array(msg.data);
-  const dataView = new DataView(buffer.buffer);
+  const buffer = decodeBytes(msg.data);
+  // CDR decoding returns views into the message buffer, so honour the view's offset.
+  const dataView = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
 
   // Find field offsets
   const fields: { [key: string]: { offset: number; datatype: number } } = {};

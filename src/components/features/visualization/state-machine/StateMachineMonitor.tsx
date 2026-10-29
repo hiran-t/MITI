@@ -2,14 +2,15 @@
 
 import { useState } from 'react';
 import WidgetSettingsPortal, { SettingsSection } from '../../layout/WidgetSettingsPortal';
-import { ROSBridge } from '@/lib/rosbridge/client';
+import { BridgeClient } from '@/lib/bridge/client';
 import { useTopic } from '@/hooks/useTopic';
 import { Activity, GitBranch, Clock, Loader2 } from 'lucide-react';
 import { commonStyles } from '@/styles';
 import { STATE_MACHINE_TOPICS } from '@/constants/ros-topics';
+import TopicInput from '../../topic-viewer/TopicInput';
 
 interface StateMachineMonitorProps {
-  client: ROSBridge | null;
+  client: BridgeClient | null;
   smaccTopic?: string;
   btStatusTopic?: string;
   onConfigChange: (config: { smaccTopic?: string; btStatusTopic?: string }) => void;
@@ -150,7 +151,7 @@ function EmptyPane({
 
 // ─── SMACC2 Tab ─────────────────────────────────────────────────────────────
 
-function SMACC2Tab({ client, topic }: { client: ROSBridge | null; topic: string }) {
+function SMACC2Tab({ client, topic }: { client: BridgeClient | null; topic: string }) {
   const { data, lastUpdate } = useTopic<SMACC2Status>(client, topic);
 
   if (!client) {
@@ -271,7 +272,7 @@ function SMACC2Tab({ client, topic }: { client: ROSBridge | null; topic: string 
 
 // ─── BehaviorTree Tab ────────────────────────────────────────────────────────
 
-function BehaviorTreeTab({ client, topic }: { client: ROSBridge | null; topic: string }) {
+function BehaviorTreeTab({ client, topic }: { client: BridgeClient | null; topic: string }) {
   const { data, lastUpdate } = useTopic<BTStatus>(client, topic);
 
   if (!client) {
@@ -367,22 +368,20 @@ function SettingsPanel({
       <div className="flex-1 space-y-4 overflow-y-auto p-4">
         <div>
           <label className={commonStyles.input.label}>SMACC2 Status Topic</label>
-          <input
-            type="text"
+          <TopicInput
             aria-label="SMACC2 Status Topic"
             value={smaccTopic}
-            onChange={(e) => onSmaccTopicChange(e.target.value)}
+            onCommit={onSmaccTopicChange}
             className={commonStyles.input.base}
             placeholder="/smacc2/status"
           />
         </div>
         <div>
           <label className={commonStyles.input.label}>BehaviorTree Status Topic</label>
-          <input
-            type="text"
+          <TopicInput
             aria-label="BehaviorTree Status Topic"
             value={btTopic}
-            onChange={(e) => onBtTopicChange(e.target.value)}
+            onCommit={onBtTopicChange}
             className={commonStyles.input.base}
             placeholder="/behavior_tree/execution_status"
           />

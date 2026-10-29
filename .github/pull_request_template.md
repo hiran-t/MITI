@@ -1,8 +1,11 @@
 ## Description
+
 <!-- Provide a brief description of your changes -->
 
 ## Type of Change
+
 <!-- Mark the relevant option with an 'x' -->
+
 - [ ] Bug fix (non-breaking change which fixes an issue)
 - [ ] New feature (non-breaking change which adds functionality)
 - [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
@@ -12,18 +15,24 @@
 - [ ] Test addition/update
 
 ## Related Issue
+
 <!-- Link to the issue this PR addresses -->
+
 Closes #(issue number)
 
 ## Changes Made
+
 <!-- List the main changes you made -->
-- 
-- 
-- 
+
+-
+-
+-
 
 ## Testing
+
 <!-- Describe the tests you ran to verify your changes -->
-- [ ] Tested locally with rosbridge connection
+
+- [ ] Tested locally with foxglove_bridge connection
 - [ ] Verified URDF visualization works
 - [ ] Tested point cloud rendering
 - [ ] Checked responsive design on mobile
@@ -31,15 +40,19 @@ Closes #(issue number)
 - [ ] Tested with ROS2 topics/services
 
 ### Test Configuration
-- **ROS2 Distribution**: 
-- **Browser**: 
-- **Device/OS**: 
+
+- **ROS2 Distribution**:
+- **Browser**:
+- **Device/OS**:
 
 ## Screenshots/Videos
+
 <!-- If applicable, add screenshots or videos to demonstrate your changes -->
 
 ## Checklist
+
 <!-- Mark completed items with an 'x' -->
+
 - [ ] My code follows the project's style guidelines
 - [ ] I have performed a self-review of my code
 - [ ] I have commented my code, particularly in hard-to-understand areas
@@ -50,4 +63,5 @@ Closes #(issue number)
 - [ ] Any dependent changes have been merged and published
 
 ## Additional Notes
+
 <!-- Add any additional notes or context for reviewers -->
