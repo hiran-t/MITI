@@ -16,7 +16,7 @@ nodejs = "22.*"
 
 [tasks]
 install = { cmd = "npm ci --no-audit --no-fund", inputs = ["package.json", "package-lock.json"], outputs = ["node_modules/.package-lock.json"] }
-build = { cmd = "npm run build", depends-on = ["install"], inputs = ["src/**", "public/**", "package.json", "next.config.js", "tailwind.config.ts", "postcss.config.js", "tsconfig.json"], outputs = [".next/BUILD_ID"] }
+build = { cmd = "npm run build", env = { NEXT_TELEMETRY_DISABLED = "1" }, depends-on = ["install"], inputs = ["src/**", "public/**", "package.json", "next.config.js", "tailwind.config.ts", "postcss.config.js", "tsconfig.json", "eslint.config.mjs"], outputs = [".next/BUILD_ID"] }
 miti = { cmd = "node scripts/start-miti.mjs --port {{ port }}", args = [{ arg = "port", default = "3000" }], depends-on = ["build"], description = "Build if needed and serve MITI (port 3000, or the next free one)" }
 dev = { cmd = "npm run dev", depends-on = ["install"], description = "Development server with hot reload" }
 # Deletes everything generated (builds, npm packages, the robot message build, pixi environments);

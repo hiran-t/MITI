@@ -25,14 +25,37 @@ const isWindows = process.platform === 'win32';
 /** How many ports above the preferred one to try. */
 const SEARCH = 20;
 
-/** True when nothing on this machine listens on the port. */
-function isFree(port) {
+/** True when something accepts connections on the port at this machine's loopback address. */
+function answers(port) {
+  return new Promise((resolve) => {
+    const socket = net.connect(port, '127.0.0.1');
+    const done = (result) => {
+      socket.destroy();
+      resolve(result);
+    };
+    socket.setTimeout(1000, () => done(false));
+    socket.once('connect', () => done(true));
+    socket.once('error', () => done(false));
+  });
+}
+
+/** True when the port can be opened on every address. */
+function canListen(port) {
   return new Promise((resolve) => {
     const server = net.createServer();
     server.once('error', () => resolve(false));
     server.once('listening', () => server.close(() => resolve(true)));
     server.listen(port, '0.0.0.0');
   });
+}
+
+/**
+ * True when nothing on this machine uses the port. Both checks are needed: on Windows a program
+ * listening on one address (e.g. netsh portproxy on 127.0.0.1) does not stop another from
+ * opening the same port on all addresses, but connections then still reach the first one.
+ */
+async function isFree(port) {
+  return !(await answers(port)) && (await canListen(port));
 }
 
 /** True when a foxglove_bridge answers the WebSocket handshake on the port. */
@@ -130,7 +153,8 @@ if (bridge.start) {
     cwd: root,
     stdio: 'inherit',
     detached: !isWindows,
-    env: { ...process.env, BRIDGE_PORT: String(bridge.port) },
+    // BRIDGE_PORT_FIXED: fail rather than move, so the bridge stays on the port MITI was told.
+    env: { ...process.env, BRIDGE_PORT: String(bridge.port), BRIDGE_PORT_FIXED: '1' },
   });
   children.push(bridgeChild);
 }

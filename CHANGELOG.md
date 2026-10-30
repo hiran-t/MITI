@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [3.3.3] - 2026-10-30
+
+### Fixed
+
+- Windows: foxglove_bridge no longer exits at start with `0xC0000135` (DLL not found); RoboStack installs `foxglove.dll` and `foxglove_cpp_shared.dll` in `Library\lib`, which the bridge script now adds to `PATH`. The harmless `WinError 1314` log-symlink warning is silenced
+- `miti-bridge` and the bridge it starts now always agree on the port: the launcher also checks whether something answers on the port (on Windows a port forwarded for one address could still be opened on all addresses), and tells the bridge to use exactly that port
+
+### Changed
+
+- No npm warnings on install: Jest 30 (jsdom 29), ESLint 10 with a flat config (`eslint.config.mjs`, Next.js core-web-vitals rules and the Rules of Hooks), overrides for `uuid`, `three-mesh-bvh` and `test-exclude`, and current browser data; `ws` is a direct dev dependency (the load harness uses it). The npm update notice and Next.js telemetry notice no longer show in pixi output. `npm run lint` runs `eslint .`
+
 ## [3.3.2] - 2026-10-30
 
 ### Changed

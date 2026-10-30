@@ -69,6 +69,10 @@ if in_use "$port"; then
   fi
   taken="$port"
   owner="$(owner_of "$port" || true)"
+  if [ -n "${BRIDGE_PORT_FIXED:-}" ]; then
+    echo "Port $taken is used by ${owner:-another program}." >&2
+    exit 1
+  fi
   for candidate in $(seq $((taken + 1)) $((taken + 20))); do
     if ! in_use "$candidate"; then
       port="$candidate"

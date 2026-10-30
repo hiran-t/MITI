@@ -15,6 +15,14 @@ if (-not (Get-Command ros2 -ErrorAction SilentlyContinue)) {
   exit 1
 }
 
+if ($env:OS -eq 'Windows_NT' -and $env:CONDA_PREFIX) {
+  # RoboStack installs foxglove.dll and foxglove_cpp_shared.dll in Library\lib, which Windows does
+  # not search; without this the bridge exits at start with 0xC0000135 (DLL not found).
+  $env:PATH = (Join-Path $env:CONDA_PREFIX 'Library\lib') + ';' + $env:PATH
+  # ros2 launch cannot create its "latest" log symlink without Developer Mode; that is harmless.
+  $env:PYTHONWARNINGS = 'ignore:Cannot create a symlink to latest log directory:UserWarning'
+}
+
 # The robot's own message packages, built by ros/build-msgs.ps1.
 $distro = $env:ROS_DISTRO
 $overlay = Join-Path $PSScriptRoot "overlay\install\$distro\setup.ps1"
@@ -78,6 +86,10 @@ if (Test-PortInUse $port) {
   }
   $taken = $port
   $owner = Get-PortOwner $taken
+  if ($env:BRIDGE_PORT_FIXED) {
+    [Console]::Error.WriteLine("Port $taken is used by $owner.")
+    exit 1
+  }
   $port = 0
   foreach ($candidate in ($taken + 1)..($taken + 20)) {
     if (-not (Test-PortInUse $candidate)) { $port = $candidate; break }
