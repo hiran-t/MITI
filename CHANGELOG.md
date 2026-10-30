@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-10-30
+
+### Added
+
+- `pixi run miti` installs Node.js and the npm packages, builds MITI and serves it on port 3000 (`pixi run miti 8080` for another port), with no system Node.js; later runs skip the build when nothing changed
+- foxglove_bridge on the MITI machine instead of the robot: `pixi run -e humble miti-bridge` (or `-e jazzy`) runs MITI and a bridge that joins the robot's ROS 2 network over DDS, so the robot only publishes; `pixi run -e <distro> bridge` runs the bridge alone
+- Docker Compose `bridge` profile (`docker compose --profile bridge up -d`) with a foxglove_bridge image (`ros/Dockerfile`, Humble by default) on host networking; ROS distro, domain ID, RMW, topic whitelist and send buffer are set in `.env`
+- The bridge includes the standard message packages (common_interfaces, tf2, nav2, map, moveit, foxglove, control and vision messages); the robot's own message packages go in `ros/overlay/src` and are built with `pixi run -e <distro> build-msgs` or into the Docker image
+- Cyclone DDS settings for large messages over Wi-Fi (`ros/cyclonedds.xml`)
+
+### Changed
+
+- Without `NEXT_PUBLIC_BRIDGE_URL`, MITI connects to `ws://<host MITI was served from>:8765` instead of `ws://localhost:8765`, so browsers on other machines reach a bridge running beside MITI
+- Docker Compose runs MITI as the `miti` service; `NEXT_PUBLIC_BRIDGE_URL` is a build argument (it was set at run time, where it had no effect); the image installs from `package-lock.json` with `npm ci` and uses Node.js 22
+
 ## [3.1.1] - 2026-10-30
 
 ### Removed

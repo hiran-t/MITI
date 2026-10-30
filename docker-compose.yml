@@ -1,56 +1,44 @@
-version: '3.8'
+# MITI as a service. Settings come from a .env file beside this one (see .env.example).
+#
+#   docker compose up -d                    MITI only, connecting to foxglove_bridge on the
+#                                           robot or wherever the browser points it
+#   docker compose --profile bridge up -d   MITI plus foxglove_bridge on this machine, joined
+#                                           to the robot's ROS 2 network over DDS
+#   docker compose logs -f                  follow the logs
+#   docker compose down                     stop
+#   docker compose up -d --build            rebuild after updating MITI
+#
+# Both services restart with the machine (restart: unless-stopped) once Docker starts at boot.
 
 services:
-  # MITI Web Application
-  miti-web:
+  miti:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: miti-web
+      args:
+        # Empty: browsers connect to ws://<this machine>:8765, where the bridge service listens.
+        NEXT_PUBLIC_BRIDGE_URL: ${NEXT_PUBLIC_BRIDGE_URL:-}
+    image: miti:latest
+    container_name: miti
     ports:
-      - "3000:3000"
-    environment:
-      # Point this at your ROS2 machine running foxglove_bridge
-      # If using the foxglove-bridge service below, keep ws://foxglove-bridge:8765
-      # If using an external robot, change to ws://<robot-ip>:8765
-      - NEXT_PUBLIC_BRIDGE_URL=ws://foxglove-bridge:8765
-    networks:
-      - miti-network
+      - '${MITI_PORT:-3000}:3000'
     restart: unless-stopped
 
-  # foxglove_bridge (optional)
-  # Uncomment to run foxglove_bridge inside Docker alongside MITI
-  # Note: requires a running ROS2 environment on the host
-  # Use ros:jazzy for Jazzy; $$ROS_DISTRO is escaped so the container's value is used
-  # foxglove-bridge:
-  #   image: ros:humble
-  #   container_name: miti-foxglove-bridge
-  #   command: >
-  #     bash -c "
-  #       apt-get update &&
-  #       apt-get install -y ros-$$ROS_DISTRO-foxglove-bridge &&
-  #       source /opt/ros/$$ROS_DISTRO/setup.bash &&
-  #       ros2 launch foxglove_bridge foxglove_bridge_launch.xml
-  #     "
-  #   ports:
-  #     - "8765:8765"
-  #   networks:
-  #     - miti-network
-  #   restart: unless-stopped
-
-networks:
-  miti-network:
-    driver: bridge
-
-# Usage:
-# 1. Build and start all services:
-#    docker-compose up -d
-#
-# 2. View logs:
-#    docker-compose logs -f
-#
-# 3. Stop all services:
-#    docker-compose down
-#
-# 4. Rebuild after code changes:
-#    docker-compose up -d --build
+  foxglove-bridge:
+    profiles: [bridge]
+    build:
+      context: ./ros
+      args:
+        ROS_DISTRO: ${ROS_DISTRO:-humble}
+    image: miti-foxglove-bridge:${ROS_DISTRO:-humble}
+    container_name: miti-foxglove-bridge
+    # DDS discovers the robot by multicast on the real network, and Fast DDS uses shared memory
+    # with ROS nodes on the same machine; both need the host's network and IPC namespaces.
+    network_mode: host
+    ipc: host
+    environment:
+      ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-0}
+      RMW_IMPLEMENTATION: ${RMW_IMPLEMENTATION:-rmw_fastrtps_cpp}
+      BRIDGE_PORT: ${BRIDGE_PORT:-8765}
+      BRIDGE_TOPIC_WHITELIST: ${BRIDGE_TOPIC_WHITELIST:-['.*']}
+      BRIDGE_SEND_BUFFER_LIMIT: ${BRIDGE_SEND_BUFFER_LIMIT:-10000000}
+    restart: unless-stopped

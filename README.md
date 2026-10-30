@@ -59,6 +59,26 @@ Built with Next.js 14, React 18, and Three.js.
 
 ---
 
+## Quick start
+
+With [pixi](https://pixi.sh) (no Node.js or ROS install needed):
+
+```bash
+pixi run miti                    # MITI on http://<this machine>:3000
+pixi run -e humble miti-bridge   # MITI plus foxglove_bridge on this machine (use -e jazzy for Jazzy)
+```
+
+With Docker Compose, as a service that restarts with the machine:
+
+```bash
+docker compose up -d                    # MITI only
+docker compose --profile bridge up -d   # MITI plus foxglove_bridge (Linux, host networking)
+```
+
+Running foxglove_bridge on the MITI machine lets it read the robot's topics over DDS, so the robot does not run the bridge itself. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the robot's own message types, DDS settings and network tips.
+
+---
+
 ## Prerequisites
 
 - **Node.js** 20+ and **npm** (or [Bun](https://bun.sh/))

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Settings, X } from 'lucide-react';
 import { connectionStyles } from '@/styles';
-import { DEFAULT_BRIDGE_URL } from '@/hooks/useBridge';
+import { defaultBridgeUrl } from '@/hooks/useBridge';
 import type { StreamMode } from '@/lib/bridge/client';
 
 interface ConnectionSettingsProps {
@@ -84,7 +84,7 @@ export default function ConnectionSettings({
   };
 
   const handleReset = () => {
-    setUrl(DEFAULT_BRIDGE_URL);
+    setUrl(defaultBridgeUrl());
     setMode('synchronized');
   };
 

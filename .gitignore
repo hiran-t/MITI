@@ -37,3 +37,8 @@ next-env.d.ts
 
 # AI SKILL
 *.agents
+# pixi environments and the message overlay's build output
+.pixi/
+ros/overlay/build/
+ros/overlay/install/
+ros/overlay/log/

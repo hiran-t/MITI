@@ -1,20 +1,23 @@
 # Stage 1: Dependencies
-FROM node:20-alpine AS deps
+FROM node:22-alpine AS deps
 WORKDIR /app
 
-# Copy package files (glob captures both package.json and package-lock.json)
-COPY package*.json ./
-
-# Install dependencies
-RUN npm install --prefer-offline
+# Install exactly the locked dependencies
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
 
 # Stage 2: Builder
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 
 # Copy dependencies
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# Leave empty to connect to foxglove_bridge on the host MITI is served from (port 8765);
+# Next.js builds NEXT_PUBLIC_* values into the app, so this is a build argument.
+ARG NEXT_PUBLIC_BRIDGE_URL=
+ENV NEXT_PUBLIC_BRIDGE_URL=${NEXT_PUBLIC_BRIDGE_URL}
 
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -25,7 +28,7 @@ ENV STANDALONE_BUILD=true
 RUN npm run build
 
 # Stage 3: Runner
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production

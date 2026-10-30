@@ -1,0 +1,84 @@
+# MITI without a system Node.js or ROS install:
+#   pixi run miti                  MITI web server on port 3000
+#   pixi run -e jazzy miti-bridge  MITI plus foxglove_bridge on this machine, joined to the robot
+#                                  over DDS (use -e humble for a Humble robot)
+#   pixi run -e jazzy bridge       foxglove_bridge only
+# See docs/DEPLOYMENT.md.
+
+[workspace]
+name = "miti"
+channels = ["conda-forge"]
+platforms = ["linux-64", "linux-aarch64", "osx-arm64"]
+
+[dependencies]
+nodejs = "22.*"
+
+[tasks]
+install = { cmd = "npm ci --no-audit --no-fund", inputs = ["package.json", "package-lock.json"], outputs = ["node_modules/.package-lock.json"] }
+build = { cmd = "npm run build", depends-on = ["install"], inputs = ["src/**", "public/**", "package.json", "next.config.js", "tailwind.config.ts", "postcss.config.js", "tsconfig.json"], outputs = [".next/BUILD_ID"] }
+miti = { cmd = "npm run start -- --hostname 0.0.0.0 --port {{ port }}", args = [{ arg = "port", default = "3000" }], depends-on = ["build"], description = "Build if needed and serve MITI (default port 3000)" }
+dev = { cmd = "npm run dev", depends-on = ["install"], description = "Development server with hot reload" }
+
+# foxglove_bridge from RoboStack. It subscribes to the robot's topics over DDS, so the robot only
+# publishes as usual and the bridge's work happens on this machine. Pick the robot's ROS distro:
+# Humble and Jazzy nodes do not discover each other reliably.
+[feature.bridge.system-requirements]
+macos = "14.0"
+
+[feature.bridge.dependencies]
+# Builds the robot's own message packages (ros/overlay/src); see ros/build-msgs.sh.
+colcon-common-extensions = "*"
+cmake = "<4"
+cxx-compiler = "*"
+ninja = "*"
+
+[feature.bridge.tasks]
+build-msgs = { cmd = "bash ros/build-msgs.sh", description = "Build message packages in ros/overlay/src" }
+bridge = { cmd = "bash ros/foxglove-bridge.sh", description = "foxglove_bridge on this machine (port 8765)" }
+miti-bridge = { cmd = "MITI_PORT={{ port }} bash ros/miti-with-bridge.sh", args = [{ arg = "port", default = "3000" }], depends-on = ["build"], description = "MITI and foxglove_bridge together (default port 3000)" }
+
+# The bridge can only offer topics whose message definitions are installed beside it; add the
+# robot's own message packages as described in docs/DEPLOYMENT.md.
+[feature.humble]
+channels = [{ channel = "robostack-humble", priority = 1 }]
+
+[feature.humble.dependencies]
+ros-humble-foxglove-bridge = ">=3.6"
+ros-humble-ros2launch = "*"
+ros-humble-ros2topic = "*"
+ros-humble-rmw-fastrtps-cpp = "*"
+ros-humble-rmw-cyclonedds-cpp = "*"
+ros-humble-common-interfaces = "*"
+ros-humble-tf2-msgs = "*"
+ros-humble-nav2-msgs = "*"
+ros-humble-map-msgs = "*"
+ros-humble-moveit-msgs = "*"
+ros-humble-foxglove-msgs = "*"
+ros-humble-control-msgs = "*"
+ros-humble-vision-msgs = "*"
+ros-humble-ament-cmake = "*"
+ros-humble-rosidl-default-generators = "*"
+
+[feature.jazzy]
+channels = [{ channel = "robostack-jazzy", priority = 1 }]
+
+[feature.jazzy.dependencies]
+ros-jazzy-foxglove-bridge = ">=3.6"
+ros-jazzy-ros2launch = "*"
+ros-jazzy-ros2topic = "*"
+ros-jazzy-rmw-fastrtps-cpp = "*"
+ros-jazzy-rmw-cyclonedds-cpp = "*"
+ros-jazzy-common-interfaces = "*"
+ros-jazzy-tf2-msgs = "*"
+ros-jazzy-nav2-msgs = "*"
+ros-jazzy-map-msgs = "*"
+ros-jazzy-moveit-msgs = "*"
+ros-jazzy-foxglove-msgs = "*"
+ros-jazzy-control-msgs = "*"
+ros-jazzy-vision-msgs = "*"
+ros-jazzy-ament-cmake = "*"
+ros-jazzy-rosidl-default-generators = "*"
+
+[environments]
+humble = ["humble", "bridge"]
+jazzy = ["jazzy", "bridge"]

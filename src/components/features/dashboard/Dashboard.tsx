@@ -15,7 +15,7 @@ import {
   Search,
 } from 'lucide-react';
 import TopicList from '../topic-viewer/TopicList';
-import { DEFAULT_BRIDGE_URL, useBridge } from '@/hooks/useBridge';
+import { defaultBridgeUrl, useBridge } from '@/hooks/useBridge';
 import type { StreamMode } from '@/lib/bridge/client';
 import { useTopicList } from '@/hooks/useTopicList';
 import { useLayoutConfig } from '@/hooks/useLayoutConfig';
@@ -45,7 +45,7 @@ function initialBridgeUrl(): string {
   } catch {
     /* Use the default when the old setting cannot be read. */
   }
-  return DEFAULT_BRIDGE_URL;
+  return defaultBridgeUrl();
 }
 
 export default function Dashboard() {

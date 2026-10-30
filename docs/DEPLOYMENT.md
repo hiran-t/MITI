@@ -4,12 +4,95 @@ This guide covers different deployment options for MITI.
 
 ## Table of Contents
 
+- [Quick Start](#quick-start)
+- [foxglove_bridge Beside MITI](#foxglove_bridge-beside-miti)
 - [Development](#development)
 - [Production Build](#production-build)
 - [Docker Deployment](#docker-deployment)
 - [Cloud Deployment](#cloud-deployment)
 - [Environment Variables](#environment-variables)
 - [Troubleshooting](#troubleshooting)
+
+## Quick Start
+
+Two ways to run MITI on a machine, neither needing Node.js or ROS installed system-wide.
+
+### pixi
+
+Install [pixi](https://pixi.sh) once (`curl -fsSL https://pixi.sh/install.sh | bash`), then in this repository:
+
+```bash
+pixi run miti            # install, build and serve MITI on http://<this machine>:3000
+pixi run miti 8080       # on another port
+```
+
+The first run installs Node.js and the npm packages and builds MITI; later runs start in seconds and rebuild only when the source changed. Linux (x86-64, ARM64) and macOS (Apple silicon) are supported.
+
+### Docker Compose (as a service)
+
+```bash
+docker compose up -d     # build and start MITI on port 3000; restarts with the machine
+```
+
+Both serve MITI to any browser on the network. By default the browser connects to foxglove_bridge on port 8765 of the machine that served MITI; open the connection settings (status bar, bottom left) to connect to a robot's own bridge instead, or set `NEXT_PUBLIC_BRIDGE_URL` (see [Environment Variables](#environment-variables)).
+
+## foxglove_bridge Beside MITI
+
+Instead of running foxglove_bridge on the robot, run it on the MITI machine. It joins the robot's ROS 2 network over DDS and subscribes only to the topics someone is viewing; the robot just publishes as usual, and the bridge's work (subscribing, encoding, one WebSocket stream per browser) moves off the robot.
+
+```
+robot (ROS 2 nodes) ──DDS──▶ MITI machine: foxglove_bridge :8765 + MITI :3000 ◀── browsers
+```
+
+### With pixi
+
+Pick the environment that matches the robot's ROS 2 distro (`humble` or `jazzy`; nodes of different distros do not discover each other reliably):
+
+```bash
+pixi run -e humble miti-bridge   # MITI and foxglove_bridge together
+pixi run -e humble bridge        # foxglove_bridge only
+```
+
+### With Docker Compose
+
+```bash
+docker compose --profile bridge up -d
+```
+
+Set the distro and DDS settings in `.env` first (copy [.env.example](../.env.example)); put `COMPOSE_PROFILES=bridge` there to start the bridge on every `docker compose up`. The bridge container uses host networking, which DDS discovery needs, so this runs on Linux; Docker Desktop on macOS and Windows cannot join the robot's DDS network.
+
+### Settings
+
+Environment variables, read by `ros/foxglove-bridge.sh` (pixi and Docker alike):
+
+| Variable                   | Default            |                                                                                  |
+| -------------------------- | ------------------ | -------------------------------------------------------------------------------- |
+| `ROS_DOMAIN_ID`            | `0`                | Must match the robot                                                             |
+| `RMW_IMPLEMENTATION`       | `rmw_fastrtps_cpp` | Or `rmw_cyclonedds_cpp`, which reads [ros/cyclonedds.xml](../ros/cyclonedds.xml) |
+| `ROS_DISTRO`               | `humble`           | Docker only; with pixi choose `-e humble` / `-e jazzy`                           |
+| `BRIDGE_PORT`              | `8765`             | WebSocket port                                                                   |
+| `BRIDGE_TOPIC_WHITELIST`   | `['.*']`           | Regexes of topics to offer                                                       |
+| `BRIDGE_SEND_BUFFER_LIMIT` | `10000000`         | Bytes queued per browser before messages are dropped                             |
+
+### The robot's own message types
+
+The bridge can only offer topics whose message definitions are installed beside it. The standard packages (`common_interfaces`, `tf2_msgs`, `nav2_msgs`, `map_msgs`, `moveit_msgs`, `foxglove_msgs`, `control_msgs`, `vision_msgs`) are included. For the robot's own packages (for example `oc_g1_msgs`), copy their source into `ros/overlay/src` and build them:
+
+```bash
+pixi run -e humble build-msgs            # pixi; restart the bridge afterwards
+docker compose --profile bridge build    # Docker builds them into the image
+```
+
+Topics of types that are still missing are left out, and the bridge logs `package '...' not found`.
+
+### Network and DDS
+
+DDS carries every message the bridge subscribes to from the robot to this machine, so the link still decides how much fits:
+
+- **Use compressed images.** A raw 1280×720 image is 2.7 MB; on a test network a raw camera reached this machine at about 2.5 frames per second, while joint states (40 Hz), TF and odometry arrived in full. Subscribe MITI to `/compressed` image topics, or offer only those with `BRIDGE_TOPIC_WHITELIST`.
+- **Large messages over Wi-Fi** need big socket buffers. With Cyclone DDS, [ros/cyclonedds.xml](../ros/cyclonedds.xml) asks for up to 16 MB; raise the kernel limit once on Linux: `sudo sysctl -w net.core.rmem_max=16777216` (add it to `/etc/sysctl.conf` to keep it).
+- **Several networks** (Wi-Fi, Ethernet, Docker): pin the robot's network with `<NetworkInterface name="..."/>` in `ros/cyclonedds.xml` if discovery picks the wrong one.
+- The first subscription can take a few seconds while DDS discovery settles; later ones are immediate.
 
 ## Development
 
@@ -74,45 +157,27 @@ bun run build
 
 ## Docker Deployment
 
-### Build Docker Image
+[docker-compose.yml](../docker-compose.yml) runs MITI as a service (`restart: unless-stopped`), optionally with foxglove_bridge beside it (see [foxglove_bridge Beside MITI](#foxglove_bridge-beside-miti)).
+
+```bash
+cp .env.example .env              # optional: port, bridge address, ROS settings
+docker compose up -d              # MITI only
+docker compose --profile bridge up -d   # MITI and foxglove_bridge
+docker compose logs -f            # follow logs
+docker compose up -d --build      # rebuild after updating MITI
+docker compose down               # stop
+```
+
+Make sure Docker itself starts at boot (`sudo systemctl enable docker`) so the services come back after a restart.
+
+### Without Compose
 
 ```bash
 docker build -t miti:latest .
+docker run -d --restart unless-stopped -p 3000:3000 --name miti miti:latest
 ```
 
-### Run Container
-
-```bash
-docker run -d \
-  -p 3000:3000 \
-  -e NEXT_PUBLIC_BRIDGE_URL=ws://your-robot-ip:8765 \
-  --name miti \
-  miti:latest
-```
-
-### Docker Compose
-
-```bash
-# Start all services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop services
-docker-compose down
-```
-
-### Update Configuration
-
-Edit [docker-compose.yml](docker-compose.yml):
-
-```yaml
-environment:
-  - NEXT_PUBLIC_BRIDGE_URL=ws://your-robot-ip:8765
-```
-
-The MITI container only needs `NEXT_PUBLIC_BRIDGE_URL` pointing at the robot's foxglove_bridge. [docker-compose.yml](docker-compose.yml) also contains an optional, commented-out `foxglove-bridge` service.
+`NEXT_PUBLIC_BRIDGE_URL` is built into the app, so pass it as a build argument, not a runtime variable: `docker build --build-arg NEXT_PUBLIC_BRIDGE_URL=ws://robot:8765 -t miti:latest .`
 
 ## Cloud Deployment
 
@@ -208,11 +273,9 @@ server {
 
 ## Environment Variables
 
-### Required
-
-- `NEXT_PUBLIC_BRIDGE_URL`: foxglove_bridge WebSocket URL (default: `ws://localhost:8765`). Replaces the former `NEXT_PUBLIC_ROSBRIDGE_URL`.
-
 ### Optional
+
+- `NEXT_PUBLIC_BRIDGE_URL`: foxglove_bridge WebSocket URL MITI opens by default. Unset, it is `ws://<host MITI was served from>:8765`, which reaches a bridge running beside MITI. Built into the app at build time. Replaces the former `NEXT_PUBLIC_ROSBRIDGE_URL`. Users can always change the address in the connection settings; their choice is remembered in the browser.
 
 - `NODE_ENV`: `development` or `production`
 - `PORT`: Server port (default: 3000)
@@ -228,9 +291,7 @@ NEXT_PUBLIC_BRIDGE_URL=ws://localhost:8765
 
 #### Production (Docker)
 
-```bash
-docker run -e NEXT_PUBLIC_BRIDGE_URL=ws://robot:8765 miti:latest
-```
+Set it in `.env` before `docker compose up -d --build`, or `docker build --build-arg NEXT_PUBLIC_BRIDGE_URL=ws://robot:8765 .`
 
 #### Production (Vercel)
 

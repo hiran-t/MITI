@@ -75,8 +75,12 @@ docs/
 # Scripts (deployment only, not needed in Docker)
 scripts/
 
-# Deploy directory
+# Deploy directory, foxglove_bridge image (built from ros/) and pixi environments
 deploy/
+ros/
+.pixi/
+pixi.lock
+pixi.toml
 
 # Husky
 .husky/
@@ -87,8 +91,7 @@ deploy/
 .turbo/
 .eslintcache
 
-# Lock files (we'll copy specific ones we need)
-package-lock.json
+# Lock files (npm's package-lock.json is used)
 yarn.lock
 pnpm-lock.yaml
 

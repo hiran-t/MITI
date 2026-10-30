@@ -1,0 +1,4 @@
+overlay/build/
+overlay/install/
+overlay/log/
+Dockerfile
