@@ -4,6 +4,7 @@
 
 import type { URDFConfig } from './urdf-config';
 import type { SceneConfig } from './scene-config';
+import type { ImagePanelConfig } from '@/lib/camera/image-config';
 import { CAMERA_TOPICS } from '@/constants/ros-topics';
 import { mosaicFromGrid, type MosaicTree } from '@/lib/layout/mosaic';
 
@@ -23,11 +24,14 @@ interface WidgetBase {
 
 // ─── Per-type props ──────────────────────────────────────────────────────────
 
-export interface CameraWidgetProps {
+/** MITI ≤ 3.0 camera props; read through normalizeImageConfig. */
+export interface LegacyCameraWidgetProps {
   topic: string;
   /** Frames per second requested from the bridge; 0 receives every frame. */
   maxFps?: number;
 }
+
+export type CameraWidgetProps = ImagePanelConfig | LegacyCameraWidgetProps;
 
 export interface StateMachineWidgetProps {
   smaccTopic?: string;
