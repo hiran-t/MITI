@@ -94,12 +94,12 @@ MITI/
 ├── public/                   # main_logo.svg, robot_logo.svg
 ├── ros/                      # foxglove_bridge beside MITI
 │   ├── overlay/src/          # The robot's own message packages, built by build-msgs.sh
-│   ├── build-msgs.sh         # pixi run -e <distro> build-msgs
+│   ├── build-msgs.sh/.ps1    # pixi run -e <distro> build-msgs (bash / Windows PowerShell)
 │   ├── cyclonedds.xml        # Cyclone DDS settings for the bridge
 │   ├── Dockerfile            # Image for the compose "bridge" profile
-│   ├── foxglove-bridge.sh    # pixi run bridge
-│   └── miti-with-bridge.sh   # pixi run miti-bridge
+│   └── foxglove-bridge.sh/.ps1 # pixi run bridge; reuses a bridge on the port or moves to a free one
 ├── scripts/
+│   ├── start-miti.mjs        # pixi run miti / miti-bridge: picks free ports, starts MITI and the bridge
 │   ├── heavy-bridge.js       # Load harness: a foxglove_bridge stand-in with robot-sized data
 │   ├── perf-run.js           # Load harness: measures MITI in Chrome
 │   ├── perf-probe.js         # Browser-side half of the harness

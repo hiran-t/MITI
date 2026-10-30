@@ -26,7 +26,12 @@ disconnects the old `BridgeClient` and creates a new one.
 // hooks/useBridge.ts
 export const BRIDGE_PORT = 8765;
 
-export function defaultBridgeUrl(location?: Pick<Location, 'protocol' | 'hostname'>): string;
+export function runtimeBridgePort(): number;
+
+export function defaultBridgeUrl(
+  location?: Pick<Location, 'protocol' | 'hostname'>,
+  port: number = runtimeBridgePort()
+): string;
 
 export function useBridge(
   url?: string,
@@ -53,8 +58,10 @@ export function useBridge(
 - `error`: the last connection error; cleared on the next successful connection.
 
 **Default URL:** `defaultBridgeUrl()` returns `NEXT_PUBLIC_BRIDGE_URL` when the build sets it.
-Otherwise it returns port 8765 on the host that served MITI: `ws://<host>:8765`, or
-`wss://<host>:8765` when MITI was served over HTTPS. IPv6 hosts are wrapped in brackets. Without a
+Otherwise it returns the bridge port on the host that served MITI: `ws://<host>:<port>`, or
+`wss://<host>:<port>` when MITI was served over HTTPS. The port is `runtimeBridgePort()`: the
+`MITI_BRIDGE_PORT` the server announced in `window.__MITI__` (set on each request by
+`src/app/layout.tsx`, from `scripts/start-miti.mjs` or Docker Compose), else 8765. IPv6 hosts are wrapped in brackets. Without a
 browser location (server rendering) the host is `localhost`.
 
 **Example:**

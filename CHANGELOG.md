@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [3.4.0] - 2026-10-30
+
+### Changed
+
+- Ports move out of each other's way. `pixi run miti` and `miti-bridge` (now one Node.js launcher, `scripts/start-miti.mjs`, the same on Linux, macOS and Windows) serve MITI on the next free port when 3000 is taken; `miti-bridge` uses a foxglove_bridge already on 8765, or starts the bridge on the next free port when another program holds 8765; `pixi run miti` finds a bridge already running on this machine. MITI learns the bridge port at run time (`MITI_BRIDGE_PORT`, also set by Docker Compose from `BRIDGE_PORT`), so browsers connect without any setting
+- The bridge scripts (`pixi run bridge`) name the program holding their port, with the command to stop it or, for `svchost` on Windows, to check port forwarding, then move to the next free port; a foxglove_bridge already on the port is reported instead of started twice
+- The output of `pixi run miti` / `miti-bridge` lists the addresses to open, including this machine's address on the network
+
+### Removed
+
+- `ros/miti-with-bridge.sh` and `ros/miti-with-bridge.ps1`, replaced by `scripts/start-miti.mjs`
+
 ## [3.3.1] - 2026-10-30
 
 ### Added

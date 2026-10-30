@@ -75,7 +75,7 @@ Run MITI:
 
 ```bash
 pixi run miti          # http://<this machine>:3000
-pixi run miti 8080     # on another port
+pixi run miti 8080     # on another port (a taken port moves to the next free one)
 pixi run remove        # delete everything pixi and the build generated; pixi run miti restores it
 ```
 
@@ -218,7 +218,7 @@ To add a panel type, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). To measur
 | 3D Scene looks empty                     | _Display frame_ set to a robot frame; topics turned on (eye icons)                                                                          |
 | Bridge beside MITI sees few or no topics | Same `ROS_DOMAIN_ID` and ROS 2 distro as the robot; see [DDS tips](docs/DEPLOYMENT.md#network-and-dds)                                      |
 | Bridge log: `package '...' not found`    | The bridge lacks that message type; add the package to `ros/overlay/src` and run `build-msgs`                                               |
-| Bridge exits: port 8765 already in use   | Another bridge runs on this machine; stop it or set `BRIDGE_PORT`                                                                           |
+| Bridge moved to another port             | Another program holds 8765; the bridge used the next free port and MITI follows it. The message names that program                          |
 | Robot model has no meshes                | The bridge serves `package://` meshes; with the bridge beside MITI, the robot's description package must be on that machine too             |
 
 ## Contributing

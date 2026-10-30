@@ -10,9 +10,19 @@ export const metadata: Metadata = {
   },
 };
 
+// Read the server's environment on each request, so the launcher (scripts/start-miti.mjs) or
+// Docker can tell the page where foxglove_bridge listens without rebuilding MITI.
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const runtime = { bridgePort: Number(process.env.MITI_BRIDGE_PORT) || null };
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{ __html: `window.__MITI__=${JSON.stringify(runtime)};` }}
+        />
+      </head>
       {/* Inline background prevents white flash before CSS loads */}
       <body style={{ background: UI_TOKENS['bg-chrome'], color: UI_TOKENS.text }}>{children}</body>
     </html>

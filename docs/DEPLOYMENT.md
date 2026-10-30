@@ -77,6 +77,8 @@ pixi run remove        # delete builds, npm packages and pixi environments
 pixi run dev           # development server with hot reload
 ```
 
+Ports move out of the way by themselves: if 3000 is taken, MITI uses the next free port, and `miti-bridge` uses a foxglove_bridge already on 8765 or, when another program holds 8765, starts the bridge on the next free port. MITI is told the bridge's port, so browsers connect without any setting; the first lines of the output show the addresses.
+
 The first run installs Node.js 22 and the npm packages and builds MITI. Later runs skip both unless `package-lock.json` or the source changed, and start in about a second. Supported: Linux x86-64 and ARM64, macOS on Apple silicon, Windows x86-64 ([notes](#windows)).
 
 | Task                                      | What it does                                                                                                                                                                       |
@@ -217,7 +219,7 @@ Environment variables, read by `ros/foxglove-bridge.sh` (pixi and Docker alike):
 | `BRIDGE_MAX_QOS_DEPTH`     | `10`               | Subscription queue depth                                                         |
 | `ROS_STATIC_PEERS`         | —                  | Jazzy: the robot's IP, to find it without multicast                              |
 
-MITI opens `ws://<host it was opened from>:8765` by default, which is this bridge. With another `BRIDGE_PORT`, enter the address in MITI's connection settings.
+MITI opens `ws://<host it was opened from>:<bridge port>` by default, which is this bridge: `pixi run miti` / `miti-bridge` and Docker Compose tell it the port (`MITI_BRIDGE_PORT`). If `BRIDGE_PORT` is taken by another program, the bridge moves to the next free port and says so; if a foxglove_bridge already listens there, it is used.
 
 ### The robot's own message types
 
@@ -245,7 +247,7 @@ DDS carries every message the bridge subscribes to from the robot to this machin
 - **Several networks** (Wi-Fi, Ethernet, Docker): pin the robot's network with `<NetworkInterface name="..."/>` in `ros/cyclonedds.xml` if discovery picks the wrong one.
 - The first subscription can take a few seconds while DDS discovery settles; later ones are immediate.
 - `sequence size exceeds remaining buffer` or `invalid data size` in the bridge log means the robot runs another ROS 2 distro: Humble cannot read Iron/Jazzy discovery data. Use the matching environment (`-e jazzy`) or `ROS_DISTRO` in Docker.
-- `Port 8765 is already in use`: another foxglove_bridge (or a test bridge) is running on this machine. Stop it, or set `BRIDGE_PORT` and enter `ws://<this machine>:<port>` in MITI's connection settings.
+- `Port 8765 is used by <process> (PID …); foxglove_bridge uses 8766 instead`: another program holds the port, so the bridge moved; `pixi run miti` and `miti-bridge` find it. To keep 8765, stop that program (the message shows the command).
 
 ## Windows
 
@@ -285,6 +287,8 @@ winget install Microsoft.VisualStudio.2022.BuildTools --override "--wait --passi
 ```powershell
 schtasks /Create /TN MITI /SC ONLOGON /TR "cmd /c cd /d C:\MITI && pixi run miti"
 ```
+
+**Port 8765 used by `svchost`**: a Windows service holds the port, usually IP Helper forwarding it with `netsh interface portproxy` (often set up for WSL). The bridge moves to the next free port by itself and MITI follows. To free 8765, check with `tasklist /svc /fi "PID eq <pid>"` and `netsh interface portproxy show all`, and remove an unused forward in an administrator PowerShell: `netsh interface portproxy delete v4tov4 listenport=8765 listenaddress=0.0.0.0`.
 
 **Keep MITI out of OneDrive.** Put the folder somewhere like `C:\MITI`, not under `Desktop` or `Documents` when those sync to OneDrive: pixi installs thousands of files in `.pixi`, which OneDrive then tries to upload.
 
@@ -340,6 +344,7 @@ MITI reads these from `.env` / `.env.local` at build time and from the environme
 | `NEXT_PUBLIC_BRIDGE_URL` | `ws://<host MITI was opened from>:8765` | Bridge address MITI opens first. Built into the app: rebuild after changing it. The address chosen in the connection settings always wins and is remembered per browser. Replaces the former `NEXT_PUBLIC_ROSBRIDGE_URL` |
 | `PORT`                   | `3000`                                  | Port for `npm start` / the standalone server                                                                                                                                                                             |
 | `MITI_PORT`              | `3000`                                  | Port Docker Compose publishes                                                                                                                                                                                            |
+| `MITI_BRIDGE_PORT`       | `8765`                                  | Bridge port the page tells browsers, read at run time; set by `pixi run miti` / `miti-bridge` and by Docker Compose from `BRIDGE_PORT`                                                                                   |
 | `MITI_PACKAGE_PATH`      | —                                       | Extra ROS package directories for MITI's `/api/package` mesh fallback (`AMENT_PREFIX_PATH` / `ROS_PACKAGE_PATH` are read too). Meshes normally come through foxglove_bridge                                              |
 | `COMPOSE_PROFILES`       | —                                       | `bridge` to start foxglove_bridge with every `docker compose up`                                                                                                                                                         |
 

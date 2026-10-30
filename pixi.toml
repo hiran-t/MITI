@@ -17,7 +17,7 @@ nodejs = "22.*"
 [tasks]
 install = { cmd = "npm ci --no-audit --no-fund", inputs = ["package.json", "package-lock.json"], outputs = ["node_modules/.package-lock.json"] }
 build = { cmd = "npm run build", depends-on = ["install"], inputs = ["src/**", "public/**", "package.json", "next.config.js", "tailwind.config.ts", "postcss.config.js", "tsconfig.json"], outputs = [".next/BUILD_ID"] }
-miti = { cmd = "npm run start -- --hostname 0.0.0.0 --port {{ port }}", args = [{ arg = "port", default = "3000" }], depends-on = ["build"], description = "Build if needed and serve MITI (default port 3000)" }
+miti = { cmd = "node scripts/start-miti.mjs --port {{ port }}", args = [{ arg = "port", default = "3000" }], depends-on = ["build"], description = "Build if needed and serve MITI (port 3000, or the next free one)" }
 dev = { cmd = "npm run dev", depends-on = ["install"], description = "Development server with hot reload" }
 # Deletes everything generated (builds, npm packages, the robot message build, pixi environments);
 # `pixi run miti` brings it back. Source, .env and ros/overlay/src stay. pixi's task shell runs
@@ -41,13 +41,12 @@ ninja = "*"
 [feature.bridge.tasks]
 build-msgs = { cmd = "bash ros/build-msgs.sh", description = "Build message packages in ros/overlay/src" }
 bridge = { cmd = "bash ros/foxglove-bridge.sh", description = "foxglove_bridge on this machine (port 8765)" }
-miti-bridge = { cmd = "MITI_PORT={{ port }} bash ros/miti-with-bridge.sh", args = [{ arg = "port", default = "3000" }], depends-on = ["build"], description = "MITI and foxglove_bridge together (default port 3000)" }
+miti-bridge = { cmd = "node scripts/start-miti.mjs --port {{ port }} --bridge", args = [{ arg = "port", default = "3000" }], depends-on = ["build"], description = "MITI and foxglove_bridge together (ports move if taken)" }
 
-# Windows runs the PowerShell versions of the same scripts.
+# Windows runs the PowerShell versions of the same scripts (miti-bridge is plain Node.js).
 [feature.bridge.target.win-64.tasks]
 build-msgs = { cmd = "powershell -NoProfile -ExecutionPolicy Bypass -File ros/build-msgs.ps1", description = "Build message packages in ros/overlay/src" }
 bridge = { cmd = "powershell -NoProfile -ExecutionPolicy Bypass -File ros/foxglove-bridge.ps1", description = "foxglove_bridge on this machine (port 8765)" }
-miti-bridge = { cmd = "MITI_PORT={{ port }} powershell -NoProfile -ExecutionPolicy Bypass -File ros/miti-with-bridge.ps1", args = [{ arg = "port", default = "3000" }], depends-on = ["build"], description = "MITI and foxglove_bridge together (default port 3000)" }
 
 # The bridge can only offer topics whose message definitions are installed beside it; add the
 # robot's own message packages as described in docs/DEPLOYMENT.md.

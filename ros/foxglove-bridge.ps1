@@ -29,16 +29,65 @@ if ($env:RMW_IMPLEMENTATION -eq 'rmw_cyclonedds_cpp' -and -not $env:CYCLONEDDS_U
 $port = [int](Get-Setting 'BRIDGE_PORT' '8765')
 $address = Get-Setting 'BRIDGE_ADDRESS' '0.0.0.0'
 
-$probe = New-Object System.Net.Sockets.TcpClient
-try {
-  $probe.Connect('127.0.0.1', $port)
-  [Console]::Error.WriteLine("Port $port is already in use, probably by another foxglove_bridge. " +
-    "Stop it, or set BRIDGE_PORT and enter ws://<this machine>:<port> in MITI's connection settings.")
-  exit 1
-} catch [System.Net.Sockets.SocketException] {
-  # Nothing listens there: the port is free.
-} finally {
-  $probe.Dispose()
+function Test-PortInUse([int]$Port) {
+  $client = New-Object System.Net.Sockets.TcpClient
+  try { $client.Connect('127.0.0.1', $Port); $true } catch { $false } finally { $client.Dispose() }
+}
+
+# A foxglove_bridge answers the WebSocket handshake with its own subprotocol.
+function Test-Bridge([int]$Port) {
+  $client = New-Object System.Net.Sockets.TcpClient
+  try {
+    $client.Connect('127.0.0.1', $Port)
+    $stream = $client.GetStream()
+    $stream.ReadTimeout = 2000
+    $request = "GET / HTTP/1.1`r`nHost: localhost`r`nUpgrade: websocket`r`nConnection: Upgrade`r`n" +
+      "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==`r`nSec-WebSocket-Version: 13`r`n" +
+      "Sec-WebSocket-Protocol: foxglove.sdk.v1, foxglove.websocket.v1`r`n`r`n"
+    $bytes = [System.Text.Encoding]::ASCII.GetBytes($request)
+    $stream.Write($bytes, 0, $bytes.Length)
+    $reader = New-Object System.IO.StreamReader($stream)
+    $lines = @()
+    while ($null -ne ($line = $reader.ReadLine()) -and $line -ne '') { $lines += $line }
+    [bool](($lines[0] -like 'HTTP/1.1 101*') -and
+      ($lines | Where-Object { $_ -match '^sec-websocket-protocol:\s*foxglove' }))
+  } catch { $false } finally { $client.Dispose() }
+}
+
+function Get-PortOwner([int]$Port) {
+  if ($env:OS -ne 'Windows_NT') { return 'another program' }
+  $listener = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue |
+    Select-Object -First 1
+  if (-not $listener) { return 'another program' }
+  $id = $listener.OwningProcess
+  $name = (Get-Process -Id $id -ErrorAction SilentlyContinue).ProcessName
+  if ($name -eq 'svchost') {
+    # A Windows service, usually IP Helper forwarding the port (netsh interface portproxy).
+    return "a Windows service (svchost, PID $id; check: tasklist /svc /fi `"PID eq $id`" and " +
+      'netsh interface portproxy show all)'
+  }
+  "$name (PID $id; stop it with: Stop-Process -Id $id)"
+}
+
+# A bridge already on the port: exit 3 (scripts/start-miti.mjs then uses it). Another program on
+# the port: move to the next free one.
+if (Test-PortInUse $port) {
+  if (Test-Bridge $port) {
+    [Console]::Error.WriteLine("foxglove_bridge already runs on port $port; use that one.")
+    exit 3
+  }
+  $taken = $port
+  $owner = Get-PortOwner $taken
+  $port = 0
+  foreach ($candidate in ($taken + 1)..($taken + 20)) {
+    if (-not (Test-PortInUse $candidate)) { $port = $candidate; break }
+  }
+  if (-not $port) {
+    [Console]::Error.WriteLine("Port $taken is used by $owner, and no port up to $($taken + 20) is free.")
+    exit 1
+  }
+  [Console]::Error.WriteLine("Port $taken is used by $owner; foxglove_bridge uses $port instead. " +
+    "pixi run miti finds it; otherwise enter ws://<this machine>:$port in MITI's connection settings.")
 }
 
 Write-Host "foxglove_bridge: ws://${address}:$port, ROS_DOMAIN_ID=$env:ROS_DOMAIN_ID, $env:RMW_IMPLEMENTATION"

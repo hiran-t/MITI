@@ -19,6 +19,9 @@ services:
         NEXT_PUBLIC_BRIDGE_URL: ${NEXT_PUBLIC_BRIDGE_URL:-}
     image: miti:latest
     container_name: miti
+    environment:
+      # Tells the page which port the bridge service listens on.
+      MITI_BRIDGE_PORT: ${BRIDGE_PORT:-8765}
     ports:
       - '${MITI_PORT:-3000}:3000'
     restart: unless-stopped
