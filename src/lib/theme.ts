@@ -47,3 +47,20 @@ export const GRAY_SCALE = {
   200: '#dfe1e4',
   100: '#f0f1f2',
 } as const;
+
+/**
+ * Node-name colors in the Log panel, handed out in order of first appearance. Amber and red
+ * are left out because they mean WARN and ERROR there.
+ */
+export const LOG_NAME_COLORS = [
+  '#6cb6ff',
+  '#c792ea',
+  '#4fd1b5',
+  '#f38ab5',
+  '#9ccc65',
+  '#949dff',
+  '#66d9ef',
+  '#b8c46a',
+  '#e0a3ff',
+  '#7fb8a4',
+] as const;

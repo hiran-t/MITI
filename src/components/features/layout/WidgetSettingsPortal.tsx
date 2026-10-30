@@ -15,6 +15,15 @@ export default function WidgetSettingsPortal({ children }: { children: ReactNode
     ? createPortal(<div onClick={(event) => event.stopPropagation()}>{children}</div>, target)
     : null;
 }
+/** The slot in this panel's tab bar, between the tab and the panel actions. */
+export const PanelStatusContext = createContext<HTMLElement | null>(null);
+
+/** Show live status (rate, lag, size…) in the panel's tab bar instead of over its content. */
+export function PanelStatusPortal({ children }: { children: ReactNode }) {
+  const target = useContext(PanelStatusContext);
+  return target ? createPortal(children, target) : null;
+}
+
 export function useCloseWidgetSettings() {
   return useContext(WidgetSettingsContext).close;
 }

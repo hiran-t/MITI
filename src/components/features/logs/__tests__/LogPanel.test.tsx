@@ -87,3 +87,16 @@ test('copy writes the shown lines in their displayed format', () => {
   fireEvent.click(screen.getByLabelText('Copy shown logs'));
   expect(writeText).toHaveBeenCalledWith('[ERROR] [controller]: grasp failed (node.cpp:7)');
 });
+
+test('gives each node its own name color and keeps it for later messages', () => {
+  const { send } = setup();
+  send(log(20, 'planner_server', 'configured'), log(20, 'bt_navigator', 'activating'));
+  send(log(20, 'planner_server', 'activated'));
+  const colors = Array.from(document.querySelectorAll<HTMLElement>('.log-name')).map(
+    (name) => name.style.color
+  );
+  expect(colors).toHaveLength(3);
+  expect(colors[0]).not.toBe('');
+  expect(colors[1]).not.toBe(colors[0]);
+  expect(colors[2]).toBe(colors[0]);
+});

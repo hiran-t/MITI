@@ -18,6 +18,7 @@ import {
   type LogLevel,
 } from '@/lib/logs/log-messages';
 import type { LogWidgetProps } from '@/types/widget';
+import { LOG_NAME_COLORS } from '@/lib/theme';
 
 /** Messages kept in memory; older ones are dropped. */
 const MAX_LOGS = 10000;
@@ -61,7 +62,15 @@ function formatLine(entry: LogEntry, display: DisplayOptions): string {
     .join(' ');
 }
 
-function LogRow({ entry, display }: { entry: LogEntry; display: DisplayOptions }) {
+function LogRow({
+  entry,
+  display,
+  nameColor,
+}: {
+  entry: LogEntry;
+  display: DisplayOptions;
+  nameColor?: string;
+}) {
   const { date, time, zone } = formatLogStamp(entry.stamp);
   const stamp = [display.showDate && date, display.showTime && time, display.showTimezone && zone]
     .filter(Boolean)
@@ -70,7 +79,11 @@ function LogRow({ entry, display }: { entry: LogEntry; display: DisplayOptions }
     <div className={`log-row ${LEVEL_TONE[entry.level]}`}>
       {display.showLevel && <span className="log-level">[{entry.level}]</span>}
       {stamp && <span className="log-meta">[{stamp}]</span>}
-      {display.showName && entry.name && <span className="log-name">[{entry.name}]:</span>}
+      {display.showName && entry.name && (
+        <span className="log-name" style={{ color: nameColor }}>
+          [{entry.name}]:
+        </span>
+      )}
       <span className="log-message">{entry.message}</span>
       {display.showSource && entry.file && (
         <span className="log-meta">
@@ -108,6 +121,8 @@ export default function LogPanel({
   const display = { showLevel, showDate, showTime, showTimezone, showName, showSource };
   const buffer = useRef<LogEntry[]>([]);
   const nextId = useRef(0);
+  // Each node keeps the color it got when it first logged, so its lines are easy to follow.
+  const nameColors = useRef(new Map<string, string>());
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [names, setNames] = useState<string[]>([]);
   const [draft, setDraft] = useState('');
@@ -119,6 +134,7 @@ export default function LogPanel({
     buffer.current = [];
     setLogs([]);
     setNames([]);
+    nameColors.current = new Map();
     if (!client || !topic) return;
     const seen = new Set<string>();
     let dirty = false;
@@ -129,6 +145,8 @@ export default function LogPanel({
       if (buffer.current.length > MAX_LOGS * 1.1) buffer.current = buffer.current.slice(-MAX_LOGS);
       if (entry.name && !seen.has(entry.name)) {
         seen.add(entry.name);
+        const colors = nameColors.current;
+        colors.set(entry.name, LOG_NAME_COLORS[colors.size % LOG_NAME_COLORS.length]);
         setNames(Array.from(seen).sort());
       }
       dirty = true;
@@ -268,7 +286,12 @@ export default function LogPanel({
               </p>
             )}
             {rows.map((entry) => (
-              <LogRow key={entry.id} entry={entry} display={display} />
+              <LogRow
+                key={entry.id}
+                entry={entry}
+                display={display}
+                nameColor={nameColors.current.get(entry.name)}
+              />
             ))}
           </>
         )}

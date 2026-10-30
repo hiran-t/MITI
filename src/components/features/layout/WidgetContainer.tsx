@@ -13,6 +13,7 @@ import ButtonSwitchWidget from '../controls/ButtonSwitchWidget';
 import LogPanel from '../logs/LogPanel';
 import TopicInput from '../topic-viewer/TopicInput';
 import WidgetSettingsPortal, {
+  PanelStatusContext,
   WidgetSettingsContext,
   SettingsSection,
 } from './WidgetSettingsPortal';
@@ -25,6 +26,8 @@ interface WidgetContainerProps {
   topicsLoading: boolean;
   onRefreshTopics: () => void;
   settingsTarget: HTMLElement | null;
+  /** Slot in the panel's tab bar for live status. */
+  statusTarget?: HTMLElement | null;
   onCloseSettings: () => void;
   onUpdateWidget: (id: string, updates: Partial<WidgetConfig>) => void;
 }
@@ -36,6 +39,7 @@ export default function WidgetContainer({
   topicsLoading,
   onRefreshTopics,
   settingsTarget,
+  statusTarget = null,
   onCloseSettings,
   onUpdateWidget,
 }: WidgetContainerProps) {
@@ -144,7 +148,9 @@ export default function WidgetContainer({
   };
   return (
     <WidgetSettingsContext.Provider value={{ target: settingsTarget, close: onCloseSettings }}>
-      <div className={widgetStyles.content.inner}>{renderWidget()}</div>
+      <PanelStatusContext.Provider value={statusTarget}>
+        <div className={widgetStyles.content.inner}>{renderWidget()}</div>
+      </PanelStatusContext.Provider>
     </WidgetSettingsContext.Provider>
   );
 }

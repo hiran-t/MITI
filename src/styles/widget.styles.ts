@@ -11,6 +11,7 @@ export const widgetStyles = {
     base: 'drag-handle panel-tabbar cursor-move',
     titleWrapper: 'panel-tab',
     title: 'panel-tab-title truncate',
+    status: 'panel-tab-status',
     actions: 'panel-tab-actions',
   },
 

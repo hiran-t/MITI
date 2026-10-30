@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import WidgetSettingsPortal, { SettingsSection } from '../../layout/WidgetSettingsPortal';
+import WidgetSettingsPortal, {
+  PanelStatusPortal,
+  SettingsSection,
+} from '../../layout/WidgetSettingsPortal';
 import { BridgeClient } from '@/lib/bridge/client';
 import type { TopicInfo } from '@/lib/bridge/types';
 import { findTopicType, topicTypeMismatch } from '@/lib/bridge/topics';
@@ -206,25 +209,25 @@ export default function CameraViewer({
         </span>
       </div>
 
-      {/* Status bar */}
+      {/* Live stats sit in the panel's tab bar, off the image */}
       {showImage && (
-        <div className={visualizationStyles.viewer.statusBarLower} style={{ top: '3.5rem' }}>
-          <span>
+        <PanelStatusPortal>
+          <span className="status-mid">
             {size.width} × {size.height}
           </span>
           {fps !== null && <span>{fps.toFixed(fps < 10 ? 1 : 0)} fps</span>}
-          {frameBytes > 0 && <span>{formatBytes(frameBytes)}/frame</span>}
+          {frameBytes > 0 && <span className="status-low">{formatBytes(frameBytes)}/frame</span>}
           {lag !== null && lag > 0.3 && (
             <span className="text-warn" title="Age of the frame on the robot's clock">
               {lag.toFixed(1)} s behind
             </span>
           )}
           {lastUpdate && (
-            <span className={visualizationStyles.camera.statusTime}>
+            <span className={`status-low ${visualizationStyles.camera.statusTime}`}>
               {lastUpdate.toLocaleTimeString()}
             </span>
           )}
-        </div>
+        </PanelStatusPortal>
       )}
 
       {/* Image display area */}

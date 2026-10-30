@@ -170,6 +170,33 @@ button:disabled {
   min-width: 0;
   text-align: left;
 }
+/* Live status a panel shows in its tab bar (e.g. camera resolution, rate and lag). */
+.panel-tab-status {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-left: 10px;
+  overflow: hidden;
+  color: var(--miti-text-secondary);
+  font-family: var(--miti-font-mono);
+  font-size: 11px;
+  white-space: nowrap;
+  container-type: inline-size;
+}
+/* In narrow panels the least useful figures drop out first. */
+@container (max-width: 300px) {
+  .panel-tab-status .status-low {
+    display: none;
+  }
+}
+@container (max-width: 150px) {
+  .panel-tab-status .status-mid {
+    display: none;
+  }
+}
 .panel-tab-actions {
   display: flex;
   align-items: center;

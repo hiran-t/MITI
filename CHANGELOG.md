@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [3.0.1] - 2026-10-30
+
+### Changed
+
+- Camera panel stats (resolution, rate, frame size, lag and time) moved from an overlay on the image to the panel's tab bar; in narrow panels the time and frame size hide first, then the resolution
+- Log panel node names each get their own color, assigned in the order nodes first log and kept while the panel is open; amber and red stay reserved for WARN and ERROR
+
 ## [3.0.0] - 2026-10-30
 
 ### Changed

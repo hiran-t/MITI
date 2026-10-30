@@ -56,6 +56,18 @@ export default function PanelMosaic({
   // Dividers move continuously; the tree is shown live and saved when the drag ends.
   const [live, setLive] = useState<MosaicTree | null>(mosaic);
   useEffect(() => setLive(mosaic), [mosaic]);
+  // Each tab bar has a slot that its panel fills with live status (see PanelStatusPortal).
+  const [statusTargets, setStatusTargets] = useState<Record<string, HTMLElement | null>>({});
+  const statusRefs = useRef(new Map<string, (el: HTMLElement | null) => void>());
+  const statusRef = (id: string) => {
+    let ref = statusRefs.current.get(id);
+    if (!ref) {
+      ref = (el) =>
+        setStatusTargets((targets) => (targets[id] === el ? targets : { ...targets, [id]: el }));
+      statusRefs.current.set(id, ref);
+    }
+    return ref;
+  };
 
   useEffect(() => {
     if (!expandedId) return;
@@ -133,6 +145,7 @@ export default function PanelMosaic({
                       <X className={widgetStyles.buttons.icon} />
                     </button>
                   </div>
+                  <div ref={statusRef(id)} className={widgetStyles.header.status} />
                   <div className={widgetStyles.header.actions}>
                     <button
                       className={widgetStyles.buttons.base}
@@ -199,6 +212,7 @@ export default function PanelMosaic({
                   topicsLoading={topicsLoading}
                   onRefreshTopics={onRefreshTopics}
                   settingsTarget={selectedWidgetId === id ? settingsTarget : null}
+                  statusTarget={statusTargets[id] ?? null}
                   onCloseSettings={onCloseSettings}
                   onUpdateWidget={onUpdateWidget}
                 />

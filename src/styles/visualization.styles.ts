@@ -10,8 +10,6 @@ export const visualizationStyles = {
       'absolute top-3 left-3 z-10 px-3 py-1.5 bg-gray-900/90 rounded text-xs font-medium text-gray-300 border border-gray-800',
     statusBar:
       'absolute top-3 right-3 z-10 px-3 py-1.5 bg-gray-900/90 rounded text-xs text-gray-400 border border-gray-800',
-    statusBarLower:
-      'absolute top-3 right-3 z-10 flex items-center gap-2 px-3 py-1.5 bg-gray-900/90 rounded text-xs text-gray-400 border border-gray-800',
     contentCenter: 'w-full h-full flex items-center justify-center',
   },
 
