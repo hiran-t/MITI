@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [3.3.4] - 2026-10-30
+
 ### Added
 
 - ROS network settings in the browser: with `pixi run -e <distro> miti-bridge`, the connection settings set the bridge's `ROS_DOMAIN_ID` and the robot's IP addresses and restart foxglove_bridge with them; MITI reconnects on its own. The settings are saved in `.miti/bridge.json`. A bridge that stops after such a change no longer stops MITI, and the settings show its last log line
