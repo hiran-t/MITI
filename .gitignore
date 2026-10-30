@@ -42,3 +42,6 @@ next-env.d.ts
 ros/overlay/build/
 ros/overlay/install/
 ros/overlay/log/
+
+# ROS settings changed in MITI (scripts/bridge-settings.mjs)
+.miti/

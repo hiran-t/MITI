@@ -196,6 +196,8 @@ pixi run -e humble bridge        # foxglove_bridge only
 
 Settings are environment variables, for example `ROS_DOMAIN_ID=5 pixi run -e humble miti-bridge`.
 
+**Change them from the browser.** With `miti-bridge`, the connection settings (gear in MITI's status bar) have a **ROS network** section: `ROS_DOMAIN_ID` and the robot's IP addresses. **Apply and restart bridge** restarts foxglove_bridge with them and MITI reconnects on its own, so settings found on site can be tried without a terminal. They are saved in `.miti/bridge.json` and used on the next start in place of the environment variables; delete that file (or run `pixi run remove`) to go back to the environment. If the bridge stops after a change, MITI keeps running and the section shows its last log line. The section is read-only information with Docker or a bridge on the robot, where the settings belong to that bridge.
+
 ### With Docker Compose
 
 ```bash
@@ -217,7 +219,7 @@ Environment variables, read by `ros/foxglove-bridge.sh` (pixi and Docker alike):
 | `BRIDGE_TOPIC_WHITELIST`   | `['.*']`           | Regexes of topics to offer                                                       |
 | `BRIDGE_SEND_BUFFER_LIMIT` | `10000000`         | Bytes queued per browser before messages are dropped                             |
 | `BRIDGE_MAX_QOS_DEPTH`     | `10`               | Subscription queue depth                                                         |
-| `ROS_STATIC_PEERS`         | —                  | Jazzy: the robot's IP, to find it without multicast                              |
+| `ROS_STATIC_PEERS`         | —                  | The robot's IPv4 addresses (`a;b`), to find it where multicast is dropped        |
 
 MITI opens `ws://<host it was opened from>:<bridge port>` by default, which is this bridge: `pixi run miti` / `miti-bridge` and Docker Compose tell it the port (`MITI_BRIDGE_PORT`). If `BRIDGE_PORT` is taken by another program, the bridge moves to the next free port and says so; if a foxglove_bridge already listens there, it is used.
 
@@ -242,7 +244,7 @@ The bridge serves `package://` meshes of the robot model from the packages insta
 DDS carries every message the bridge subscribes to from the robot to this machine, so the link still decides how much fits:
 
 - **Use compressed images.** A raw 1280×720 image is 2.7 MB; on a test network a raw camera reached this machine at about 2.5 frames per second, while joint states (40 Hz), TF and odometry arrived in full. Subscribe MITI to `/compressed` image topics, or offer only those with `BRIDGE_TOPIC_WHITELIST`.
-- **Discovery over Wi-Fi** relies on multicast, which Wi-Fi often drops; topics then come and go. On Jazzy, list the robot directly: `ROS_STATIC_PEERS=<robot-ip>` (in `.env` for Docker; exported before `pixi run` with pixi). On Humble, use a Fast DDS discovery server or a wired link.
+- **Discovery over Wi-Fi** relies on multicast, which Wi-Fi often drops; topics then come and go. List the robot directly: its IP in MITI's connection settings (**ROS network**), or `ROS_STATIC_PEERS=<robot-ip>` (in `.env` for Docker; exported before `pixi run` with pixi). Jazzy reads `ROS_STATIC_PEERS` itself; on Humble the bridge script adds the address to Fast DDS's initial peers (a generated profile, unless `FASTRTPS_DEFAULT_PROFILES_FILE` is already set) or to Cyclone DDS's peers. Multicast discovery keeps working alongside.
 - **Large messages over Wi-Fi** need big socket buffers. With Cyclone DDS, [ros/cyclonedds.xml](../ros/cyclonedds.xml) asks for up to 16 MB; raise the kernel limit once on Linux: `sudo sysctl -w net.core.rmem_max=16777216` (add it to `/etc/sysctl.conf` to keep it).
 - **Several networks** (Wi-Fi, Ethernet, Docker): pin the robot's network with `<NetworkInterface name="..."/>` in `ros/cyclonedds.xml` if discovery picks the wrong one.
 - The first subscription can take a few seconds while DDS discovery settles; later ones are immediate.
@@ -263,7 +265,7 @@ Settings are environment variables, set before `pixi run`:
 
 ```powershell
 $env:ROS_DOMAIN_ID = "5"
-$env:ROS_STATIC_PEERS = "192.168.10.27"   # Jazzy: find the robot by IP
+$env:ROS_STATIC_PEERS = "192.168.10.27"   # find the robot by IP
 pixi run -e jazzy miti-bridge
 ```
 

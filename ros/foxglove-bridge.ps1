@@ -1,7 +1,7 @@
 # Windows version of foxglove-bridge.sh: runs foxglove_bridge on this machine, joined to the
 # robot's ROS 2 network over DDS. Used by `pixi run -e <distro> bridge` and `miti-bridge` on
 # Windows; it reads the same environment variables as the bash script:
-#   ROS_DOMAIN_ID, RMW_IMPLEMENTATION, CYCLONEDDS_URI, BRIDGE_PORT, BRIDGE_ADDRESS,
+#   ROS_DOMAIN_ID, RMW_IMPLEMENTATION, CYCLONEDDS_URI, ROS_STATIC_PEERS, BRIDGE_PORT, BRIDGE_ADDRESS,
 #   BRIDGE_TOPIC_WHITELIST, BRIDGE_SEND_BUFFER_LIMIT, BRIDGE_MAX_QOS_DEPTH
 $ErrorActionPreference = 'Stop'
 
@@ -102,7 +102,43 @@ if (Test-PortInUse $port) {
     "pixi run miti finds it; otherwise enter ws://<this machine>:$port in MITI's connection settings.")
 }
 
-Write-Host "foxglove_bridge: ws://${address}:$port, ROS_DOMAIN_ID=$env:ROS_DOMAIN_ID, $env:RMW_IMPLEMENTATION"
+# The robot's addresses. Jazzy reads ROS_STATIC_PEERS itself; Humble needs them in the DDS
+# configuration (IPv4 only, the form both DDS configurations accept).
+$peers = @()
+foreach ($peer in ((Get-Setting 'ROS_STATIC_PEERS' '') -split '[\s,;]+' | Where-Object { $_ })) {
+  if ($peer -match '^\d{1,3}(\.\d{1,3}){3}$') { $peers += $peer }
+  else { [Console]::Error.WriteLine("Ignoring robot address ${peer}: use an IPv4 address.") }
+}
+if ($peers.Count -gt 0 -and $env:ROS_DISTRO -eq 'humble') {
+  if ($env:RMW_IMPLEMENTATION -eq 'rmw_cyclonedds_cpp') {
+    $list = ($peers | ForEach-Object { "<Peer address=`"$_`"/>" }) -join ''
+    $env:CYCLONEDDS_URI = "$env:CYCLONEDDS_URI,<CycloneDDS><Domain Id=`"any`"><Discovery>" +
+      "<ParticipantIndex>auto</ParticipantIndex><Peers>$list</Peers></Discovery></Domain></CycloneDDS>"
+  } elseif ($env:FASTRTPS_DEFAULT_PROFILES_FILE) {
+    [Console]::Error.WriteLine('FASTRTPS_DEFAULT_PROFILES_FILE is set; add the robot to its initialPeersList.')
+  } else {
+    # Multicast and this machine stay in the list, so discovery works as before plus the robot.
+    $locators = (@('239.255.0.1', '127.0.0.1') + $peers | ForEach-Object {
+      "      <locator><udpv4><address>$_</address></udpv4></locator>"
+    }) -join "`n"
+    $peersFile = Join-Path ([System.IO.Path]::GetTempPath()) "miti-fastdds-$port.xml"
+    Set-Content -Path $peersFile -Encoding ascii -Value @"
+<?xml version="1.0" encoding="UTF-8"?>
+<profiles xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
+  <participant profile_name="miti_robot_peers" is_default_profile="true">
+    <rtps><builtin><initialPeersList>
+$locators
+    </initialPeersList></builtin></rtps>
+  </participant>
+</profiles>
+"@
+    $env:FASTRTPS_DEFAULT_PROFILES_FILE = $peersFile
+  }
+}
+$env:ROS_STATIC_PEERS = $peers -join ';'
+
+$robot = if ($peers.Count) { ", robot $($peers -join ' ')" } else { '' }
+Write-Host "foxglove_bridge: ws://${address}:$port, ROS_DOMAIN_ID=$env:ROS_DOMAIN_ID, $env:RMW_IMPLEMENTATION$robot"
 
 & ros2 launch foxglove_bridge foxglove_bridge_launch.xml `
   "port:=$port" `

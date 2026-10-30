@@ -22,7 +22,7 @@ dev = { cmd = "npm run dev", depends-on = ["install"], description = "Developmen
 # Deletes everything generated (builds, npm packages, the robot message build, pixi environments);
 # `pixi run miti` brings it back. Source, .env and ros/overlay/src stay. pixi's task shell runs
 # `rm` itself, so this works on Windows too.
-remove = { cmd = "rm -rf .next node_modules coverage ros/overlay/build ros/overlay/install ros/overlay/log && pixi clean", description = "Delete builds, npm packages and pixi environments" }
+remove = { cmd = "rm -rf .next node_modules coverage .miti ros/overlay/build ros/overlay/install ros/overlay/log && pixi clean", description = "Delete builds, npm packages, saved ROS settings and pixi environments" }
 
 # foxglove_bridge from RoboStack. It subscribes to the robot's topics over DDS, so the robot only
 # publishes as usual and the bridge's work happens on this machine. Pick the robot's ROS distro:

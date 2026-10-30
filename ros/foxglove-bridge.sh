@@ -8,6 +8,7 @@
 #   ROS_DOMAIN_ID            must match the robot (default 0)
 #   RMW_IMPLEMENTATION       rmw_fastrtps_cpp (ROS 2 default) or rmw_cyclonedds_cpp
 #   CYCLONEDDS_URI           Cyclone DDS config; defaults to ros/cyclonedds.xml beside this script
+#   ROS_STATIC_PEERS         the robot's IP addresses (a;b), to find it where multicast is dropped
 #   BRIDGE_PORT              WebSocket port (default 8765)
 #   BRIDGE_ADDRESS           address to listen on (default 0.0.0.0)
 #   BRIDGE_TOPIC_WHITELIST   regexes of topics to offer, e.g. "['/tf.*','/camera/.*/compressed']"
@@ -87,8 +88,46 @@ if in_use "$port"; then
     "pixi run miti finds it; otherwise enter ws://<this machine>:$port in MITI's connection settings." >&2
 fi
 
+# The robot's addresses. Jazzy reads ROS_STATIC_PEERS itself; Humble needs them in the DDS
+# configuration (IPv4 only, the form both DDS configurations accept).
+peers=()
+listed="${ROS_STATIC_PEERS:-}"
+for peer in ${listed//[,;]/ }; do
+  if [[ "$peer" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; then
+    peers+=("$peer")
+  else
+    echo "Ignoring robot address $peer: use an IPv4 address." >&2
+  fi
+done
+if [ ${#peers[@]} -gt 0 ] && [ "${ROS_DISTRO:-}" = "humble" ]; then
+  if [ "$RMW_IMPLEMENTATION" = "rmw_cyclonedds_cpp" ]; then
+    xml='<CycloneDDS><Domain Id="any"><Discovery><ParticipantIndex>auto</ParticipantIndex><Peers>'
+    for peer in "${peers[@]}"; do xml+="<Peer address=\"$peer\"/>"; done
+    export CYCLONEDDS_URI="$CYCLONEDDS_URI,$xml</Peers></Discovery></Domain></CycloneDDS>"
+  elif [ -n "${FASTRTPS_DEFAULT_PROFILES_FILE:-}" ]; then
+    echo "FASTRTPS_DEFAULT_PROFILES_FILE is set; add the robot to its initialPeersList." >&2
+  else
+    # Multicast and this machine stay in the list, so discovery works as before plus the robot.
+    profile="${TMPDIR:-/tmp}/miti-fastdds-$port.xml"
+    {
+      echo '<?xml version="1.0" encoding="UTF-8"?>'
+      echo '<profiles xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">'
+      echo '  <participant profile_name="miti_robot_peers" is_default_profile="true">'
+      echo '    <rtps><builtin><initialPeersList>'
+      for address in 239.255.0.1 127.0.0.1 "${peers[@]}"; do
+        echo "      <locator><udpv4><address>$address</address></udpv4></locator>"
+      done
+      echo '    </initialPeersList></builtin></rtps>'
+      echo '  </participant>'
+      echo '</profiles>'
+    } >"$profile"
+    export FASTRTPS_DEFAULT_PROFILES_FILE="$profile"
+  fi
+fi
+export ROS_STATIC_PEERS="$(IFS=';'; echo "${peers[*]:-}")"
+
 echo "foxglove_bridge: ws://${BRIDGE_ADDRESS:-0.0.0.0}:$port," \
-  "ROS_DOMAIN_ID=$ROS_DOMAIN_ID, $RMW_IMPLEMENTATION"
+  "ROS_DOMAIN_ID=$ROS_DOMAIN_ID, $RMW_IMPLEMENTATION${peers[0]:+, robot ${peers[*]}}"
 
 exec ros2 launch foxglove_bridge foxglove_bridge_launch.xml \
   port:="$port" \

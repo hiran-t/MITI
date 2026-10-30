@@ -111,3 +111,4 @@ jest.setup.ts
 .lintstagedrc.js
 docker-compose.yml
 Dockerfile
+.miti

@@ -132,7 +132,7 @@ In MITI, open the connection settings (gear in the status bar, bottom left) and 
 
 ### Beside MITI (keeps the work off the robot)
 
-foxglove_bridge runs on the MITI machine and subscribes to the robot's topics over DDS, only for the topics someone is viewing. Nothing is installed on the robot; the two machines must be on the same network with the same `ROS_DOMAIN_ID`, and the bridge must use the robot's ROS 2 distro.
+foxglove_bridge runs on the MITI machine and subscribes to the robot's topics over DDS, only for the topics someone is viewing. Nothing is installed on the robot; the two machines must be on the same network with the same `ROS_DOMAIN_ID`, and the bridge must use the robot's ROS 2 distro. With `miti-bridge`, the connection settings in MITI change the bridge's `ROS_DOMAIN_ID` and robot address and restart it.
 
 ```bash
 pixi run -e humble miti-bridge          # MITI + foxglove_bridge (use -e jazzy for a Jazzy robot)
@@ -154,6 +154,7 @@ MITI needs no configuration. Optional settings go in `.env` (copy [.env.example]
 | `COMPOSE_PROFILES`       | —                                       | `bridge` to always start foxglove_bridge with Docker Compose                      |
 | `ROS_DISTRO`             | `humble`                                | Bridge image distro (Docker)                                                      |
 | `ROS_DOMAIN_ID`          | `0`                                     | Must match the robot                                                              |
+| `ROS_STATIC_PEERS`       | —                                       | The robot's IP, for networks that drop multicast (Wi-Fi)                          |
 | `RMW_IMPLEMENTATION`     | `rmw_fastrtps_cpp`                      | Or `rmw_cyclonedds_cpp`                                                           |
 | `BRIDGE_TOPIC_WHITELIST` | `['.*']`                                | Regexes of topics the bridge offers                                               |
 

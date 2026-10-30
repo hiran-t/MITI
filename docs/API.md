@@ -1256,6 +1256,14 @@ assets. Both serve only mesh, texture and URDF files found under the ROS package
 | `GET /api/package/<pkg>/<path>`      | `package://<pkg>/<path>` |
 | `GET /api/file?path=<absolute path>` | `file://<absolute path>` |
 
+`/api/bridge` reads and changes the ROS network of the foxglove_bridge that `miti-bridge` started
+(`scripts/start-miti.mjs` serves it to MITI's server on 127.0.0.1 with a per-run token).
+
+| Route             | Does                                                                                                                                                                |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/bridge` | `{ available, domainId, peers, distro, rmw, port, state, exitCode, log }`; `available: false` with a `reason` when MITI did not start the bridge                    |
+| `PUT /api/bridge` | JSON `{ domainId: 0–232, peers: "192.168.10.27, …" }`: saves `.miti/bridge.json` and restarts the bridge; `400` with `error` for invalid values, `415` for non-JSON |
+
 ## Examples
 
 ### A custom panel

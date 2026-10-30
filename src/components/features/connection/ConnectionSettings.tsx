@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Settings, X } from 'lucide-react';
 import { connectionStyles } from '@/styles';
 import { defaultBridgeUrl } from '@/hooks/useBridge';
+import BridgeNetworkSettings from './BridgeNetworkSettings';
 import type { StreamMode } from '@/lib/bridge/client';
 
 interface ConnectionSettingsProps {
@@ -176,6 +177,8 @@ export default function ConnectionSettings({
               </button>
             </div>
           </div>
+
+          <BridgeNetworkSettings />
         </div>
 
         {/* Footer */}

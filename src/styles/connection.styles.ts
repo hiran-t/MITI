@@ -36,6 +36,17 @@ export const connectionStyles = {
     hint: 'mt-1 text-xs text-gray-500',
   },
 
+  // ROS network of the bridge beside MITI
+  network: {
+    section: 'space-y-2 border-t border-gray-800 pt-4',
+    title: 'flex items-baseline justify-between gap-2 text-xs font-medium text-gray-300',
+    meta: 'font-normal text-gray-500',
+    row: 'flex items-end gap-2',
+    state: 'min-w-0 flex-1 truncate text-xs',
+    log: 'ml-1.5 font-mono text-gray-500',
+    error: 'text-xs text-danger',
+  },
+
   // Examples section
   examples: {
     container: 'bg-gray-950 rounded p-3',
@@ -50,6 +61,8 @@ export const connectionStyles = {
     group: 'flex gap-2',
     cancel:
       'px-3 py-1.5 text-xs text-gray-300 border border-gray-700 rounded hover:bg-gray-800 transition-colors',
+    apply:
+      'shrink-0 px-3 py-1.5 text-xs text-gray-200 border border-gray-700 rounded hover:bg-gray-800 transition-colors disabled:opacity-40 disabled:hover:bg-transparent',
     save: 'px-3 py-1.5 text-xs bg-accent hover:bg-accent-hover text-gray-950 font-medium rounded transition-colors',
   },
 } as const;
