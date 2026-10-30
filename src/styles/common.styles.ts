@@ -6,16 +6,16 @@ export const commonStyles = {
   // Button styles
   button: {
     primary:
-      'px-4 py-2 bg-violet-400 hover:bg-violet-300 text-gray-950 rounded-md transition-all duration-200',
-    secondary: 'px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors',
-    ghost: 'px-4 py-2 hover:bg-gray-800/50 text-gray-300 rounded-md transition-colors',
-    danger: 'px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-md transition-colors',
-    icon: 'p-2 hover:bg-gray-800/50 rounded-md transition-colors',
+      'px-4 py-2 bg-accent hover:bg-accent-hover text-gray-950 rounded transition-all duration-200',
+    secondary: 'px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded transition-colors',
+    ghost: 'px-4 py-2 hover:bg-gray-800/50 text-gray-300 rounded transition-colors',
+    danger: 'px-4 py-2 bg-danger/20 hover:bg-danger/30 text-danger rounded transition-colors',
+    icon: 'p-2 hover:bg-gray-800/50 rounded transition-colors',
   },
 
   // Card styles
   card: {
-    base: 'bg-gray-900/50 rounded-md border border-gray-800',
+    base: 'bg-gray-900/50 rounded border border-gray-800',
     header: 'px-4 py-3 border-b border-gray-800',
     body: 'p-4',
     footer: 'px-4 py-3 border-t border-gray-800',
@@ -23,37 +23,37 @@ export const commonStyles = {
 
   // Input styles
   input: {
-    base: 'w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent',
-    error: 'border-red-500 focus:ring-red-400',
+    base: 'w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent',
+    error: 'border-danger focus:ring-danger',
     label: 'block text-sm font-medium text-gray-300 mb-1',
     hint: 'text-xs text-gray-500 mt-1',
   },
 
   // Status indicators
   status: {
-    success: 'text-green-500',
-    warning: 'text-yellow-500',
-    error: 'text-red-500',
-    info: 'text-blue-500',
+    success: 'text-ok',
+    warning: 'text-warn',
+    error: 'text-danger',
+    info: 'text-accent',
     neutral: 'text-gray-400',
   },
 
   // Badge styles
   badge: {
     base: 'inline-flex items-center px-2 py-1 rounded text-xs font-medium',
-    success: 'bg-green-500/20 text-green-400',
-    warning: 'bg-yellow-500/20 text-yellow-400',
-    error: 'bg-red-500/20 text-red-400',
-    info: 'bg-blue-500/20 text-blue-400',
+    success: 'bg-ok/20 text-ok',
+    warning: 'bg-warn/20 text-warn',
+    error: 'bg-danger/20 text-danger',
+    info: 'bg-accent/20 text-accent',
     neutral: 'bg-gray-500/20 text-gray-400',
   },
 
   // Modal/Dialog styles
   modal: {
-    backdrop: 'fixed inset-0 z-50 bg-black/50 backdrop-blur-sm',
+    backdrop: 'fixed inset-0 z-50 bg-black/50',
     container: 'fixed inset-0 z-50 flex items-center justify-center p-4',
     content:
-      'bg-gray-900 rounded-md border border-gray-800 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden',
+      'bg-gray-900 rounded border border-gray-800 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden',
     header: 'px-6 py-4 border-b border-gray-800 flex items-center justify-between',
     body: 'p-6 overflow-y-auto',
     footer: 'px-6 py-4 border-t border-gray-800 flex items-center justify-end gap-2',

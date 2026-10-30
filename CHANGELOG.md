@@ -2,6 +2,24 @@
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-10-30
+
+### Changed
+
+- New MITI look in the style of VS Code and JetBrains, replacing the Foxglove-like styling: neutral dark grays, a muted teal accent (`#2fb4c4`) used only for active, selected and focus states, and status colors (ok, warning, error) used only for real state
+- Workspace shell rearranged without changing any workflow:
+  - one title bar with the MITI logo, the layout name, Reset layout and Add panel (now icon buttons)
+  - an activity bar on the left replaces the Sidebar button and the sidebar tabs (Panel, Topics, Problems, Sources); clicking the open view closes the sidebar, and arrow keys move between views
+  - a status bar at the bottom shows the connection (address, state and connection settings), the problem count, the panel count and the app version
+- Panel headers are tabs (icon, title, close) with expand and lock on the right; the selected panel's tab has a teal top line; panels are separated by 1px seams with square corners
+- Topic list, settings tree, Log panel, connection dialog, State Machine and Button Switch panels restyled to match
+- 3D Scene default colors (paths, poses, camera frustums, TF lines, publish tool) use the MITI cyan `#15FBFF` instead of purple
+- All UI colors come from tokens in `src/lib/theme.ts`, exposed as `--miti-*` CSS variables and Tailwind colors (`accent`, `ok`, `warn`, `danger`, `surface-*`)
+
+### Removed
+
+- Camera panel presets (Color, Detection, Depth and IR buttons); choose the image topic in the Image Topic field
+
 ## [2.2.0] - 2026-10-30
 
 ### Added

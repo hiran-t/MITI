@@ -35,21 +35,22 @@ export default function AddWidgetButton({
     <div className="relative" ref={container}>
       <button
         ref={trigger}
-        className="workspace-button primary"
+        className="workspace-icon"
+        aria-label="Add panel"
+        title="Add panel"
         aria-expanded={open}
         aria-controls="panel-picker"
         onClick={() => setOpen(!open)}
       >
-        <Plus size={15} />
-        Add panel
+        <Plus size={16} strokeWidth={1.75} />
       </button>
       {open && (
         <div id="panel-picker" className="panel-picker" aria-label="Add panel">
-          <p className="px-3 py-2 text-xs text-gray-400">VISUALIZATION PANELS</p>
+          <p className="panel-picker-heading">Add panel</p>
           {WIDGET_TYPES.map(({ type, label }) => (
             <button
               key={type}
-              className="flex w-full items-center gap-3 rounded px-3 py-3 text-left hover:bg-gray-800"
+              className="panel-picker-item"
               onClick={() => {
                 onAddWidget(type);
                 setOpen(false);
@@ -58,7 +59,6 @@ export default function AddWidgetButton({
             >
               <PanelIcon type={type} />
               <span className="flex-1">{label}</span>
-              <Plus size={14} />
             </button>
           ))}
         </div>

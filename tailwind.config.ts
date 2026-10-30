@@ -1,4 +1,9 @@
 import type { Config } from 'tailwindcss';
+import plugin from 'tailwindcss/plugin';
+import { GRAY_SCALE, MITI_CYAN, MITI_CYAN_HOVER, UI_TOKENS } from './src/lib/theme';
+
+/** Tailwind color backed by an `--miti-*-rgb` variable, so `/50` opacity modifiers work. */
+const rgbVar = (name: string) => `rgb(var(--miti-${name}-rgb) / <alpha-value>)`;
 
 const config: Config = {
   content: [
@@ -9,23 +14,31 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        gray: {
-          950: '#111216',
-          900: '#191B22',
-          800: '#2B2E39',
-          700: '#3C4050',
-          600: '#747B8F',
-          500: '#969DB0',
-          400: '#ADB3C3',
-          300: '#C6CBD7',
-          200: '#E8EAF0',
-          100: '#F3F4F7',
+        brand: { DEFAULT: MITI_CYAN, hover: MITI_CYAN_HOVER },
+        accent: { DEFAULT: rgbVar('accent'), hover: 'var(--miti-accent-hover)' },
+        ok: rgbVar('ok'),
+        warn: rgbVar('warn'),
+        danger: rgbVar('error'),
+        surface: {
+          chrome: 'var(--miti-bg-chrome)',
+          panel: 'var(--miti-bg-panel)',
+          viewport: 'var(--miti-bg-viewport)',
+          input: 'var(--miti-bg-input)',
         },
+        gray: GRAY_SCALE,
         background: 'var(--background)',
         foreground: 'var(--foreground)',
       },
     },
   },
-  plugins: [],
+  plugins: [
+    plugin(({ addBase }) => {
+      addBase({
+        ':root': Object.fromEntries(
+          Object.entries(UI_TOKENS).map(([name, value]) => [`--miti-${name}`, value])
+        ),
+      });
+    }),
+  ],
 };
 export default config;

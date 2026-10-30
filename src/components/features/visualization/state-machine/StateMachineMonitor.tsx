@@ -68,15 +68,15 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
 
 const STATUS_STYLES: Record<NodeStatus, { dot: string; label: string; bg: string }> = {
   SUCCESS: {
-    dot: 'bg-green-400',
-    label: 'text-green-400',
-    bg: 'border-green-500/30 bg-green-500/10',
+    dot: 'bg-ok',
+    label: 'text-ok',
+    bg: 'border-ok/30 bg-ok/10',
   },
-  FAILURE: { dot: 'bg-red-400', label: 'text-red-400', bg: 'border-red-500/30 bg-red-500/10' },
+  FAILURE: { dot: 'bg-danger', label: 'text-danger', bg: 'border-danger/30 bg-danger/10' },
   RUNNING: {
-    dot: 'bg-yellow-400 animate-pulse',
-    label: 'text-yellow-400',
-    bg: 'border-yellow-500/30 bg-yellow-500/10',
+    dot: 'bg-warn animate-pulse',
+    label: 'text-warn',
+    bg: 'border-warn/30 bg-warn/10',
   },
   IDLE: { dot: 'bg-gray-500', label: 'text-gray-500', bg: 'border-gray-700 bg-gray-800/30' },
 };
@@ -84,17 +84,17 @@ const STATUS_STYLES: Record<NodeStatus, { dot: string; label: string; bg: string
 function BTNodeIcon({ type }: { type: string }) {
   switch (type) {
     case 'Sequence':
-      return <span className="text-xs font-bold text-blue-400">→</span>;
+      return <span className="text-xs font-bold text-gray-400">→</span>;
     case 'Selector':
-      return <span className="text-xs font-bold text-purple-400">?</span>;
+      return <span className="text-xs font-bold text-accent">?</span>;
     case 'Root':
-      return <span className="text-xs font-bold text-cyan-400">⊙</span>;
+      return <span className="text-xs font-bold text-gray-400">⊙</span>;
     case 'Action':
-      return <span className="text-xs font-bold text-orange-400">▶</span>;
+      return <span className="text-xs font-bold text-gray-400">▶</span>;
     case 'Condition':
-      return <span className="text-xs font-bold text-teal-400">◇</span>;
+      return <span className="text-xs font-bold text-gray-400">◇</span>;
     case 'Decorator':
-      return <span className="text-xs font-bold text-pink-400">∂</span>;
+      return <span className="text-xs font-bold text-gray-400">∂</span>;
     default:
       return <span className="text-xs font-bold text-gray-400">•</span>;
   }
@@ -180,17 +180,17 @@ function SMACC2Tab({ client, topic }: { client: BridgeClient | null; topic: stri
     <div className="flex h-full flex-col gap-3 overflow-hidden">
       {/* Status header */}
       <div
-        className={`flex flex-shrink-0 items-center gap-2 rounded-lg border px-3 py-2 ${data.is_running ? 'border-green-500/40 bg-green-500/10' : 'border-gray-700 bg-gray-800/50'}`}
+        className={`flex flex-shrink-0 items-center gap-2 rounded border px-3 py-2 ${data.is_running ? 'border-ok/40 bg-ok/10' : 'border-gray-700 bg-gray-800/50'}`}
       >
         <span
-          className={`h-2.5 w-2.5 rounded-full ${data.is_running ? 'animate-pulse bg-green-400' : 'bg-gray-600'}`}
+          className={`h-2.5 w-2.5 rounded-full ${data.is_running ? 'animate-pulse bg-ok' : 'bg-gray-600'}`}
         />
         <span className="text-xs text-gray-400">Machine ID:</span>
         <span className="truncate text-sm font-semibold text-gray-200">
           {data.machine_id || '—'}
         </span>
         <span
-          className={`ml-auto rounded px-2 py-0.5 text-xs font-medium ${data.is_running ? 'bg-green-500/20 text-green-400' : 'bg-gray-700 text-gray-400'}`}
+          className={`ml-auto rounded px-2 py-0.5 text-xs font-medium ${data.is_running ? 'bg-ok/20 text-ok' : 'bg-gray-700 text-gray-400'}`}
         >
           {data.is_running ? 'RUNNING' : 'STOPPED'}
         </span>
@@ -198,11 +198,11 @@ function SMACC2Tab({ client, topic }: { client: BridgeClient | null; topic: stri
 
       {/* Current / Previous state */}
       <div className="grid flex-shrink-0 grid-cols-2 gap-2">
-        <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-2">
+        <div className="rounded border border-accent/30 bg-accent/10 px-3 py-2">
           <p className="mb-1 text-xs text-gray-500">Current State</p>
-          <p className="truncate text-sm font-bold text-cyan-300">{data.current_state || '—'}</p>
+          <p className="truncate text-sm font-bold text-accent">{data.current_state || '—'}</p>
         </div>
-        <div className="rounded-lg border border-gray-700 bg-gray-800/40 px-3 py-2">
+        <div className="rounded border border-gray-700 bg-gray-800/40 px-3 py-2">
           <p className="mb-1 text-xs text-gray-500">Previous State</p>
           <p className="truncate text-sm font-medium text-gray-400">{data.previous_state || '—'}</p>
         </div>
@@ -218,7 +218,7 @@ function SMACC2Tab({ client, topic }: { client: BridgeClient | null; topic: stri
                 key={i}
                 className={`rounded border px-2 py-0.5 text-xs ${
                   s.is_active
-                    ? 'border-cyan-500/50 bg-cyan-500/15 text-cyan-300'
+                    ? 'border-accent/50 bg-accent/15 text-accent'
                     : 'border-gray-700 bg-gray-800/50 text-gray-500'
                 }`}
               >
@@ -248,7 +248,7 @@ function SMACC2Tab({ client, topic }: { client: BridgeClient | null; topic: stri
                 >
                   <span className="truncate text-gray-400">{t.from_state}</span>
                   <span className="flex-shrink-0 text-gray-600">→</span>
-                  <span className="truncate font-medium text-cyan-400">{t.to_state}</span>
+                  <span className="truncate font-medium text-accent">{t.to_state}</span>
                   {t.timestamp && (
                     <span className="ml-auto flex-shrink-0 tabular-nums text-gray-600">
                       {new Date(t.timestamp / 1e6).toLocaleTimeString()}
@@ -299,21 +299,21 @@ function BehaviorTreeTab({ client, topic }: { client: BridgeClient | null; topic
       {/* Stats bar */}
       <div className="flex flex-shrink-0 items-center gap-2">
         <div
-          className={`flex flex-1 items-center gap-2 rounded-lg border px-3 py-1.5 ${data.is_running ? 'border-yellow-500/40 bg-yellow-500/10' : 'border-gray-700 bg-gray-800/50'}`}
+          className={`flex flex-1 items-center gap-2 rounded border px-3 py-1.5 ${data.is_running ? 'border-warn/40 bg-warn/10' : 'border-gray-700 bg-gray-800/50'}`}
         >
           <span
-            className={`h-2 w-2 rounded-full ${data.is_running ? 'animate-pulse bg-yellow-400' : 'bg-gray-600'}`}
+            className={`h-2 w-2 rounded-full ${data.is_running ? 'animate-pulse bg-warn' : 'bg-gray-600'}`}
           />
           <span className="truncate text-xs text-gray-400">
             Tree: <span className="font-medium text-gray-300">{data.tree_id || '—'}</span>
           </span>
         </div>
-        <div className="flex-shrink-0 rounded-lg border border-gray-700 bg-gray-800/50 px-3 py-1.5 text-xs text-gray-400">
+        <div className="flex-shrink-0 rounded border border-gray-700 bg-gray-800/50 px-3 py-1.5 text-xs text-gray-400">
           <span className="font-medium tabular-nums text-gray-300">{data.total_ticks ?? 0}</span>{' '}
           ticks
         </div>
         <div
-          className={`flex-shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium ${data.is_running ? 'border-yellow-500/40 text-yellow-400' : 'border-gray-700 text-gray-500'}`}
+          className={`flex-shrink-0 rounded border px-3 py-1.5 text-xs font-medium ${data.is_running ? 'border-warn/40 text-warn' : 'border-gray-700 text-gray-500'}`}
         >
           {data.is_running ? 'RUNNING' : 'IDLE'}
         </div>
@@ -402,7 +402,7 @@ export default function StateMachineMonitor({
   const [activeTab, setActiveTab] = useState<TabType>('smacc2');
 
   return (
-    <div className="relative flex h-full w-full flex-col overflow-hidden rounded-lg border border-gray-800 bg-gray-950">
+    <div className="relative flex h-full w-full flex-col overflow-hidden rounded border border-gray-800 bg-gray-950">
       {/* Header */}
       <div className="flex flex-shrink-0 items-center gap-1 border-b border-gray-800 bg-gray-900/60 px-3 py-2">
         {TABS.map((tab) => (

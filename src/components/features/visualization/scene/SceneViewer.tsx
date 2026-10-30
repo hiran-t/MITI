@@ -376,7 +376,7 @@ export default function SceneViewer({
           {displayFrame !== fixedFrame && ` · Display: ${displayFrame}`}
         </span>
         {problems.map(([id, status]) => (
-          <span key={id} className="text-red-300">
+          <span key={id} className="text-danger">
             {id.replace(/^(topic|layer):/, '')}: {status.message}
           </span>
         ))}

@@ -1,4 +1,5 @@
 'use client';
+import { MITI_CYAN } from '@/lib/theme';
 import { useEffect, useMemo, useState } from 'react';
 import { Line } from '@react-three/drei';
 import * as THREE from 'three';
@@ -120,9 +121,9 @@ export default function CameraLayer({
   }, [lastUpdate, layer.imageTopic, layer.staleAfter, onError]);
   return (
     <>
-      <Line points={[...corners, corners[0]]} color={layer.color ?? '#a78bfa'} />
+      <Line points={[...corners, corners[0]]} color={layer.color ?? MITI_CYAN} />
       {corners.map((corner, i) => (
-        <Line key={i} points={[[0, 0, 0], corner]} color={layer.color ?? '#a78bfa'} />
+        <Line key={i} points={[[0, 0, 0], corner]} color={layer.color ?? MITI_CYAN} />
       ))}
       {texture && (
         <mesh geometry={geometry}>

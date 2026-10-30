@@ -1,4 +1,5 @@
 'use client';
+import { MITI_CYAN } from '@/lib/theme';
 import { Component, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Line } from '@react-three/drei';
 import * as THREE from 'three';
@@ -97,7 +98,7 @@ function poseStyle(layer: SceneLayerConfig): PoseStyle {
   return {
     type: layer.poseType ?? defaultPoseType(layer.type),
     axisScale: layer.axisScale ?? 1,
-    color: layer.color ?? '#a78bfa',
+    color: layer.color ?? MITI_CYAN,
     opacity: layer.opacity ?? 1,
     shaftLength: layer.shaftLength ?? DEFAULT_ARROW.shaftLength,
     shaftWidth: layer.shaftWidth ?? DEFAULT_ARROW.shaftWidth,
@@ -269,7 +270,7 @@ export default function SceneLayer({
   }, [fieldsKey, layer.id, onInfo]);
   const prepared = useMemo(() => {
     if (!layer.enabled || !client || !data) return { node: null, error: '', empty: false };
-    const color = layer.color ?? '#a78bfa',
+    const color = layer.color ?? MITI_CYAN,
       opacity = layer.opacity ?? 1,
       size = layer.size ?? 0.04,
       max = Math.max(1, Math.min(layer.maxPoints ?? 100000, 1000000));

@@ -1,4 +1,5 @@
 'use client';
+import { MITI_CYAN } from '@/lib/theme';
 import { useMemo } from 'react';
 import { Line } from '@react-three/drei';
 import * as THREE from 'three';
@@ -20,8 +21,8 @@ export interface PoseStyle {
 
 /** RViz's arrow defaults, which Foxglove also uses. */
 export const DEFAULT_ARROW = { shaftLength: 1, shaftWidth: 0.05, headLength: 0.3, headWidth: 0.1 };
-export const DEFAULT_PATH_GRADIENT: [string, string] = ['#38bdf8', '#a78bfa'];
-export const DEFAULT_COVARIANCE_COLOR = '#ff00ff66';
+export const DEFAULT_PATH_GRADIENT: [string, string] = ['#38bdf8', MITI_CYAN];
+export const DEFAULT_COVARIANCE_COLOR = `${MITI_CYAN}66`;
 
 const AXIS_COLORS = ['#ef4444', '#22c55e', '#3b82f6'];
 /** Rotations that turn a +Y cylinder onto +X, +Y and +Z. */

@@ -11,6 +11,8 @@ interface ConnectionSettingsProps {
   onUrlChange: (url: string) => void;
   currentMode?: StreamMode;
   onModeChange?: (mode: StreamMode) => void;
+  /** Overrides the trigger button's look, e.g. inside the status bar. */
+  triggerClassName?: string;
 }
 
 const STREAM_MODES: { value: StreamMode; label: string; hint: string }[] = [
@@ -31,6 +33,7 @@ export default function ConnectionSettings({
   onUrlChange,
   currentMode = 'synchronized',
   onModeChange,
+  triggerClassName,
 }: ConnectionSettingsProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -89,10 +92,11 @@ export default function ConnectionSettings({
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className={connectionStyles.settingsButton.base}
-        title="Connection Settings"
+        className={triggerClassName ?? connectionStyles.settingsButton.base}
+        title="Connection settings"
+        aria-label="Connection settings"
       >
-        <Settings className={connectionStyles.settingsButton.icon} />
+        <Settings className={triggerClassName ? 'h-4 w-4' : connectionStyles.settingsButton.icon} />
       </button>
     );
   }
@@ -103,12 +107,12 @@ export default function ConnectionSettings({
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Connection Settings"
+        aria-label="Connection settings"
         className={connectionStyles.modal.container}
       >
         {/* Header */}
         <div className={connectionStyles.modal.header}>
-          <h3 className={connectionStyles.modal.title}>Connection Settings</h3>
+          <h3 className={connectionStyles.modal.title}>Connection settings</h3>
           <button
             aria-label="Close connection settings"
             onClick={() => setIsOpen(false)}
@@ -177,14 +181,14 @@ export default function ConnectionSettings({
         {/* Footer */}
         <div className={connectionStyles.modal.footer}>
           <button onClick={handleReset} className={connectionStyles.buttons.reset}>
-            Reset to Default
+            Reset to default
           </button>
           <div className={connectionStyles.buttons.group}>
             <button onClick={() => setIsOpen(false)} className={connectionStyles.buttons.cancel}>
               Cancel
             </button>
             <button onClick={handleSave} className={connectionStyles.buttons.save}>
-              Save & Reconnect
+              Save and reconnect
             </button>
           </div>
         </div>

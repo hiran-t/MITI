@@ -1,4 +1,5 @@
 import dynamic from 'next/dynamic';
+import { UI_TOKENS } from '@/lib/theme';
 
 const Dashboard = dynamic(() => import('@/components/features/dashboard/Dashboard'), {
   ssr: false,
@@ -6,13 +7,13 @@ const Dashboard = dynamic(() => import('@/components/features/dashboard/Dashboar
     <div
       style={{
         minHeight: '100vh',
-        background: '#111216',
+        background: UI_TOKENS['bg-chrome'],
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
       }}
     >
-      <div style={{ color: '#adb3c3', fontSize: '0.875rem' }}>Loading...</div>
+      <div style={{ color: UI_TOKENS['text-secondary'], fontSize: '0.875rem' }}>Loading...</div>
     </div>
   ),
 });

@@ -45,7 +45,8 @@ Built with Next.js 14, React 18, and Three.js.
 
 **Dashboard**
 
-- Foxglove-style tiled panels: drag a panel onto another panel's edge to split it, drag dividers to resize, and resize the sidebar
+- IDE-style workspace (activity bar, tabbed panels, status bar) with MITI's own dark theme
+- Tiled panels: drag a panel onto another panel's edge to split it, drag dividers to resize, and resize the sidebar
 - Persistent configuration saved in localStorage
 - Add/remove widgets on the fly
 - Configurable ROS topics per widget

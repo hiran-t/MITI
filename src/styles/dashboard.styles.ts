@@ -15,8 +15,7 @@ export const dashboardStyles = {
     logoSection: 'flex items-center gap-2 ml-3',
     logo: 'h-9 w-auto',
     actionsSection: 'flex items-center gap-3',
-    errorBanner:
-      'mt-2 px-3 py-2 bg-red-500/10 border border-red-500/30 rounded text-xs text-red-400',
+    errorBanner: 'mt-2 px-3 py-2 bg-danger/10 border border-danger/30 rounded text-xs text-danger',
   },
 
   // Main content area

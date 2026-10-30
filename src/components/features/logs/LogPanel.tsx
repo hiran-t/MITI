@@ -29,10 +29,10 @@ const FONT_SIZES = [10, 11, 12, 13, 14, 16];
 
 const LEVEL_TONE: Record<LogLevel, string> = {
   DEBUG: 'text-gray-400',
-  INFO: 'text-gray-100',
-  WARN: 'text-amber-300',
-  ERROR: 'text-red-400',
-  FATAL: 'text-fuchsia-400',
+  INFO: 'text-gray-300',
+  WARN: 'text-warn',
+  ERROR: 'text-danger',
+  FATAL: 'text-danger',
   UNKNOWN: 'text-gray-400',
 };
 

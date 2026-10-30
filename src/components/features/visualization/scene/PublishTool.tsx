@@ -1,4 +1,5 @@
 'use client';
+import { MITI_CYAN } from '@/lib/theme';
 import { useState } from 'react';
 import type { ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
@@ -13,7 +14,7 @@ export interface PublishTarget {
 }
 
 const ARROW_COLOR: Record<PublishType, string> = {
-  point: '#a78bfa',
+  point: MITI_CYAN,
   pose: '#22c55e',
   pose_estimate: '#38bdf8',
 };

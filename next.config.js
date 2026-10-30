@@ -7,6 +7,11 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
 
+  // Shown in the workspace status bar
+  env: {
+    NEXT_PUBLIC_APP_VERSION: require('./package.json').version,
+  },
+
   // Server-side packages
   experimental: {
     serverComponentsExternalPackages: ['three'],

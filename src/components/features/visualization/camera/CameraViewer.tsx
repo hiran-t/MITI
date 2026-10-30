@@ -38,13 +38,6 @@ const MAX_MEANINGFUL_LAG_S = 30;
 export const DEFAULT_CAMERA_MAX_FPS = 0;
 const MAX_FPS_CHOICES = [1, 2, 5, 10, 15, 30, 0];
 
-const CAMERA_PRESETS = [
-  { value: CAMERA_TOPIC_VALUES.COLOR, label: 'Color Image' },
-  { value: CAMERA_TOPIC_VALUES.DETECTION, label: 'Detection Image' },
-  { value: CAMERA_TOPIC_VALUES.DEPTH, label: 'Depth Image' },
-  { value: CAMERA_TOPIC_VALUES.IR, label: 'IR Image' },
-];
-
 /** image_transport publishes JPEG/PNG frames on `<topic>/compressed`. */
 function isCompressedTopic(topic: string, topics: TopicInfo[]): boolean {
   const type = findTopicType(topics, topic);
@@ -131,25 +124,6 @@ function CameraSettingsPanel({
             every frame.
           </p>
         </div>
-
-        <div>
-          <label className={commonStyles.input.label}>Presets</label>
-          <div className="flex flex-wrap gap-1.5">
-            {CAMERA_PRESETS.map((preset) => (
-              <button
-                key={preset.value}
-                onClick={() => onTopicChange(preset.value)}
-                className={`rounded border px-2 py-1 text-xs transition-colors ${
-                  topic === preset.value
-                    ? 'border-cyan-500/50 bg-cyan-500/15 text-cyan-300'
-                    : 'border-gray-700 bg-gray-800/50 text-gray-400 hover:border-gray-600 hover:text-gray-300'
-                }`}
-              >
-                {preset.label}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -159,7 +133,7 @@ function CameraSettingsPanel({
 
 export default function CameraViewer({
   client,
-  topic: selectedTopic = CAMERA_PRESETS[0].value,
+  topic: selectedTopic = CAMERA_TOPIC_VALUES.COLOR,
   topics = [],
   onTopicChange,
   maxFps = DEFAULT_CAMERA_MAX_FPS,
@@ -241,7 +215,7 @@ export default function CameraViewer({
           {fps !== null && <span>{fps.toFixed(fps < 10 ? 1 : 0)} fps</span>}
           {frameBytes > 0 && <span>{formatBytes(frameBytes)}/frame</span>}
           {lag !== null && lag > 0.3 && (
-            <span className="text-amber-300" title="Age of the frame on the robot's clock">
+            <span className="text-warn" title="Age of the frame on the robot's clock">
               {lag.toFixed(1)} s behind
             </span>
           )}
@@ -288,7 +262,7 @@ export default function CameraViewer({
       <WidgetSettingsPortal>
         <SettingsSection
           title="General"
-          keywords="image topic camera presets color detection depth IR compressed"
+          keywords="image topic camera color detection depth IR compressed fps"
         >
           <CameraSettingsPanel
             topic={selectedTopic}

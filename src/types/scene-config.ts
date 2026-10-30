@@ -1,3 +1,4 @@
+import { MITI_CYAN } from '@/lib/theme';
 /**
  * 3D Scene panel settings, grouped like Foxglove's 3D panel so its users find the same controls.
  * Stored as the `urdf-viewer` widget's props (the widget type name predates the scene).
@@ -230,7 +231,7 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
     labelSize: 11,
     axisScale: 1,
     lineWidth: 1,
-    lineColor: '#a78bfa',
+    lineColor: MITI_CYAN,
     tfTopics: ['/tf', '/tf_static'],
     frames: {},
   },

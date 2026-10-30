@@ -89,7 +89,9 @@ test('only selected camera settings appear in the sidebar; switching and editing
   expect(screen.getByTitle('/b_new')).toBeInTheDocument();
   fireEvent.click(screen.getByText('Select A'));
   expect(within(inspector).getByRole('combobox', { name: 'Image Topic' })).toHaveValue('/a_new');
-  fireEvent.click(within(inspector).getByText('Depth Image'));
+  const topicAgain = within(inspector).getByRole('combobox', { name: 'Image Topic' });
+  fireEvent.change(topicAgain, { target: { value: '/camera/depth/image_raw' } });
+  fireEvent.keyDown(topicAgain, { key: 'Enter' });
   expect(screen.getByTitle('/camera/depth/image_raw')).toBe(originalA);
   expect(screen.getByTitle('/b_new')).toBeInTheDocument();
   fireEvent.click(screen.getByText('Close inspector'));

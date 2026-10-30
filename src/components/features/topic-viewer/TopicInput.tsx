@@ -96,9 +96,9 @@ export default function TopicInput({
           <option key={t.topic} value={t.topic} />
         ))}
       </datalist>
-      {nameError && <p className="topic-input-hint text-red-400">{nameError}</p>}
+      {nameError && <p className="topic-input-hint text-danger">{nameError}</p>}
       {!nameError && mismatch && (
-        <p className="topic-input-hint text-amber-400">
+        <p className="topic-input-hint text-warn">
           {value} publishes {mismatch}, not {(accepted ?? []).join(' or ')}
         </p>
       )}

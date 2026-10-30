@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Mosaic, MosaicWindow } from 'react-mosaic-component';
 import 'react-mosaic-component/react-mosaic-component.css';
-import { GripVertical, Lock, Maximize2, Minimize2, Unlock, X } from 'lucide-react';
+import { Lock, Maximize2, Minimize2, Unlock, X } from 'lucide-react';
 import type { WidgetConfig } from '@/types/widget';
 import type { BridgeClient } from '@/lib/bridge/client';
 import type { TopicInfo } from '@/lib/bridge/types';
@@ -107,8 +107,7 @@ export default function PanelMosaic({
                   title={widget.locked ? undefined : 'Drag onto another panel to move it'}
                 >
                   <div className={widgetStyles.header.titleWrapper}>
-                    <GripVertical className={widgetStyles.buttons.icon} />
-                    <h2 className={widgetStyles.header.title}>
+                    <h2 className="flex min-w-0">
                       <button
                         type="button"
                         className="panel-title-button"
@@ -118,9 +117,21 @@ export default function PanelMosaic({
                         onClick={() => onSelectWidget(id)}
                       >
                         <PanelIcon type={widget.type} />
-                        <span className="truncate">{widget.title}</span>
+                        <span className={widgetStyles.header.title}>{widget.title}</span>
                       </button>
                     </h2>
+                    <button
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (expanded) setExpandedId(null);
+                        onRemoveWidget(id);
+                      }}
+                      className={widgetStyles.buttons.base}
+                      aria-label={`Remove ${widget.title}`}
+                      title="Remove panel"
+                    >
+                      <X className={widgetStyles.buttons.icon} />
+                    </button>
                   </div>
                   <div className={widgetStyles.header.actions}>
                     <button
@@ -132,7 +143,11 @@ export default function PanelMosaic({
                         setExpandedId(expanded ? null : id);
                       }}
                     >
-                      {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                      {expanded ? (
+                        <Minimize2 className={widgetStyles.buttons.icon} />
+                      ) : (
+                        <Maximize2 className={widgetStyles.buttons.icon} />
+                      )}
                     </button>
                     <button
                       onClick={(event) => {
@@ -141,7 +156,7 @@ export default function PanelMosaic({
                       }}
                       className={cn(
                         widgetStyles.buttons.base,
-                        widget.locked ? widgetStyles.buttons.lock : widgetStyles.buttons.unlock
+                        widget.locked && widgetStyles.buttons.lock
                       )}
                       aria-label={widget.locked ? 'Unlock panel position' : 'Lock panel position'}
                       title={widget.locked ? 'Unlock panel position' : 'Lock panel position'}
@@ -151,18 +166,6 @@ export default function PanelMosaic({
                       ) : (
                         <Unlock className={widgetStyles.buttons.icon} />
                       )}
-                    </button>
-                    <button
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        if (expanded) setExpandedId(null);
-                        onRemoveWidget(id);
-                      }}
-                      className={cn(widgetStyles.buttons.base, widgetStyles.buttons.remove)}
-                      aria-label={`Remove ${widget.title}`}
-                      title="Remove panel"
-                    >
-                      <X className={widgetStyles.buttons.icon} />
                     </button>
                   </div>
                 </div>

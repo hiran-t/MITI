@@ -58,7 +58,7 @@ export function ActionMenu({ label, actions }: { label: string; actions: TreeAct
               key={action.label}
               type="button"
               role="menuitem"
-              className={action.danger ? 'text-red-300' : undefined}
+              className={action.danger ? 'text-danger' : undefined}
               onClick={() => {
                 setOpen(false);
                 action.onSelect();

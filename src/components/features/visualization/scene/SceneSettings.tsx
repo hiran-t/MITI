@@ -1,4 +1,5 @@
 'use client';
+import { MITI_CYAN } from '@/lib/theme';
 import type { CSSProperties } from 'react';
 import { AlertCircle, CheckCircle2, Clock } from 'lucide-react';
 import {
@@ -122,11 +123,7 @@ export function StatusLine({ status, depth = 1 }: { status?: LayerStatus; depth?
   const Icon =
     status.level === 'error' ? AlertCircle : status.level === 'ok' ? CheckCircle2 : Clock;
   const tone =
-    status.level === 'error'
-      ? 'text-red-300'
-      : status.level === 'ok'
-        ? 'text-emerald-300'
-        : 'text-gray-400';
+    status.level === 'error' ? 'text-danger' : status.level === 'ok' ? 'text-ok' : 'text-gray-400';
   return (
     <div
       role="status"
@@ -357,7 +354,7 @@ function PointFields({
       {colorMode === 'flat' && (
         <ColorField
           label="Color"
-          value={settings.color ?? '#a78bfa'}
+          value={settings.color ?? MITI_CYAN}
           onChange={(color) => onChange({ color })}
         />
       )}
@@ -456,7 +453,7 @@ function PoseFields({
         <>
           <ColorField
             label="Color"
-            value={settings.color ?? '#a78bfa'}
+            value={settings.color ?? MITI_CYAN}
             onChange={(color) => onChange({ color })}
           />
           {(
@@ -666,7 +663,7 @@ function TopicFields({
       {hasColor && (
         <ColorField
           label="Color"
-          value={settings.color ?? '#a78bfa'}
+          value={settings.color ?? MITI_CYAN}
           onChange={(color) => onChange({ color })}
         />
       )}

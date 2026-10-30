@@ -74,7 +74,7 @@ function SettingsPanel({
         {/* Mode pill selector */}
         <div>
           <label className={commonStyles.input.label}>Action Mode</label>
-          <div className="grid grid-cols-2 gap-1.5 rounded-lg border border-gray-700 bg-gray-800/60 p-1">
+          <div className="grid grid-cols-2 gap-1.5 rounded border border-gray-700 bg-gray-800/60 p-1">
             {(
               [
                 { id: 'topic' as const, icon: Radio, label: 'Publish Topic' },
@@ -276,8 +276,8 @@ export default function ButtonSwitchWidget({
 
   const btnClass = {
     disconnected: 'border-gray-800 bg-gray-900/40 text-gray-600 cursor-not-allowed',
-    sending: 'border-yellow-500/50 bg-yellow-500/8 text-yellow-400 animate-pulse cursor-wait',
-    on: 'border-lime-400/60 bg-lime-400/8 text-lime-300 hover:bg-lime-400/12 active:scale-[0.98]',
+    sending: 'border-warn/50 bg-warn/8 text-warn animate-pulse cursor-wait',
+    on: 'border-ok/60 bg-ok/8 text-ok hover:bg-ok/12 active:scale-[0.98]',
     off: 'border-gray-700 bg-gray-800/40 text-gray-400 hover:border-gray-600 hover:bg-gray-800/60 active:scale-[0.98]',
   }[btnState];
 
@@ -299,9 +299,9 @@ export default function ButtonSwitchWidget({
             !connected ? 'Not connected to ROS' : isOn ? 'Click to turn OFF' : 'Click to turn ON'
           }
           className={cn(
-            'h-full w-full rounded-xl border-2 transition-all duration-200',
+            'h-full w-full rounded border-2 transition-all duration-200',
             'flex flex-col items-center justify-center gap-2',
-            'focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-1 focus-visible:ring-offset-gray-900',
+            'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-gray-900',
             btnClass
           )}
         >
@@ -319,7 +319,7 @@ export default function ButtonSwitchWidget({
           <span
             className={cn(
               'text-xl font-bold tabular-nums tracking-widest transition-all duration-200',
-              isOn && connected ? 'text-lime-300' : 'text-current'
+              isOn && connected ? 'text-ok' : 'text-current'
             )}
           >
             {isSending ? '···' : isOn ? 'ON' : 'OFF'}
@@ -334,10 +334,7 @@ export default function ButtonSwitchWidget({
       {/* ── Status row ── */}
       <div className="flex shrink-0 items-center gap-2 px-3 pb-3">
         <span
-          className={cn(
-            'h-1.5 w-1.5 shrink-0 rounded-full',
-            connected ? 'bg-lime-400' : 'bg-gray-600'
-          )}
+          className={cn('h-1.5 w-1.5 shrink-0 rounded-full', connected ? 'bg-ok' : 'bg-gray-600')}
         />
         <span className="truncate text-xs text-gray-600">
           {connected
@@ -353,8 +350,8 @@ export default function ButtonSwitchWidget({
             'pointer-events-none absolute bottom-10 left-1/2 -translate-x-1/2',
             'whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium',
             feedback.ok
-              ? 'border-lime-400/25 bg-lime-400/15 text-lime-300'
-              : 'border-red-400/25 bg-red-400/15 text-red-300'
+              ? 'border-ok/25 bg-ok/15 text-ok'
+              : 'border-danger/25 bg-danger/15 text-danger'
           )}
         >
           {feedback.text}

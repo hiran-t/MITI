@@ -5,13 +5,14 @@ import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import {
-  ListTree,
-  PanelLeftClose,
-  PanelLeft,
-  RotateCcw,
-  Radio,
-  Search,
   AlertCircle,
+  XCircle,
+  ListTree,
+  PanelLeft,
+  PanelLeftClose,
+  Radio,
+  RotateCcw,
+  Search,
 } from 'lucide-react';
 import TopicList from '../topic-viewer/TopicList';
 import { DEFAULT_BRIDGE_URL, useBridge } from '@/hooks/useBridge';
@@ -23,15 +24,15 @@ import ConnectionStatus from '../connection/ConnectionStatus';
 import AddWidgetButton from '../layout/AddWidgetButton';
 import ConnectionSettings from '../connection/ConnectionSettings';
 import { SettingsSearchContext } from '../layout/WidgetSettingsPortal';
+import ActivityBar, { sidebarViewLabel } from './ActivityBar';
+import type { SidebarTab } from './ActivityBar';
 
 // Drag and drop needs the browser, so the panel layout is not rendered on the server.
 const PanelMosaic = dynamic(() => import('../layout/PanelMosaic'), { ssr: false });
 
-const SIDEBAR_TABS = ['Panel', 'Topics', 'Problems', 'Sources'] as const;
 const STORAGE_KEY_SIDEBAR_WIDTH = 'miti_sidebar_width';
 const SIDEBAR_MIN_WIDTH = 240;
 const SIDEBAR_DEFAULT_WIDTH = 380;
-type SidebarTab = (typeof SIDEBAR_TABS)[number];
 
 const STORAGE_KEY_BRIDGE_URL = 'miti_bridge_url';
 const STORAGE_KEY_STREAM_MODE = 'miti_stream_mode';
@@ -135,48 +136,16 @@ export default function Dashboard() {
   return (
     <SettingsSearchContext.Provider value={settingsSearch}>
       <div className="miti-workspace">
-        <header className="workspace-header">
+        <header className="workspace-titlebar">
           <div className="workspace-brand">
-            <Image
-              src="/main_logo.svg"
-              alt="MITI"
-              width={100}
-              height={32}
-              priority
-              className="h-7 w-auto"
-            />
-            <span className="brand-divider" />
-            <span className="text-xs text-gray-400">Robotics workspace</span>
+            <Image src="/main_logo.svg" alt="MITI" width={106} height={42} priority />
           </div>
-          <ConnectionStatus
-            connected={connected}
-            url={bridgeUrl}
-            onUrlChange={handleUrlChange}
-            streamMode={streamMode}
-            onStreamModeChange={setStreamMode}
-          />
-        </header>
-        <div className="workspace-toolbar">
-          <button
-            ref={sidebarTrigger}
-            className={`workspace-button ${sidebarOpen ? 'selected' : ''}`}
-            aria-label="Toggle sidebar"
-            aria-expanded={sidebarOpen}
-            aria-controls="workspace-sidebar"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
-            <PanelLeft size={16} />
-            <span>Sidebar</span>
-          </button>
-          <span className="toolbar-label">
-            Workspace <span className="text-gray-600">/</span>{' '}
-            <span className="text-gray-200">Live monitoring</span>
-          </span>
-          <div className="ml-auto flex items-center gap-2">
+          <span className="layout-name">Live monitoring</span>
+          <div className="titlebar-actions">
             <button
               aria-label="Reset layout"
               title="Reset layout"
-              className="workspace-button reset-action"
+              className="workspace-icon"
               onClick={() => {
                 if (
                   window.confirm(
@@ -189,12 +158,11 @@ export default function Dashboard() {
                 }
               }}
             >
-              <RotateCcw size={14} />
-              <span>Reset layout</span>
+              <RotateCcw size={15} strokeWidth={1.75} />
             </button>
             <AddWidgetButton onAddWidget={(type) => addWidget(type, selectedWidgetId)} />
           </div>
-        </div>
+        </header>
         {error && (
           <div role="status" className="connection-notice">
             <Radio size={14} />
@@ -208,6 +176,20 @@ export default function Dashboard() {
           className={`workspace-body ${sidebarOpen ? 'settings-open' : ''} ${resizingSidebar ? 'is-resizing' : ''}`}
           style={{ '--sidebar-width': `${sidebarWidth}px` } as CSSProperties}
         >
+          <ActivityBar
+            activeTab={activeTab}
+            sidebarOpen={sidebarOpen}
+            problemCount={error ? 1 : 0}
+            activeRef={sidebarTrigger}
+            onFocusTab={setActiveTab}
+            onSelect={(tab) => {
+              if (sidebarOpen && tab === activeTab) closeSettings();
+              else {
+                setActiveTab(tab);
+                setSidebarOpen(true);
+              }
+            }}
+          />
           {sidebarOpen && (
             <button
               className="topics-scrim"
@@ -221,39 +203,14 @@ export default function Dashboard() {
             aria-label="Workspace sidebar"
             className={`workspace-sidebar ${sidebarOpen ? 'is-open' : ''}`}
           >
-            <div className="inspector-tabs" role="tablist" aria-label="Workspace tools">
-              {SIDEBAR_TABS.map((tab, index) => (
-                <button
-                  key={tab}
-                  id={`sidebar-tab-${tab}`}
-                  role="tab"
-                  aria-selected={activeTab === tab}
-                  aria-controls={`sidebar-view-${tab}`}
-                  tabIndex={activeTab === tab ? 0 : -1}
-                  onClick={() => setActiveTab(tab)}
-                  onKeyDown={(event) => {
-                    let next = index;
-                    if (event.key === 'ArrowRight') next = (index + 1) % SIDEBAR_TABS.length;
-                    else if (event.key === 'ArrowLeft')
-                      next = (index + SIDEBAR_TABS.length - 1) % SIDEBAR_TABS.length;
-                    else if (event.key === 'Home') next = 0;
-                    else if (event.key === 'End') next = SIDEBAR_TABS.length - 1;
-                    else return;
-                    event.preventDefault();
-                    setActiveTab(SIDEBAR_TABS[next]);
-                    document.getElementById(`sidebar-tab-${SIDEBAR_TABS[next]}`)?.focus();
-                  }}
-                >
-                  {tab}
-                  {tab === 'Problems' && error && <span className="problem-count">1</span>}
-                </button>
-              ))}
+            <div className="sidebar-view-title">
+              {sidebarViewLabel(activeTab)}
               <button
                 className="workspace-icon sidebar-close"
                 aria-label="Close sidebar"
                 onClick={closeSettings}
               >
-                <PanelLeftClose size={15} />
+                <PanelLeftClose size={15} strokeWidth={1.75} />
               </button>
             </div>
             <div
@@ -265,10 +222,7 @@ export default function Dashboard() {
             >
               {selectedWidget ? (
                 <>
-                  <div className="inspector-title">
-                    {selectedWidget.title || 'Untitled panel'}
-                    <span>Panel settings</span>
-                  </div>
+                  <div className="inspector-title">{selectedWidget.title || 'Untitled panel'}</div>
                   <label className="inspector-search">
                     <Search size={14} />
                     <input
@@ -438,12 +392,23 @@ export default function Dashboard() {
             )}
           </main>
         </div>
-        <footer className="workspace-footer">
-          <span className="flex items-center gap-2">
-            <Radio size={12} />
-            {connected ? 'Connected to ROS' : 'Disconnected'}
+        <footer className="workspace-statusbar">
+          <ConnectionStatus
+            connected={connected}
+            url={bridgeUrl}
+            onUrlChange={handleUrlChange}
+            streamMode={streamMode}
+            onStreamModeChange={setStreamMode}
+          />
+          <span className="status-item is-optional">ROS 2 · foxglove_bridge</span>
+          <span className={`status-item ${error ? 'has-error' : ''}`} title="Problems">
+            <XCircle size={14} aria-hidden="true" />
+            {error ? 1 : 0}
+            <span className="sr-only">problems</span>
           </span>
-          <span>{layout.widgets.length} panels · ROS 2</span>
+          <span className="status-spacer" />
+          <span className="status-item">{layout.widgets.length} panels</span>
+          <span className="status-item is-optional">v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
         </footer>
       </div>
     </SettingsSearchContext.Provider>
