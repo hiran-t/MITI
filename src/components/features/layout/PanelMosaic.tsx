@@ -11,6 +11,7 @@ import type { MosaicTree } from '@/lib/layout/mosaic';
 import { widgetStyles, cn } from '@/styles';
 import WidgetContainer from './WidgetContainer';
 import PanelIcon from './PanelIcon';
+import { PanelVisibleContext } from '@/hooks/usePanelVisible';
 
 interface PanelMosaicProps {
   widgets: WidgetConfig[];
@@ -205,17 +206,19 @@ export default function PanelMosaic({
                     onSelectWidget(id);
                 }}
               >
-                <WidgetContainer
-                  widget={widget}
-                  client={client}
-                  topics={topics}
-                  topicsLoading={topicsLoading}
-                  onRefreshTopics={onRefreshTopics}
-                  settingsTarget={selectedWidgetId === id ? settingsTarget : null}
-                  statusTarget={statusTargets[id] ?? null}
-                  onCloseSettings={onCloseSettings}
-                  onUpdateWidget={onUpdateWidget}
-                />
+                <PanelVisibleContext.Provider value={!expandedId || expanded}>
+                  <WidgetContainer
+                    widget={widget}
+                    client={client}
+                    topics={topics}
+                    topicsLoading={topicsLoading}
+                    onRefreshTopics={onRefreshTopics}
+                    settingsTarget={selectedWidgetId === id ? settingsTarget : null}
+                    statusTarget={statusTargets[id] ?? null}
+                    onCloseSettings={onCloseSettings}
+                    onUpdateWidget={onUpdateWidget}
+                  />
+                </PanelVisibleContext.Provider>
               </div>
             </MosaicWindow>
           );

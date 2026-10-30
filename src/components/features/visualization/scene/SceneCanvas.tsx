@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import type { ViewSettings } from '@/types/scene-config';
 import { visualizationStyles } from '@/styles';
+import { usePanelVisible } from '@/hooks/usePanelVisible';
 
 export interface RenderStats {
   fps: number;
@@ -165,8 +166,11 @@ export default function SceneCanvas({
   onStats?: (stats: RenderStats) => void;
   children: ReactNode;
 }) {
+  // Nothing to draw while another panel covers this one.
+  const visible = usePanelVisible();
   return (
     <Canvas
+      frameloop={visible ? 'always' : 'never'}
       className={visualizationStyles.scene.canvas}
       style={{ touchAction: 'none', background }}
       onPointerDown={(e) => e.stopPropagation()}

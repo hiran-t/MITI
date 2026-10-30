@@ -1,8 +1,9 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { TFMessage, TFTree, TFFrame } from '@/types/tf-messages';
 import type { BridgeClient } from '@/lib/bridge/client';
 import { frameName, stampSeconds, transformMatrix } from '@/lib/scene/transforms';
+import { usePanelVisibleRef } from './usePanelVisible';
 const DEFAULT_TOPICS = ['/tf', '/tf_static'];
 /** TF history kept per frame, in message time and samples. */
 const HISTORY_SECONDS = 30;
@@ -29,6 +30,9 @@ export function useTF({
     staticTopics ?? tfTopics.filter((topic) => topic.includes('static'))
   );
   const topicKey = JSON.stringify(tfTopics);
+  // A hidden panel keeps the tree current but publishes it only once it is visible again.
+  const publishHeld = useRef<() => void>();
+  const visible = usePanelVisibleRef(() => publishHeld.current?.());
   useEffect(() => {
     const frames = new Map<string, TFFrame>();
     // Publish at most once per animation frame, and only when frames changed: robots and the
@@ -41,8 +45,14 @@ export function useTF({
         .filter((p) => p && !frames.has(p));
       setTree({ frames: new Map(frames), rootFrame: roots[0] ?? null });
     };
+    let held = false;
     const schedule = () => {
-      scheduled ??= requestAnimationFrame(publish);
+      if (!visible.current) held = true;
+      else scheduled ??= requestAnimationFrame(publish);
+    };
+    publishHeld.current = () => {
+      if (held) schedule();
+      held = false;
     };
     setTree({ frames: new Map(), rootFrame: null });
     setLoading(true);
@@ -115,6 +125,6 @@ export function useTF({
       if (scheduled !== null) cancelAnimationFrame(scheduled);
       subscriptions.forEach(({ topic, callback }) => client.unsubscribe(topic, callback));
     };
-  }, [client, enabled, topicKey, staticKey, maxAge]);
+  }, [client, enabled, topicKey, staticKey, maxAge, visible]);
   return { tfTree, isLoading };
 }

@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import LogPanel from '../LogPanel';
+import { PanelVisibleContext } from '@/hooks/usePanelVisible';
 import type { BridgeClient } from '@/lib/bridge/client';
 import type { LogWidgetProps } from '@/types/widget';
 
@@ -99,4 +100,32 @@ test('gives each node its own name color and keeps it for later messages', () =>
   expect(colors[0]).not.toBe('');
   expect(colors[1]).not.toBe(colors[0]);
   expect(colors[2]).toBe(colors[0]);
+});
+
+test('while hidden behind an expanded panel, messages are kept but the list waits', () => {
+  let receive: (message: unknown) => void = () => {};
+  const client = {
+    subscribe: jest.fn((_topic: string, callback: (message: unknown) => void) => {
+      receive = callback;
+    }),
+    unsubscribe: jest.fn(),
+  } as unknown as BridgeClient;
+  const panel = (visible: boolean) => (
+    <PanelVisibleContext.Provider value={visible}>
+      <LogPanel client={client} props={{}} onConfigChange={jest.fn()} />
+    </PanelVisibleContext.Provider>
+  );
+  const view = render(panel(false));
+  act(() => {
+    receive(log(20, 'a', 'first'));
+    receive(log(20, 'b', 'second'));
+    jest.advanceTimersByTime(1000);
+  });
+  expect(rows()).toHaveLength(0);
+  view.rerender(panel(true));
+  act(() => {
+    jest.advanceTimersByTime(200);
+  });
+  expect(rows()).toHaveLength(2);
+  expect(client.subscribe).toHaveBeenCalledTimes(1);
 });

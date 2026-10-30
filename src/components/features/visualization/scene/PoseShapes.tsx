@@ -1,9 +1,9 @@
 'use client';
 import { MITI_CYAN } from '@/lib/theme';
 import { useMemo } from 'react';
-import { Line } from '@react-three/drei';
 import * as THREE from 'three';
 import { parseHex } from '@/lib/scene/colors';
+import FatLine from './FatLine';
 import type { PoseDisplayType } from '@/types/scene';
 
 export interface PoseStyle {
@@ -108,7 +108,7 @@ export function PoseList({ matrices, style }: { matrices: THREE.Matrix4[]; style
   }, [matrices, style.type, style.gradient, style.opacity]);
   if (style.type === 'line')
     return line ? (
-      <Line
+      <FatLine
         points={line.points}
         vertexColors={line.colors}
         lineWidth={style.lineWidth}
