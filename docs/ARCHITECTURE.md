@@ -103,6 +103,8 @@ src/
 │   ├── bridge/           # foxglove_bridge client
 │   │   ├── client.ts     # BridgeClient (WebSocket client)
 │   │   ├── codec.ts      # CDR decoders/encoders from schemas
+│   │   ├── decode-pool.ts # Web Workers that decode heavy topics
+│   │   ├── decode-core.ts # What a decode worker does (decode, RGBA, point scan)
 │   │   ├── topics.ts     # Topic name/type helpers
 │   │   └── types.ts      # Type definitions
 │   └── parsers/          # Data parsers
@@ -137,7 +139,9 @@ useBridge(url) → BridgeClient.connect() → WebSocket (foxglove.sdk.v1) → se
 useTopic(client, topic) → client.subscribe() → bridge subscription to the advertised channel → CDR decode → Message callback
 ```
 
-Subscriptions are shared per topic and rebind automatically when the bridge re-advertises the topic (reconnects, node restarts). The Foxglove protocol has no server-side throttling, so `useTopic` throttles React updates in the browser.
+Subscriptions are shared per topic and rebind automatically when the bridge re-advertises the topic (reconnects, node restarts). The Foxglove protocol has no server-side throttling, so `useTopic` throttles React updates in the browser and tells the client its window (`throttleMs`): frames superseded within it are dropped before they are decoded.
+
+Heavy topics (images, point clouds, maps) are decoded in a pool of Web Workers, which also convert raw images to RGBA and scan point clouds; results come back as transferable buffers and `decodeImagePixels` / `readPointCloud` reuse them. One message per topic decodes at a time and the newest waiting message wins. Where workers are unavailable (Jest, server rendering) decoding stays on the main thread. See [PERFORMANCE.md](PERFORMANCE.md) for the load harness and measurements.
 
 ### 3. Data Processing
 
@@ -250,7 +254,8 @@ Used for:
 
 ### 3. WebSocket Optimization
 
-- Message throttling for high-frequency topics
+- Message throttling for high-frequency topics, before decoding
+- Heavy topics decoded in Web Workers, newest frame first
 - Efficient subscription management
 - Connection pooling
 

@@ -4,7 +4,8 @@
  * DevTools protocol with a throwaway profile:
  *
  *   node scripts/perf-run.js [--app http://localhost:3000] [--bridge ws://localhost:8790]
- *     [--cams 3] [--seconds 20] [--warmup 8] [--expand camera-0] [--cpu-throttle 4] [--profile] [--headful]
+ *     [--cams 3] [--seconds 20] [--warmup 8] [--expand camera-0] [--cpu-throttle 4] [--profile] [--screenshot out.png]
+ *     [--headful]
  *
  * Prints one JSON line: frame rate, frame-time percentiles, worst frame, long tasks and how busy
  * the main thread was (DevTools' TaskDuration / ScriptDuration over the run), plus the WebGL renderer so runs on different GPUs are not compared by mistake.
@@ -34,6 +35,8 @@ const EXPAND = opt('expand', '');
 const HEADFUL = argv.includes('--headful');
 /** Print the functions that used the most main-thread time during the run. */
 const PROFILE = argv.includes('--profile');
+/** Save a PNG of the page after the run. */
+const SCREENSHOT = opt('screenshot', '');
 /** Slow the CPU down this many times, to approximate a robot's or kiosk's weaker computer. */
 const CPU_THROTTLE = Number(opt('cpu-throttle', 1));
 const CHROME =
@@ -123,7 +126,6 @@ async function main() {
       deviceScaleFactor: 2,
       mobile: false,
     });
-    if (CPU_THROTTLE > 1) await send('Emulation.setCPUThrottlingRate', { rate: CPU_THROTTLE });
     await send('Page.addScriptToEvaluateOnNewDocument', { source: probe });
     await send('Page.navigate', { url: APP });
     await sleep(3000);
@@ -147,6 +149,11 @@ async function main() {
     const status = await evaluate(
       `Array.from(document.querySelectorAll('.mosaic-window-toolbar')).map((el) => el.innerText.replace(/\\s+/g, ' ').trim()).join(' | ')`
     );
+    // Set after the reload, which would reset it; the page warms up unthrottled.
+    if (CPU_THROTTLE > 1) {
+      await send('Emulation.setCPUThrottlingRate', { rate: CPU_THROTTLE });
+      await sleep(3000);
+    }
     await send('Performance.enable');
     const metrics = async () =>
       Object.fromEntries(
@@ -189,6 +196,10 @@ async function main() {
         panels: status,
       })
     );
+    if (SCREENSHOT) {
+      const { data } = await send('Page.captureScreenshot', { format: 'png' });
+      fs.writeFileSync(SCREENSHOT, Buffer.from(data, 'base64'));
+    }
     consoleErrors.slice(0, 5).forEach((error) => console.error('console:', error.slice(0, 300)));
     ws.close();
   } finally {
