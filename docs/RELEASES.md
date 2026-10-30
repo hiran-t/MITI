@@ -1,199 +1,123 @@
-# 📦 How to Create a Release
+# How to create a release
 
-This guide explains how to create a new release of MITI with downloadable packages.
+This guide describes how MITI releases are made. A release is a version bump, a CHANGELOG entry, release notes in `docs/releases/`, a git tag and a GitHub release. No build artifacts are attached: users run a release from the tagged source with pixi, Docker Compose or npm (see [DEPLOYMENT.md](DEPLOYMENT.md)).
 
-## 🚀 Quick Release
+## Release checklist
+
+Before tagging:
+
+- [ ] Lint passes (`npm run lint`)
+- [ ] Type check passes (`npm run type-check`)
+- [ ] Tests pass (`npm test`)
+- [ ] Production build succeeds (`npm run build`; stop `npm run dev` first, since both use `.next`)
+- [ ] Version updated in `package.json` and `package-lock.json`
+- [ ] `bun.lock` in sync if dependencies changed (`bun install`)
+- [ ] CHANGELOG.md has a `## [x.y.z] - YYYY-MM-DD` section
+- [ ] Release notes written in `docs/releases/vX.Y.Z.md`
+- [ ] README.md and `docs/` updated for changed behavior, and breaking changes described
+
+## Steps
 
 ```bash
-# 1. Update version in package.json
-# 2. Update CHANGELOG.md
-# 3. Commit changes
-git add package.json CHANGELOG.md
-git commit -m "chore: bump version to 1.0.0"
+# 1. Bump the version in package.json and package-lock.json (no tag yet)
+npm version 3.3.0 --no-git-tag-version
 
-# 4. Create and push tag
-git tag -a v1.0.0 -m "Release v1.0.0"
+# 2. In CHANGELOG.md, move the [Unreleased] entries into a new section:
+#      ## [3.3.0] - 2026-11-15
+#    with Added / Changed / Fixed / Removed subsections.
+
+# 3. Write the release notes: docs/releases/v3.3.0.md
+#    First line: "# MITI v3.3.0 — <short summary>"
+
+# 4. Commit. Use feat: for a release with new features, chore: for maintenance.
+git add package.json package-lock.json CHANGELOG.md docs/releases/v3.3.0.md
+git commit -m "feat: release MITI v3.3.0 with <short summary>"
+
+# 5. Tag and push
+git tag -a v3.3.0 -m "MITI v3.3.0"
 git push origin main
-git push origin v1.0.0
+git push origin v3.3.0
+
+# 6. Create the GitHub release from the release notes
+gh release create v3.3.0 --title "MITI v3.3.0" --notes-file docs/releases/v3.3.0.md --latest
 ```
 
-The GitHub Action will automatically:
+Pushing to `main` runs two GitHub Actions workflows:
 
-1. ✅ Build the application
-2. ✅ Create standalone package (~100 MB)
-3. ✅ Build Docker image (~500 MB)
-4. ✅ Generate release notes
-5. ✅ Create GitHub Release with downloadable files
+- **CI** (`.github/workflows/ci.yml`): ESLint, type check, production build and Jest tests on Node.js 22 with `npm ci`
+- **Docker Build** (`.github/workflows/docker.yml`): builds the Docker image to check it builds; it is not pushed to a registry
 
-## 📋 Release Checklist
+Neither workflow runs on tags or creates the release; step 6 does that.
 
-Before creating a release:
-
-- [ ] All tests pass (`bun test`)
-- [ ] No linting errors (`bun run lint`)
-- [ ] Build successful (`bun run build`)
-- [ ] Version updated in `package.json`
-- [ ] `CHANGELOG.md` updated with changes
-- [ ] Documentation updated if needed
-- [ ] Breaking changes documented
-
-## 📦 What Gets Released
-
-Each release includes 2 downloadable packages:
-
-### 1. Docker Image
-
-- **Filename**: `miti-docker-v1.0.0.tar.gz`
-- **Size**: ~500 MB
-- **Contains**: Complete Docker image
-- **Usage**:
-  ```bash
-  docker load < miti-docker-v1.0.0.tar.gz
-  docker run -d -p 3000:3000 --name miti miti:v1.0.0
-  ```
-
-### 2. Standalone Build
-
-- **Filename**: `miti-standalone-v1.0.0.tar.gz`
-- **Size**: ~100 MB
-- **Contains**: Built application + setup scripts
-- **Usage**:
-  ```bash
-  tar -xzf miti-standalone-v1.0.0.tar.gz
-  ./ubuntu-setup.sh
-  ```
-
-## 🔢 Version Numbering
+## Version numbering
 
 Follow [Semantic Versioning](https://semver.org/):
 
-- **MAJOR** (1.0.0): Breaking changes
-- **MINOR** (0.1.0): New features, backwards compatible
-- **PATCH** (0.0.1): Bug fixes
+- **Major** (`4.0.0`): breaking changes, for example a different bridge protocol or layouts that cannot be converted
+- **Minor** (`3.3.0`): new features that keep existing layouts and settings working
+- **Patch** (`3.2.1`): bug fixes and maintenance
 
-Examples:
+Examples from MITI's history:
 
-- `v1.0.0` - First stable release
-- `v1.1.0` - Added new widget type
-- `v1.1.1` - Fixed connection bug
-- `v2.0.0` - Changed API (breaking)
+- `v2.1.0`: moved from rosbridge to foxglove_bridge
+- `v3.1.0`: Foxglove-style Image panel
+- `v3.1.1`: removed unused code and dependencies
 
-## 📝 Release Notes Format
+## Release notes
 
-The workflow automatically generates release notes from git commits.
+- **CHANGELOG.md** follows [Keep a Changelog](https://keepachangelog.com/): one line per user-visible change under Added, Changed, Fixed or Removed.
+- **`docs/releases/vX.Y.Z.md`** is the GitHub release text: a title, a sentence on what the release is for, then sections that show how to use what is new. Look at earlier files in `docs/releases/` for the format.
 
-Use [Conventional Commits](https://www.conventionalcommits.org/):
+Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `perf:`, `docs:`, `chore:`), which makes the CHANGELOG easier to write.
 
-```bash
-feat: add new point cloud coloring option
-fix: resolve WebSocket reconnection issue
-docs: update API documentation
-chore: update dependencies
-```
+## Deployment helper scripts
 
-## 🧪 Test Release Locally
+Two older scripts in `scripts/` package MITI by hand. They are not part of the release process, and they do not match each other:
 
-Before creating an official release:
+- **`scripts/deploy.sh`** asks for a method and builds either a Docker image saved as `miti-docker.tar`, or a standalone Next.js build packed as `miti-standalone.tar.gz` (a `deploy/` folder with `server.js`, run with `node server.js`).
+- **`scripts/ubuntu-setup.sh`** is meant to run on the target Ubuntu machine. Option 1 offers to install Docker, loads a `miti-docker*.tar.gz` image and starts it with `docker run`. Option 2 offers to install Bun, extracts a `miti-standalone*.tar.gz` that contains a `miti/` or `deploy/miti/` folder, installs a systemd service `miti` from `scripts/auto-startapp.service` that runs `server.js` with Bun, and adds an autostart entry that opens Chrome or Chromium in kiosk mode on `http://localhost:3000` (`scripts/auto-launch-browser.sh`).
 
-```bash
-# Test standalone build
-./deploy.sh
-# Select option 2
+Because `deploy.sh` writes `miti-docker.tar` and a `deploy/` folder without `miti/`, `ubuntu-setup.sh` does not find its output without renaming or repacking. For new installs use pixi or Docker Compose as described in [DEPLOYMENT.md](DEPLOYMENT.md).
 
-# Test Docker build
-./deploy.sh
-# Select option 1
-
-# Verify packages work
-tar -xzf miti-standalone-*.tar.gz
-# Test extracted files
-
-docker load < miti-docker-*.tar
-docker run -p 3000:3000 miti:latest
-```
-
-## 🔄 Release Workflow
-
-```mermaid
-graph TD
-    A[Update Version] --> B[Update Changelog]
-    B --> C[Commit Changes]
-    C --> D[Create Tag]
-    D --> E[Push Tag]
-    E --> F[GitHub Action Runs]
-    F --> G[Build Application]
-    G --> H[Create Packages]
-    H --> I[Generate Notes]
-    I --> J[Create Release]
-    J --> K[Upload Assets]
-```
-
-## 🎯 Manual Release (if needed)
-
-If you need to create a release manually:
-
-```bash
-# 1. Build standalone
-bun run build
-mkdir -p deploy/miti
-cp -r .next/standalone/* deploy/miti/
-cp -r .next/static deploy/miti/.next/static/
-cp -r public deploy/miti/public/
-cp ubuntu-setup.sh deploy/
-tar -czf miti-standalone-v1.0.0.tar.gz deploy/
-
-# 2. Build Docker
-docker build -t miti:v1.0.0 .
-docker save miti:v1.0.0 | gzip > miti-docker-v1.0.0.tar.gz
-
-# 3. Create release on GitHub
-# - Go to Releases
-# - Click "Draft a new release"
-# - Create tag: v1.0.0
-# - Upload both tar.gz files
-# - Publish release
-```
-
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Build fails
 
 ```bash
-# Clear cache and retry
 rm -rf .next node_modules
-bun install
-bun run build
+npm ci
+npm run build
 ```
+
+If `npm run dev` is running from the same folder, stop it first; a build replaces `.next` under the dev server.
 
 ### Tag already exists
 
-```bash
-# Delete local and remote tag
-git tag -d v1.0.0
-git push --delete origin v1.0.0
+If a tag was created by mistake and not yet released:
 
-# Create new tag
-git tag -a v1.0.0 -m "Release v1.0.0"
-git push origin v1.0.0
+```bash
+git tag -d v3.3.0
+git push --delete origin v3.3.0
+git tag -a v3.3.0 -m "MITI v3.3.0"
+git push origin v3.3.0
 ```
 
-### Release workflow doesn't trigger
+Do not move a tag after its GitHub release is published; make a patch release instead.
 
-- Check that tag format is correct: `v*.*.*`
-- Check GitHub Actions are enabled
-- Check workflow file syntax
+### Release not marked as latest
 
-## 📊 After Release
+```bash
+gh release edit v3.3.0 --latest
+```
 
-1. Announce on social media
-2. Update documentation links
-3. Close related issues
-4. Update project board
-5. Plan next release
+## After a release
 
-## 🔗 Resources
+1. Close the issues the release fixes.
+2. Start a new `## [Unreleased]` section in CHANGELOG.md if it is not there.
 
-- [GitHub Releases Documentation](https://docs.github.com/en/repositories/releasing-projects-on-github)
+## Resources
+
+- [GitHub releases documentation](https://docs.github.com/en/repositories/releasing-projects-on-github)
 - [Semantic Versioning](https://semver.org/)
 - [Conventional Commits](https://www.conventionalcommits.org/)
 - [Keep a Changelog](https://keepachangelog.com/)

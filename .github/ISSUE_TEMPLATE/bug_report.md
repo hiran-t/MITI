@@ -1,57 +1,51 @@
 ---
-name: Bug Report
-about: Create a report to help us improve MITI
+name: Bug report
+about: Report something in MITI that does not work as expected
 title: '[BUG] '
 labels: bug
 assignees: ''
 ---
 
-## Bug Description
+## What happened
 
-A clear and concise description of the bug.
+A clear description of the bug.
 
-## Steps To Reproduce
+## Steps to reproduce
 
-1. Go to '...'
-2. Click on '...'
-3. See error
+1. Open panel '...'
+2. Set '...' to '...'
+3. See the error
 
-## Expected Behavior
+## Expected behavior
 
-A clear description of what you expected to happen.
-
-## Actual Behavior
-
-A clear description of what actually happened.
+What you expected to happen.
 
 ## Screenshots
 
-If applicable, add screenshots to help explain your problem.
+If they help, add screenshots or a short recording.
 
 ## Environment
 
-- **OS**: [e.g., Ubuntu 22.04, Windows 11, macOS Sonoma]
-- **ROS2 Distribution**: [e.g., Humble, Iron, Jazzy]
-- **Browser**: [e.g., Chrome 120, Firefox 121]
-- **MITI Version**: [e.g., 0.1.0]
-- **Node/Bun Version**: [e.g., Bun 1.0.0]
+- **MITI version**: [e.g. 3.2.0, or the commit]
+- **How MITI runs**: [`pixi run miti`, Docker Compose, `npm run dev`, `npm start`]
+- **Browser**: [e.g. Chrome 142]
+- **OS of the MITI machine**: [e.g. Ubuntu 22.04, macOS 15]
 
-## ROS2 Setup
+## Robot and foxglove_bridge
 
-- **foxglove_bridge version**: [e.g., from `apt show ros-humble-foxglove-bridge`]
-- **Connection URL**: [e.g., ws://localhost:8765]
-- **Topics/Services involved**: [list relevant topics]
+- **ROS 2 distro**: [Humble, Jazzy, ...]
+- **Where foxglove_bridge runs**: [on the robot / beside MITI with pixi (`pixi run -e humble miti-bridge`) / beside MITI with Docker (`docker compose --profile bridge up -d`)]
+- **foxglove_bridge version**: [e.g. 3.6.0]
+- **Bridge address in MITI**: [e.g. ws://192.168.1.10:8765]
+- **Topics and message types involved**: [e.g. /camera/color/image_raw, sensor_msgs/msg/Image]
+- **Network**: [same machine, wired, Wi-Fi, VPN]
 
-## Console Output
+## Logs
 
 ```
-Paste any relevant console errors or logs here
+Browser console errors, and MITI or foxglove_bridge output if relevant
 ```
 
-## Additional Context
+## Additional context
 
-Add any other context about the problem here.
-
-## Possible Solution
-
-(Optional) If you have ideas on how to fix this bug.
+Anything else that might help, or an idea for a fix.

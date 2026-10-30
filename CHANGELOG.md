@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+## [3.2.1] - 2026-10-30
+
+### Added
+
+- The foxglove_bridge beside MITI includes nav2's `bond` messages, so `/bond` is offered instead of logging `package 'bond' not found`
+- `ROS_STATIC_PEERS` passes through Docker Compose to the bridge, so a Jazzy bridge can find the robot by IP when Wi-Fi drops multicast discovery
+
+### Fixed
+
+- The bridge script stops with a clear message when its port is already in use, instead of foxglove_bridge aborting with a bind error
+
+### Changed
+
+- Documentation rewritten for 3.2: a standard README (install with pixi, Docker or from source, foxglove_bridge on the robot or beside MITI, configuration, troubleshooting), a deployment guide with install commands for pixi, Docker, Node.js and foxglove_bridge and a pixi systemd service, and API, architecture, contributing, release, security, 3D Scene, State Machine and performance docs that match the code; issue and pull request templates ask for the ROS distro and where foxglove_bridge runs
+
 ## [3.2.0] - 2026-10-30
 
 ### Added

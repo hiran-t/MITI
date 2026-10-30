@@ -1,165 +1,105 @@
 # Contributing to MITI
 
-First off, thank you for considering contributing to MITI! It's people like you that make MITI such a great tool for the ROS2 community.
+Thank you for considering a contribution to MITI, a web dashboard for ROS 2 robots.
 
-## Code of Conduct
+## Code of conduct
 
-By participating in this project, you are expected to uphold our Code of Conduct of being respectful and inclusive to all contributors.
+By taking part in this project you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
-## How Can I Contribute?
+## How to contribute
 
-### Reporting Bugs
+### Reporting bugs
 
-Before creating bug reports, please check the existing issues to avoid duplicates. When you create a bug report, include as many details as possible:
+Check the existing issues first to avoid duplicates. Then open an issue with the **Bug report** template; it asks for what MITI needs to reproduce the problem:
 
-- **Use a clear and descriptive title**
-- **Describe the exact steps to reproduce the problem**
-- **Provide specific examples** (code snippets, screenshots, etc.)
-- **Describe the behavior you observed and what you expected**
-- **Include details about your environment** (OS, ROS2 version, browser, etc.)
+- MITI version, browser and operating system
+- ROS 2 distro, and how foxglove_bridge runs (on the robot, or beside MITI with pixi or Docker)
+- Steps to reproduce, what you expected and what happened
+- Errors from the browser console and from the MITI or foxglove_bridge logs
 
-**Bug Report Template:**
-```markdown
-**Description:**
-A clear description of the bug.
+Report security problems privately instead; see [SECURITY.md](SECURITY.md).
 
-**Steps to Reproduce:**
-1. Go to '...'
-2. Click on '...'
-3. See error
+### Suggesting features
 
-**Expected Behavior:**
-What you expected to happen.
+Open an issue with the **Feature request** template. Check first whether it has been suggested already, and describe the use case: which robot data or task it is for, and how you work around it today.
 
-**Actual Behavior:**
-What actually happened.
+### Pull requests
 
-**Environment:**
-- OS: [e.g., Ubuntu 22.04]
-- ROS2 Distribution: [e.g., Humble]
-- Browser: [e.g., Chrome 120]
-- MITI Version: [e.g., 1.0.0]
+1. Fork the repository and create a branch from `main`.
+2. Keep the change focused on one fix or feature.
+3. Run the checks below and make sure they pass.
+4. Update the documentation (README.md, files in `docs/`) when behavior changes, and add a line under `## [Unreleased]` in CHANGELOG.md.
+5. Open the pull request with the template filled in, including how you tested it.
 
-**Screenshots:**
-If applicable, add screenshots.
+CI (`.github/workflows/ci.yml`) runs lint, type check, build and tests on every pull request to `main`, and `.github/workflows/docker.yml` builds the Docker image.
 
-**Additional Context:**
-Any other relevant information.
+## Development setup
+
+You need Node.js 22 and npm. [Bun](https://bun.sh) also works, and [pixi](https://pixi.sh) can provide Node.js for you.
+
+```bash
+git clone https://github.com/YOUR_USERNAME/MITI.git
+cd MITI
+npm ci                 # or: bun install
+npm run dev            # http://localhost:3000, with hot reload
 ```
 
-### Suggesting Enhancements
+With pixi instead of a system Node.js, run `pixi run dev`.
 
-Enhancement suggestions are welcome! Before creating an enhancement suggestion:
+npm is the primary package manager: CI and the Docker image install with `npm ci` from `package-lock.json`. If you change dependencies, update `package-lock.json` with npm and keep `bun.lock` in sync with `bun install`.
 
-- **Check if the enhancement has already been suggested**
-- **Provide a clear use case** for the enhancement
-- **Explain how it would be useful** to most MITI users
+### A robot or test data to connect to
 
-### Pull Requests
+MITI talks to [foxglove_bridge](https://github.com/foxglove/foxglove-sdk) over the Foxglove WebSocket protocol (default port 8765). Enter the bridge address in the connection box in the status bar, or set `NEXT_PUBLIC_BRIDGE_URL` (see `.env.example`). Without it, MITI connects to `ws://<host MITI was served from>:8765`.
 
-1. **Fork the repository** and create your branch from `main`
-2. **Follow the coding style** used in the project
-3. **Write clear, descriptive commit messages**
-4. **Update documentation** if you're adding or changing features
-5. **Test your changes** thoroughly
-6. **Ensure your code builds** without errors or warnings
+- On a robot: `ros2 launch foxglove_bridge foxglove_bridge_launch.xml`
+- Beside MITI, joined to the robot over DDS: `pixi run -e humble bridge` (or `-e jazzy`); see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+- Without a robot: `node scripts/heavy-bridge.js` streams robot-sized test data on `ws://localhost:8790`; see [docs/PERFORMANCE.md](docs/PERFORMANCE.md)
 
-#### Pull Request Process
+### Checks
 
-1. **Update the README.md** with details of changes if applicable
-2. **Follow the code style** guidelines below
-3. **Include tests** for new features when possible
-4. **Ensure CI passes** (if configured)
-5. **Request review** from maintainers
-
-**Pull Request Template:**
-```markdown
-**Description:**
-Brief description of what this PR does.
-
-**Type of Change:**
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] Documentation update
-
-**Testing:**
-Describe the tests you ran and how to reproduce them.
-
-**Checklist:**
-- [ ] My code follows the project's style guidelines
-- [ ] I have performed a self-review of my code
-- [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] I have made corresponding changes to the documentation
-- [ ] My changes generate no new warnings
-- [ ] I have tested my changes thoroughly
-
-**Screenshots (if applicable):**
-Add screenshots to help explain your changes.
-
-**Related Issues:**
-Closes #[issue number]
+```bash
+npm run lint          # ESLint
+npm run type-check    # TypeScript
+npm test              # Jest
+npm run build         # production build
+npm run format        # Prettier on src/
 ```
 
-## Development Setup
+Stop `npm run dev` before running `npm run build` in the same folder: both write to `.next`, and a build breaks the running dev server.
 
-1. **Clone your fork:**
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/miti.git
-   cd miti
-   ```
+A Husky pre-commit hook runs lint-staged (ESLint with `--fix` and Prettier on staged files). The hook calls `bun run lint-staged`, so it needs Bun installed.
 
-2. **Install dependencies:**
-   ```bash
-   bun install  # or npm install
-   ```
+## Coding style
 
-3. **Start development server:**
-   ```bash
-   bun dev  # or npm run dev
-   ```
+### TypeScript and React
 
-4. **Create a branch:**
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
+- Write new code in TypeScript.
+- Use function components and hooks.
+- Prefer `const`; do not use `var`.
+- Use `async`/`await` rather than chained promises.
+- Subscribe to topics through the hooks in `src/hooks/` (`useTopic`, `useTopicList`, `useTF`) instead of talking to the bridge client directly.
 
-## Coding Style Guidelines
-
-### TypeScript/JavaScript
-
-- Use **TypeScript** for all new code
-- Follow **functional component** patterns for React
-- Use **hooks** instead of class components
-- Prefer **const** over let, avoid var
-- Use **arrow functions** for callbacks
-- Use **async/await** over promises when possible
-
-### Component Structure
+### Component structure
 
 ```typescript
-'use client';  // If client component
+'use client';
 
 import { useState } from 'react';
-import { SomeIcon } from 'lucide-react';
-import { someUtil } from '@/lib/utils';
+import { Activity } from 'lucide-react';
 import { commonStyles } from '@/styles';
 
-interface MyComponentProps {
-  prop1: string;
-  prop2?: number;
+interface MyPanelProps {
+  topic: string;
+  label?: string;
 }
 
-export default function MyComponent({ prop1, prop2 = 0 }: MyComponentProps) {
-  const [state, setState] = useState(false);
-
-  const handleClick = () => {
-    // Handler logic
-  };
+export default function MyPanel({ topic, label = 'Status' }: MyPanelProps) {
+  const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className={commonStyles.container}>
-      {/* JSX */}
+    <div className={commonStyles.card.base} onClick={() => setExpanded(!expanded)}>
+      <Activity className="h-4 w-4" /> {label}: {topic}
     </div>
   );
 }
@@ -167,88 +107,79 @@ export default function MyComponent({ prop1, prop2 = 0 }: MyComponentProps) {
 
 ### Styling
 
-- Use **centralized style modules** in `src/styles/`
-- Import from `@/styles` for consistency
-- Use **Tailwind CSS classes** in style constants
-- Use the `cn()` helper for conditional classes
-- Keep styles organized by feature
+- Shared class strings live in the style modules in `src/styles/`; import them from `@/styles`.
+- Use Tailwind classes, and the `cn()` helper from `@/styles` for conditional classes.
 
-Example:
 ```typescript
 import { visualizationStyles, cn } from '@/styles';
 
-<div className={cn(
-  visualizationStyles.camera.container,
-  isActive && visualizationStyles.camera.active
-)}>
+<div className={cn(visualizationStyles.camera.title, isActive && 'border-accent')} />
 ```
 
-### File Naming
+### File naming
 
-- **Components**: PascalCase (e.g., `MyComponent.tsx`)
-- **Utilities**: camelCase (e.g., `myUtil.ts`)
-- **Types**: PascalCase (e.g., `MyTypes.ts`)
-- **Styles**: kebab-case with .styles suffix (e.g., `my-feature.styles.ts`)
+- Components: PascalCase (`LogPanel.tsx`)
+- Hooks: `useSomething.ts`
+- Other modules: kebab-case or camelCase as in the surrounding folder (`pointcloud-parser.ts`, `theme.ts`)
+- Style modules: kebab-case with a `.styles.ts` suffix (`visualization.styles.ts`)
+- Tests: in a `__tests__` folder beside the code, named `*.test.ts` or `*.test.tsx`
 
-### Git Commit Messages
+### Commit messages
 
-Follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
+Follow [Conventional Commits](https://www.conventionalcommits.org/):
 
-- `feat:` - A new feature
-- `fix:` - A bug fix
-- `docs:` - Documentation changes
-- `style:` - Code style changes (formatting, missing semicolons, etc.)
-- `refactor:` - Code refactoring
-- `test:` - Adding or updating tests
-- `chore:` - Maintenance tasks
+- `feat:` a new feature
+- `fix:` a bug fix
+- `perf:` a performance improvement
+- `docs:` documentation only
+- `refactor:` code changes that neither fix a bug nor add a feature
+- `test:` adding or updating tests
+- `chore:` maintenance (dependencies, tooling, releases without new features)
 
 Examples:
+
 ```
-feat: add point cloud color mapping options
-fix: resolve URDF mesh loading CORS issue
-docs: update installation instructions for ROS2 Iron
-refactor: extract styles from visualization components
+feat: add color map options to the Point Cloud panel
+fix: keep TF frames after reconnecting to foxglove_bridge
+docs: describe running foxglove_bridge beside MITI
 ```
 
-## Project Structure
-
-Please maintain the feature-based organization:
+## Project structure
 
 ```
 src/
-├── components/features/    # Feature-specific components
-├── hooks/                  # Global React hooks
-├── lib/                    # Core libraries
-├── styles/                 # Centralized style modules
-└── types/                  # TypeScript definitions
+├── app/                    # Next.js app and API routes (package:// and file:// meshes)
+├── components/features/    # UI by feature: dashboard, layout, connection, topic-viewer,
+│                           # visualization (3D Scene, camera, point cloud, state machine), logs, controls
+├── constants/              # Default topic names
+├── hooks/                  # React hooks (bridge connection, topics, TF, layout)
+├── lib/                    # Bridge client, parsers, scene, camera, layout, logs, server helpers
+├── styles/                 # Shared style modules
+└── types/                  # TypeScript types
+ros/                        # foxglove_bridge beside MITI (pixi and Docker)
+scripts/                    # Deployment helpers and the performance harness
+docs/                       # Documentation and release notes
 ```
 
-## Testing Guidelines
+## Testing
 
-While we don't have automated tests yet, please manually test:
+Unit tests use Jest and Testing Library and live in `__tests__` folders. Add tests for parsers, transforms and other logic you change.
 
-- **Functionality**: Does your change work as expected?
-- **Edge cases**: Test with empty data, large datasets, errors
-- **Performance**: Does it impact performance?
-- **Compatibility**: Test on different browsers (Chrome, Firefox, Safari)
-- **ROS2 integration**: Test with real ROS2 topics when applicable
+Also test by hand:
+
+- With real ROS 2 topics through foxglove_bridge, when the change touches robot data
+- Edge cases: no connection, empty or missing topics, large messages, missing transforms
+- Performance under heavy data, with `scripts/heavy-bridge.js` and `scripts/perf-run.js`
+- Current Chrome, Edge, Firefox or Safari
 
 ## Documentation
 
-When adding new features:
+When you add or change a feature:
 
-1. **Update README.md** with usage examples
-2. **Add JSDoc comments** to complex functions
-3. **Include inline comments** for non-obvious code
-4. **Update type definitions** if adding new interfaces
+1. Update README.md or the relevant file in `docs/`.
+2. Add a line to CHANGELOG.md under `## [Unreleased]`.
+3. Comment code whose purpose is not obvious, and update types for new interfaces.
 
-## Questions?
+## Questions
 
-Feel free to:
-- **Open an issue** for questions
-- **Start a discussion** in GitHub Discussions (if enabled)
-- **Reach out to maintainers** via issue comments
-
-## Recognition
-
-Contributors will be recognized in the project README and release notes. Thank you for your contributions! 🎉
+Open an issue, or ask in the comments of a related issue or pull request.

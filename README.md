@@ -1,358 +1,223 @@
 <div align="center">
-  <img src="public/main_logo.svg" alt="MITI Logo" width="800"/>
+  <img src="public/main_logo.svg" alt="MITI" width="640"/>
 
-# MITI - ROS2 Web Visualization
+# MITI
 
-**A modern, real-time web dashboard for visualizing ROS2 robots and sensor data.**
+**A web dashboard for watching and driving ROS 2 robots from any browser.**
 
-Built with Next.js 14, React 18, and Three.js.
-
-[![ROS2](https://img.shields.io/badge/ROS2-Humble%20%7C%20Iron%20%7C%20Jazzy-blue)](https://docs.ros.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-14+-black)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue)](https://www.typescriptlang.org/)
+[![Release](https://img.shields.io/github/v/release/hiran-t/MITI)](https://github.com/hiran-t/MITI/releases/latest)
+[![CI](https://github.com/hiran-t/MITI/actions/workflows/ci.yml/badge.svg)](https://github.com/hiran-t/MITI/actions/workflows/ci.yml)
+[![ROS 2](https://img.shields.io/badge/ROS%202-Humble%20%7C%20Jazzy-blue)](https://docs.ros.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 </div>
 
----
+MITI shows a robot's 3D scene, cameras, logs and state machines in tiled panels, in the browser. It connects to [foxglove_bridge](https://github.com/foxglove/foxglove-sdk) over the Foxglove WebSocket protocol and works the way Foxglove's panels do, so teams that know Foxglove feel at home. foxglove_bridge can run on the robot, or on the MITI machine, where it reads the robot's topics over DDS and keeps the work off the robot.
 
-## Table of Contents
+## Contents
 
 - [Features](#features)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Project Structure](#project-structure)
-- [ROS2 Integration](#ros2-integration)
-- [Customization](#customization)
-- [Testing](#testing)
+- [Requirements](#requirements)
+- [Install and run](#install-and-run)
+- [Set up foxglove_bridge](#set-up-foxglove_bridge)
+- [Configuration](#configuration)
+- [Using MITI](#using-miti)
+- [Development](#development)
+- [Documentation](#documentation)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 - [License](#license)
-- [Acknowledgments](#acknowledgments)
-
----
 
 ## Features
 
-**Visualization**
+- **3D Scene** like Foxglove's 3D panel: robot model from `/robot_description` with live joints, TF, point clouds and laser scans, occupancy grids and costmaps, poses, paths, markers, and publishing goal poses. See [docs/3d-scene.md](docs/3d-scene.md).
+- **Camera** like Foxglove's Image panel: raw and compressed images, 3D topics drawn over the image through `camera_info` and TF, color maps for depth images, flip, rotation and rectify.
+- **Log** for `/rosout`, with level, text and node filters and a color per node.
+- **Topics**, **Point Cloud**, **State Machine** (SMACC2 and BehaviorTree) and **Button Switch** panels.
+- **Workspace**: tiled panels you drag, split and resize; an activity bar for panel settings, topics, problems and sources; layouts saved in the browser.
+- **Built for heavy data**: decoding runs in Web Workers, and panels skip frames they would not draw.
+- **Runs anywhere**: one `pixi run miti`, or Docker Compose as a service; optional foxglove_bridge beside MITI.
 
-- URDF 3D robot model viewer with live joint state animation
-- Point cloud rendering from depth cameras
-- Camera feed viewer (color, depth, IR, detection) with Foxglove-style overlays of 3D topics, depth color maps, flip/rotation and rectify
-- TF frame visualization
-- State machine monitor (SMACC2 and BehaviorTree)
+## Requirements
 
-**Dashboard**
+| To run           | You need                                                                     |
+| ---------------- | ---------------------------------------------------------------------------- |
+| MITI with pixi   | [pixi](https://pixi.sh); it brings Node.js (and ROS 2 for the bridge) itself |
+| MITI with Docker | Docker with Compose v2                                                       |
+| MITI from source | Node.js 22 and npm (or [Bun](https://bun.sh))                                |
+| The robot        | ROS 2 Humble or Jazzy, and foxglove_bridge on the robot or beside MITI       |
 
-- IDE-style workspace (activity bar, tabbed panels, status bar) with MITI's own dark theme
-- Tiled panels: drag a panel onto another panel's edge to split it, drag dividers to resize, and resize the sidebar
-- Persistent configuration saved in localStorage
-- Add/remove widgets on the fly
-- Configurable ROS topics per widget
+Linux (x86-64, ARM64) and macOS (Apple silicon) are supported. Browsers: current Chrome, Edge, Firefox or Safari.
 
-**Connectivity**
-
-- Real-time ROS2 connection via [foxglove_bridge](https://github.com/foxglove/foxglove-sdk) (Foxglove WebSocket protocol, messages CDR-decoded in the browser)
-- Auto-reconnection on connection loss
-- Topic discovery, search, and live data monitoring
-
----
-
-## Quick start
-
-With [pixi](https://pixi.sh) (no Node.js or ROS install needed):
+## Install and run
 
 ```bash
-pixi run miti                    # MITI on http://<this machine>:3000
-pixi run -e humble miti-bridge   # MITI plus foxglove_bridge on this machine (use -e jazzy for Jazzy)
+git clone https://github.com/hiran-t/MITI.git
+cd MITI
 ```
 
-With Docker Compose, as a service that restarts with the machine:
+### Option 1: pixi (recommended)
+
+Install pixi once:
 
 ```bash
-docker compose up -d                    # MITI only
-docker compose --profile bridge up -d   # MITI plus foxglove_bridge (Linux, host networking)
+curl -fsSL https://pixi.sh/install.sh | sh
+# then open a new terminal, or: source ~/.bashrc (zsh: source ~/.zshrc)
 ```
 
-Running foxglove_bridge on the MITI machine lets it read the robot's topics over DDS, so the robot does not run the bridge itself. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the robot's own message types, DDS settings and network tips.
-
----
-
-## Prerequisites
-
-- **Node.js** 20+ and **npm** (or [Bun](https://bun.sh/))
-- **ROS2** Humble Hawksbill or later
-- **foxglove_bridge** for WebSocket communication
-- **robot_state_publisher** on the robot, if the robot model should load from `/robot_description`
-
-Install foxglove_bridge on Ubuntu (replace `humble` with your ROS distro):
+Run MITI:
 
 ```bash
+pixi run miti          # http://<this machine>:3000
+pixi run miti 8080     # on another port
+```
+
+The first run installs Node.js and the npm packages and builds MITI; later runs start in about a second unless the source changed.
+
+### Option 2: Docker Compose (as a service)
+
+Install Docker once on Ubuntu, if it is not there yet:
+
+```bash
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER   # log out and in again
+sudo systemctl enable --now docker
+```
+
+Run MITI; it restarts with the machine:
+
+```bash
+docker compose up -d           # http://<this machine>:3000
+docker compose logs -f         # logs
+docker compose up -d --build   # rebuild after updating MITI
+docker compose down            # stop
+```
+
+### Option 3: from source
+
+```bash
+npm ci
+npm run build && npm start     # production, http://localhost:3000
+npm run dev                    # development with hot reload
+```
+
+## Set up foxglove_bridge
+
+MITI needs foxglove_bridge (WebSocket, port 8765) somewhere it can reach. Choose one place for it.
+
+### On the robot
+
+Install it with the robot's ROS 2 (replace `humble` with `jazzy` on a Jazzy robot):
+
+```bash
+sudo apt update
 sudo apt install ros-humble-foxglove-bridge
 ```
 
----
-
-## Installation
-
-```bash
-git clone https://github.com/hiran-t/miti.git
-cd miti
-npm install
-```
-
-### Configure Connection (optional)
-
-**Option A** - Environment variable:
-
-```bash
-cp .env.example .env.local
-```
-
-Edit `.env.local`:
-
-```env
-NEXT_PUBLIC_BRIDGE_URL=ws://192.168.10.27:8765
-```
-
-**Option B** - UI settings (recommended):
-
-Click the settings icon next to the connection status in the app to change the URL at runtime. The setting persists in localStorage. A rosbridge URL saved by an earlier MITI version is migrated to the same host on port 8765.
-
----
-
-## Usage
-
-### 1. Start foxglove_bridge
-
-On the robot:
+Start it:
 
 ```bash
 source /opt/ros/humble/setup.bash
 ros2 launch foxglove_bridge foxglove_bridge_launch.xml
 ```
 
-The bridge listens on port 8765 by default.
+In MITI, open the connection settings (gear in the status bar, bottom left) and enter `ws://<robot-ip>:8765`.
 
-### 2. Start MITI
+### Beside MITI (keeps the work off the robot)
 
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000).
-
-### 3. Production build (web)
+foxglove_bridge runs on the MITI machine and subscribes to the robot's topics over DDS, only for the topics someone is viewing. Nothing is installed on the robot; the two machines must be on the same network with the same `ROS_DOMAIN_ID`, and the bridge must use the robot's ROS 2 distro.
 
 ```bash
-npm run build
-npm start
+pixi run -e humble miti-bridge          # MITI + foxglove_bridge (use -e jazzy for a Jazzy robot)
+pixi run -e humble bridge               # foxglove_bridge only
+
+docker compose --profile bridge up -d   # the same with Docker (Linux only: needs host networking)
 ```
 
----
+MITI connects to the bridge beside it by itself. The bridge offers topics whose message types it knows: the standard ROS packages are included; add the robot's own message packages to `ros/overlay/src` and run `pixi run -e humble build-msgs`. Settings, DDS tuning for Wi-Fi and troubleshooting are in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#foxglove_bridge-beside-miti).
 
-## Project Structure
+## Configuration
 
-```
-miti/
-├── src/
-│   ├── app/                     # Next.js App Router (layout, page, globals.css)
-│   ├── components/features/     # Feature-based components
-│   │   ├── connection/          #   Connection status & settings
-│   │   ├── controls/            #   Button/switch widgets
-│   │   ├── dashboard/           #   Main dashboard
-│   │   ├── layout/              #   Grid layout, widget container
-│   │   ├── topic-viewer/        #   Topic list, cards, data display
-│   │   ├── logs/                #   Log panel (/rosout)
-│   │   └── visualization/       #   Camera, point cloud, URDF, TF, state machine
-│   ├── hooks/                   # React hooks (useBridge, useTopic, useTF, etc.)
-│   ├── lib/                     # Core libraries (foxglove_bridge client, parsers)
-│   ├── styles/                  # Centralized Tailwind style modules
-│   ├── types/                   # TypeScript definitions
-│   └── constants/               # ROS topic constants
-├── public/                      # Static assets (logos, icons)
-├── package.json
-├── tsconfig.json
-├── tailwind.config.ts
-└── next.config.js
-```
+MITI needs no configuration. Optional settings go in `.env` (copy [.env.example](.env.example)); Docker Compose and Next.js both read it.
 
----
+| Variable                 | Default                                 | Meaning                                                                           |
+| ------------------------ | --------------------------------------- | --------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_BRIDGE_URL` | `ws://<host MITI was opened from>:8765` | Bridge address MITI opens first; built into the app, so rebuild after changing it |
+| `MITI_PORT`              | `3000`                                  | Port for Docker Compose                                                           |
+| `COMPOSE_PROFILES`       | —                                       | `bridge` to always start foxglove_bridge with Docker Compose                      |
+| `ROS_DISTRO`             | `humble`                                | Bridge image distro (Docker)                                                      |
+| `ROS_DOMAIN_ID`          | `0`                                     | Must match the robot                                                              |
+| `RMW_IMPLEMENTATION`     | `rmw_fastrtps_cpp`                      | Or `rmw_cyclonedds_cpp`                                                           |
+| `BRIDGE_TOPIC_WHITELIST` | `['.*']`                                | Regexes of topics the bridge offers                                               |
 
-## ROS2 Integration
+The address in the connection settings always wins and is remembered per browser.
 
-### Supported message types
+## Using MITI
 
-| Type                      | Used for                    |
-| ------------------------- | --------------------------- |
-| `std_msgs/String`         | URDF robot description      |
-| `sensor_msgs/JointState`  | Joint positions (animation) |
-| `sensor_msgs/PointCloud2` | Point cloud data            |
-| `sensor_msgs/Image`       | Camera feeds                |
-| `tf2_msgs/TFMessage`      | TF frame transforms         |
+- **Connect**: the status bar (bottom left) shows the bridge address and state; the gear opens the connection settings.
+- **Add panels** with **+** in the title bar. Drag a panel's tab onto another panel's edge to split it, drag dividers to resize, and use the expand and lock buttons on each tab.
+- **Configure a panel**: click its tab; its settings open in the sidebar. The activity bar on the left switches between Panel settings, Topics, Problems and Sources.
+- **3D Scene**: set _Display frame_ to a robot frame (for example `base_link`) to follow the robot, and turn topics on with the eye icons, as in Foxglove.
+- **Camera**: pick the image topic in its settings; turn on _Calibration_ and topics to draw them over the image.
 
-All standard ROS2 message types can be viewed in the topic browser.
-
-### URDF loading
-
-**From ROS topic** (default):
+## Development
 
 ```bash
-ros2 topic pub /robot_description std_msgs/msg/String \
-  "data: '$(cat robot.urdf)'" --once
+npm ci
+npm run dev            # http://localhost:3000
+npm test               # unit tests (Jest)
+npm run type-check     # TypeScript
+npm run lint           # ESLint
+npm run format         # Prettier
 ```
 
-**From URL**:
+A pre-commit hook runs ESLint and Prettier on staged files. Stack: Next.js 14, React 18, TypeScript, Tailwind CSS, three.js with React Three Fiber, react-mosaic.
 
-1. Serve URDF files with a CORS-enabled HTTP server:
-
-```bash
-cd /path/to/robot_description
-python3 -m http.server 8000
+```
+src/
+├── app/                   Next.js app, global styles, API routes
+├── components/features/   dashboard shell, layout, connection, topics, logs, controls, visualization
+├── hooks/                 useBridge, useTopic, useTF, useLayoutConfig, …
+├── lib/                   foxglove_bridge client and decode workers, parsers, scene and camera math, theme
+├── styles/                shared Tailwind class sets
+└── types/                 message, widget and scene types
+pixi.toml                  pixi tasks and environments
+docker-compose.yml         MITI service and the bridge profile
+ros/                       foxglove_bridge script, image and message overlay
+scripts/                   load harness, deployment helpers
 ```
 
-2. In MITI, switch to URL mode and enter:
-   - URDF URL: `http://<host>:8000/robot.urdf`
-   - Mesh Base URL: `http://<host>:8000`
+To add a panel type, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). To measure performance under robot-sized data, see [docs/PERFORMANCE.md](docs/PERFORMANCE.md).
 
-Package paths like `package://robot_description/meshes/base.stl` are resolved against the mesh base URL automatically.
+## Documentation
 
-### Publishing test data
-
-```bash
-# String topic
-ros2 topic pub /test std_msgs/msg/String "data: 'Hello MITI'"
-
-# Joint states
-ros2 topic pub /joint_states sensor_msgs/msg/JointState \
-  "{name: ['joint1', 'joint2'], position: [0.5, 1.0], velocity: [], effort: []}"
-```
-
----
-
-## Customization
-
-### Subscribing to a custom topic
-
-```typescript
-import { useTopic } from '@/hooks/useTopic';
-
-function MyWidget({ client }) {
-  const { data, lastUpdate } = useTopic(client, '/my_topic', 'std_msgs/String');
-  return <div>{data?.data}</div>;
-}
-```
-
-### Adding a new widget
-
-1. Define props in `src/types/widget.ts`
-2. Create component in `src/components/features/visualization/<name>/`
-3. Register in `src/components/features/layout/WidgetContainer.tsx`
-4. Add widget metadata to `WIDGET_TYPES` in `src/types/widget.ts`
-
-### Modifying styles
-
-All styles are centralized in `src/styles/`. Edit the relevant module:
-
-- `common.styles.ts` - Buttons, inputs, cards, modals
-- `visualization.styles.ts` - Camera, URDF, point cloud viewers
-- `widget.styles.ts` - Panel tabs and containers
-- `topic.styles.ts` - Topic list
-- `connection.styles.ts` - Connection status and settings dialog
-
-Colors come from the tokens in `src/lib/theme.ts`; the workspace shell is styled in `src/app/globals.css`.
-
-### Connection settings
-
-| Method       | File / Location                 | Persists       |
-| ------------ | ------------------------------- | -------------- |
-| `.env.local` | `NEXT_PUBLIC_BRIDGE_URL`        | Per deployment |
-| UI settings  | Settings icon in the header bar | localStorage   |
-
----
-
-## Testing
-
-```bash
-# Unit tests
-npm test
-
-# Watch mode
-npm run test:watch
-
-# Coverage
-npm run test:coverage
-
-# Type checking
-npm run type-check
-
-# Lint
-npm run lint
-npm run lint:fix
-
-# Format
-npm run format
-npm run format:check
-```
-
----
+| Document                                                             | Contents                                                              |
+| -------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)                             | pixi, Docker, foxglove_bridge beside MITI, DDS, environment variables |
+| [docs/3d-scene.md](docs/3d-scene.md)                                 | 3D Scene settings and layers                                          |
+| [docs/STATE_MACHINE_MONITORING.md](docs/STATE_MACHINE_MONITORING.md) | State Machine panel                                                   |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)                         | How MITI is built                                                     |
+| [docs/API.md](docs/API.md)                                           | Hooks, bridge client and types                                        |
+| [docs/PERFORMANCE.md](docs/PERFORMANCE.md)                           | Load harness and measurements                                         |
+| [docs/RELEASES.md](docs/RELEASES.md)                                 | How releases are made                                                 |
+| [CHANGELOG.md](CHANGELOG.md)                                         | What changed in each version                                          |
 
 ## Troubleshooting
 
-### Cannot connect to foxglove_bridge
-
-- Verify foxglove_bridge is running: `ros2 node list | grep foxglove_bridge`
-- Check the WebSocket URL (default: `ws://localhost:8765`)
-- Check firewall settings for port 8765
-
-### Topics list is empty
-
-- Verify ROS2 nodes are running: `ros2 topic list`
-- Click the refresh button in the topic browser
-- Check foxglove_bridge logs for errors
-
-### URDF not loading from URL
-
-- Ensure the HTTP server sends CORS headers (`Access-Control-Allow-Origin: *`)
-- Test the URL directly: `curl http://<host>:8000/robot.urdf`
-- Check browser console for specific errors
-
-### Point cloud not rendering
-
-- Verify topic publishes `sensor_msgs/PointCloud2`
-- Check data rate: `ros2 topic hz /camera/depth/points`
-
-### Build errors
-
-```bash
-rm -rf node_modules .next
-npm install
-```
-
----
+| Problem                                  | What to check                                                                                                                               |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Status bar says Disconnected             | foxglove_bridge is running and port 8765 is reachable (`ros2 node list \| grep foxglove`, firewall); the address in the connection settings |
+| Connected, but a panel waits for data    | The panel's topic exists (Topics view in the activity bar); names differ between robots, e.g. `/camera/camera/color/image_raw`              |
+| 3D Scene looks empty                     | _Display frame_ set to a robot frame; topics turned on (eye icons)                                                                          |
+| Bridge beside MITI sees few or no topics | Same `ROS_DOMAIN_ID` and ROS 2 distro as the robot; see [DDS tips](docs/DEPLOYMENT.md#network-and-dds)                                      |
+| Bridge log: `package '...' not found`    | The bridge lacks that message type; add the package to `ros/overlay/src` and run `build-msgs`                                               |
+| Bridge exits: port 8765 already in use   | Another bridge runs on this machine; stop it or set `BRIDGE_PORT`                                                                           |
+| Robot model has no meshes                | The bridge serves `package://` meshes; with the bridge beside MITI, the robot's description package must be on that machine too             |
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/my-feature`
-3. Commit your changes: `git commit -m 'Add my feature'`
-4. Push: `git push origin feature/my-feature`
-5. Open a Pull Request
-
----
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md), and the [Code of Conduct](CODE_OF_CONDUCT.md). Report security issues as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
-
----
-
-## Acknowledgments
-
-- [ROS2](https://docs.ros.org/) and the robotics community
-- [foxglove_bridge](https://github.com/foxglove/foxglove-sdk) (MIT)
-- [Three.js](https://threejs.org/) and [React Three Fiber](https://docs.pmnd.rs/react-three-fiber/)
-- [Next.js](https://nextjs.org/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [urdf-loader](https://github.com/gkjohnson/urdf-loaders)
+[MIT](LICENSE). MITI builds on [ROS 2](https://docs.ros.org/), [foxglove_bridge](https://github.com/foxglove/foxglove-sdk), [three.js](https://threejs.org/), [React Three Fiber](https://docs.pmnd.rs/react-three-fiber/), [Next.js](https://nextjs.org/), [Tailwind CSS](https://tailwindcss.com/), [react-mosaic](https://github.com/nomcopter/react-mosaic) and [urdf-loader](https://github.com/gkjohnson/urdf-loaders).

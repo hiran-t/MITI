@@ -39,11 +39,18 @@ if [ "$RMW_IMPLEMENTATION" = "rmw_cyclonedds_cpp" ] && [ -z "${CYCLONEDDS_URI:-}
   export CYCLONEDDS_URI="file://$here/cyclonedds.xml"
 fi
 
-echo "foxglove_bridge: ws://${BRIDGE_ADDRESS:-0.0.0.0}:${BRIDGE_PORT:-8765}," \
+port="${BRIDGE_PORT:-8765}"
+if (exec 3<>"/dev/tcp/127.0.0.1/$port") 2>/dev/null; then
+  echo "Port $port is already in use, probably by another foxglove_bridge. Stop it, or run" \
+    "with BRIDGE_PORT=<port> and enter ws://<this machine>:<port> in MITI's connection settings." >&2
+  exit 1
+fi
+
+echo "foxglove_bridge: ws://${BRIDGE_ADDRESS:-0.0.0.0}:$port," \
   "ROS_DOMAIN_ID=$ROS_DOMAIN_ID, $RMW_IMPLEMENTATION"
 
 exec ros2 launch foxglove_bridge foxglove_bridge_launch.xml \
-  port:="${BRIDGE_PORT:-8765}" \
+  port:="$port" \
   address:="${BRIDGE_ADDRESS:-0.0.0.0}" \
   topic_whitelist:="${BRIDGE_TOPIC_WHITELIST:-['.*']}" \
   send_buffer_limit:="${BRIDGE_SEND_BUFFER_LIMIT:-10000000}" \

@@ -1,6 +1,6 @@
-# MITI 3D Scene
+# 3D Scene panel
 
-The scene is independent of the robot description. A grid, TF frames and sensor layers can be used without a URDF model. Select the scene and open **Panel**: settings are grouped like Foxglove's 3D panel — **Frame**, **Scene**, **View**, **Transforms**, **Topics**, **Custom layers** and **Publish** — and take effect immediately. Layouts saved by MITI 2.0 are converted automatically.
+The scene is independent of the robot description. A grid, TF frames and sensor layers can be used without a URDF model. Select a 3D Scene panel and open **Panel** in the activity bar: settings are grouped like Foxglove's 3D panel — **Frame**, **Scene**, **View**, **Transforms**, **Topics**, **Custom layers** and **Publish** — and take effect immediately. Layouts saved by MITI 2.0 are converted automatically.
 
 **Topics** lists every published topic the scene can draw; use its eye button to show or hide it and expand it for display settings. Robot descriptions (`std_msgs/String` topics ending in `robot_description`) are shown by default, sensor topics are opt-in. **Custom layers** holds grids and URDF models loaded from a URL, a file path, a node parameter or a topic.
 
@@ -19,7 +19,7 @@ The scene is independent of the robot description. A grid, TF frames and sensor 
 | Pose / Pose Array     | `geometry_msgs/msg/PoseStamped`, `PoseArray`                               | Pose arrows                                                                                       |
 | Camera / Image        | `sensor_msgs/msg/CameraInfo` + optional `Image` or `CompressedImage`       | Calibrated frustum and textured image plane                                                       |
 
-Topic suggestions use the live topic list and filter by message type. A topic can also be entered manually. Layer visibility, topic, opacity and applicable style controls live in the sidebar. Layer status distinguishes disconnected, waiting, empty, stale and errors. Removing a layer releases its subscriptions; changing a shared topic does not unsubscribe other widgets.
+Topic suggestions use the live topic list and filter by message type. A topic can also be entered manually. Visibility, topic, opacity and style controls for each layer are under **Topics** and **Custom layers** in the panel settings. Layer status distinguishes disconnected, waiting, empty, stale and errors. Removing a layer releases its subscriptions; changing a shared topic does not unsubscribe other panels.
 
 ## Robot models
 
@@ -33,7 +33,7 @@ The robot must run `robot_state_publisher` for the model to appear from `/robot_
 
 Meshes are requested four at a time and kept in the browser's Cache Storage (when MITI is opened from `localhost` or HTTPS), so a robot crosses the network once; use **Reload model (clear mesh cache)** in the robot's ⋮ menu after its meshes change. foxglove_bridge drops replies when the connection is saturated, which raw camera images easily do over VPNs or Wi-Fi: hide image topics or publish compressed images while a robot loads. Timed-out meshes are requested up to three times.
 
-By default all topics share one bridge connection, as in Foxglove, so cameras, robot motion and the scene show the same moment; on a slow link they are late together. **Connection Settings → Streaming → Prioritize robot motion** gives each image, point cloud and map topic a connection of its own instead: robot motion stays real-time and point clouds are not queued behind camera frames, at the cost of cameras trailing the robot. Mesh downloads always use their own connection. **Max rate (Hz)** on a topic, and **Max FPS** on camera panels (default: every frame), only limit how often MITI decodes and draws; the robot still sends every message, since foxglove_bridge cannot throttle per client. The camera status bar shows the received frame rate, the frame size and, when the frame is stamped on the robot's clock, how far it trails the robot.
+By default all topics share one bridge connection, as in Foxglove, so cameras, robot motion and the scene show the same moment; on a slow link they are late together. **Connection settings** (in the connection box in the status bar) → **Streaming** → **Prioritize robot motion** gives each image, point cloud and map topic a connection of its own instead: robot motion stays real-time and point clouds are not queued behind camera frames, at the cost of cameras trailing the robot. Mesh downloads always use their own connection. **Max rate (Hz)** on a topic, and **Max FPS** on Camera panels (default 15), only limit how often MITI decodes and draws; the robot still sends every message, since foxglove_bridge cannot throttle per client. The camera status bar shows the received frame rate, the frame size and, when the frame is stamped on the robot's clock, how far it trails the robot.
 
 ## Coordinates and time
 
@@ -51,7 +51,7 @@ PointCloud2 accepts CDR byte arrays (also number arrays and Base64), padded rows
 
 Robot and marker mesh URLs must be browser-accessible with appropriate CORS. STL, OBJ and DAE are supported, including `package://` and `file://` resources fetched through foxglove_bridge or resolved using the package mapping or mesh server URL. Embedded marker mesh/texture payloads and textured triangle-list messages are not implemented; unsupported mesh URIs report an error. Marker colors and scales come from the messages.
 
-Camera images must be rectified and use the same optical frame as CameraInfo. Distortion correction is not performed. Raw image encodings use MITI's image decoder; compressed images use the browser's JPEG/PNG decoder. A zero focal length reports an uncalibrated camera. CameraInfo defines the image plane transform; the viewer is not a stereo reconstruction or image synchronization pipeline. The Foxglove protocol has no server-side throttling: foxglove_bridge sends every message and heavy topics are throttled for rendering in the browser, so prefer `CompressedImage` camera topics over slow links.
+Camera layer images must be rectified and use the same optical frame as CameraInfo; the 3D Scene does not correct distortion (the Camera panel's **Rectify** does). Raw image encodings use MITI's image decoder; compressed images use the browser's JPEG/PNG decoder. A zero focal length reports an uncalibrated camera. CameraInfo defines the image plane transform; the viewer is not a stereo reconstruction or image synchronization pipeline. The Foxglove protocol has no server-side throttling: foxglove_bridge sends every message and heavy topics are throttled for rendering in the browser, so prefer `CompressedImage` camera topics over slow links.
 
 Odometry displays pose, not covariance ellipsoids or a stored trajectory. Use Path for trajectories. Custom ROS messages, volumetric maps and other message families need additional renderers; this is not complete RViz feature parity.
 

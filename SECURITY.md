@@ -1,49 +1,48 @@
-# Security Policy
+# Security policy
 
-## Supported Versions
+## Supported versions
 
-We release patches for security vulnerabilities. Which versions are eligible for receiving such patches depends on the CVSS v3.0 Rating:
+Security fixes go into the latest release.
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.1.x   | :white_check_mark: |
+| 3.2.x   | :white_check_mark: |
+| < 3.2   | :x:                |
 
-## Reporting a Vulnerability
+## Reporting a vulnerability
 
-If you discover a security vulnerability within MITI, please send an email to the maintainers. All security vulnerabilities will be promptly addressed.
+Email the maintainer at thongpanchang.h@gmail.com with "MITI security" in the subject.
 
-**Please do not report security vulnerabilities through public GitHub issues.**
+**Do not report security vulnerabilities in public GitHub issues.**
 
-### What to include in your report:
+### What to include
 
-- Type of issue (e.g., buffer overflow, SQL injection, cross-site scripting, etc.)
-- Full paths of source file(s) related to the manifestation of the issue
-- The location of the affected source code (tag/branch/commit or direct URL)
-- Any special configuration required to reproduce the issue
-- Step-by-step instructions to reproduce the issue
-- Proof-of-concept or exploit code (if possible)
-- Impact of the issue, including how an attacker might exploit it
+- Type of issue (for example cross-site scripting, path traversal, unintended file access)
+- The affected source files, and the version, tag or commit
+- Any configuration needed to reproduce it (how MITI and foxglove_bridge run, environment variables)
+- Steps to reproduce
+- Proof-of-concept code, if you have it
+- The impact, and how an attacker could use it
 
-### What to expect:
+### What to expect
 
 - Confirmation of receipt within 48 hours
 - A detailed response within 7 days
-- Regular updates on the progress toward a fix
-- Credit in the security advisory (unless you prefer to remain anonymous)
+- Updates while a fix is in progress
+- Credit in the release notes, unless you prefer to stay anonymous
 
-## Security Best Practices
+## Deployment advice
 
-When using MITI:
+MITI has no login. Anyone who can open MITI and reach foxglove_bridge can see every topic the bridge offers, and can publish (Button Switch panel, 3D Scene **Publish**) and call services where the bridge allows it. foxglove_bridge itself has no authentication.
 
-1. **Use WSS (Secure WebSocket)** in production environments
-2. **Validate all input** from ROS topics before processing
-3. **Keep dependencies updated** regularly
-4. **Use environment variables** for sensitive configuration
-5. **Run with minimal privileges** when deploying
-6. **Monitor logs** for suspicious activity
+1. Run MITI and foxglove_bridge only on a trusted network (the robot's network or a VPN); do not expose ports 3000 and 8765 to the internet.
+2. Limit what the bridge offers with its `topic_whitelist` (and, when it runs beside MITI, `BRIDGE_TOPIC_WHITELIST`; see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)). Use foxglove_bridge's `capabilities` and service whitelist parameters to turn off publishing or service calls you do not need.
+3. Use `wss://` (foxglove_bridge's TLS options, or a reverse proxy with TLS) when traffic crosses a network you do not control.
+4. Keep MITI, its npm dependencies and foxglove_bridge up to date.
+5. Run MITI as an unprivileged user; the Docker image already runs as a non-root user.
 
-## Known Security Considerations
+## Known security considerations
 
-- WebSocket connections should be secured with WSS in production
-- URDF files loaded from URLs should be from trusted sources only
-- Browser localStorage is used for configuration - sensitive data should not be stored there
+- MITI's server serves `package://` and `file://` meshes (`/api/package`, `/api/file`) from the ROS package paths it is given (`AMENT_PREFIX_PATH`, `ROS_PACKAGE_PATH` or `MITI_PACKAGE_PATH`). Only mesh, texture and URDF files inside those directories are served, but do not point these variables at directories with private files.
+- URDF files and meshes loaded from URLs are fetched by the browser; load them only from sources you trust.
+- Layouts and connection settings are kept in the browser's localStorage. Do not put secrets in them.

@@ -1,38 +1,32 @@
 ---
-name: Feature Request
+name: Feature request
 about: Suggest an idea for MITI
 title: '[FEATURE] '
 labels: enhancement
 assignees: ''
 ---
 
-## Feature Description
-A clear and concise description of the feature you'd like to see.
+## Problem
 
-## Problem It Solves
-Describe the problem this feature would solve. Ex. I'm always frustrated when [...]
+What are you trying to do, and what gets in the way? For example: "I cannot see X while the robot does Y."
 
-## Proposed Solution
-A clear description of what you want to happen.
+## Proposed solution
 
-## Alternative Solutions
-A description of any alternative solutions or features you've considered.
+What you would like MITI to do. Name the panel (Topics, 3D Scene, Point Cloud, Camera, State Machine, Button Switch, Log) or part of the window it concerns, if any.
 
-## Use Case
-Describe your specific use case and how this feature would benefit the ROS2/robotics community.
+## Robot data involved
 
-## Example
-If applicable, provide a code example or mockup of how this feature would work:
+Topics, message types, rates and sizes, if the feature uses robot data.
 
-```typescript
-// Example code or usage
-```
+## Alternatives
 
-## Additional Context
-Add any other context, screenshots, or references about the feature request here.
+Other approaches you have considered, or how you work around it today. If Foxglove or RViz already does this, describe how.
 
-## Are You Willing To Contribute?
-- [ ] Yes, I'd like to implement this feature
-- [ ] I can help with testing
-- [ ] I can help with documentation
-- [ ] I can provide feedback during development
+## Additional context
+
+Screenshots, mockups or links.
+
+## Can you help?
+
+- [ ] I would like to implement this
+- [ ] I can test it on a robot

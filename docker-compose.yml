@@ -38,6 +38,8 @@ services:
     environment:
       ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-0}
       RMW_IMPLEMENTATION: ${RMW_IMPLEMENTATION:-rmw_fastrtps_cpp}
+      # Jazzy: the robot's IP(s), separated by ';', for discovery without multicast (Wi-Fi)
+      ROS_STATIC_PEERS: ${ROS_STATIC_PEERS:-}
       BRIDGE_PORT: ${BRIDGE_PORT:-8765}
       BRIDGE_TOPIC_WHITELIST: ${BRIDGE_TOPIC_WHITELIST:-['.*']}
       BRIDGE_SEND_BUFFER_LIMIT: ${BRIDGE_SEND_BUFFER_LIMIT:-10000000}

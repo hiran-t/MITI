@@ -1,67 +1,40 @@
 ## Description
 
-<!-- Provide a brief description of your changes -->
+<!-- What this pull request changes and why -->
 
-## Type of Change
+Closes #
 
-<!-- Mark the relevant option with an 'x' -->
+## Type of change
 
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] Documentation update
-- [ ] Code refactoring
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Breaking change (existing layouts, settings or deployments stop working as before)
 - [ ] Performance improvement
-- [ ] Test addition/update
-
-## Related Issue
-
-<!-- Link to the issue this PR addresses -->
-
-Closes #(issue number)
-
-## Changes Made
-
-<!-- List the main changes you made -->
-
--
--
--
+- [ ] Refactoring
+- [ ] Documentation
+- [ ] Deployment (pixi, Docker, `ros/`, `scripts/`)
 
 ## Testing
 
-<!-- Describe the tests you ran to verify your changes -->
+<!-- How you tested it. Mark what applies. -->
 
-- [ ] Tested locally with foxglove_bridge connection
-- [ ] Verified URDF visualization works
-- [ ] Tested point cloud rendering
-- [ ] Checked responsive design on mobile
-- [ ] Verified drag-and-drop functionality
-- [ ] Tested with ROS2 topics/services
+- [ ] `npm run lint`, `npm run type-check`, `npm test` and `npm run build` pass
+- [ ] Tested against foxglove_bridge with real robot data
+- [ ] Tested under load with `scripts/heavy-bridge.js` (for performance-sensitive changes)
+- [ ] Tested an older saved layout still loads (for changes to panel settings)
 
-### Test Configuration
+**Test setup**
 
-- **ROS2 Distribution**:
-- **Browser**:
-- **Device/OS**:
+- ROS 2 distro:
+- foxglove_bridge: <!-- on the robot, or beside MITI with pixi or Docker -->
+- Browser and OS:
 
-## Screenshots/Videos
+## Screenshots
 
-<!-- If applicable, add screenshots or videos to demonstrate your changes -->
+<!-- For UI changes, before and after -->
 
 ## Checklist
 
-<!-- Mark completed items with an 'x' -->
-
-- [ ] My code follows the project's style guidelines
-- [ ] I have performed a self-review of my code
-- [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] I have made corresponding changes to the documentation
-- [ ] My changes generate no new warnings or errors
-- [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] New and existing unit tests pass locally with my changes
-- [ ] Any dependent changes have been merged and published
-
-## Additional Notes
-
-<!-- Add any additional notes or context for reviewers -->
+- [ ] Documentation updated (README.md, `docs/`) where behavior changed
+- [ ] CHANGELOG.md has a line under `## [Unreleased]`
+- [ ] `bun.lock` updated along with `package-lock.json` if dependencies changed

@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       ros-${ROS_DISTRO}-foxglove-msgs \
       ros-${ROS_DISTRO}-control-msgs \
       ros-${ROS_DISTRO}-vision-msgs \
+      ros-${ROS_DISTRO}-bond \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /miti/ros

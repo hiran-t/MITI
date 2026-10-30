@@ -1,212 +1,162 @@
-# State Machine Monitoring Guide
+# State machine monitoring
 
-This guide explains how to use MITI's state machine monitoring features to visualize SMACC2 state machines and BehaviorTree.CPP execution in real-time.
+This guide explains how to use MITI's **State Machine** panel to watch a SMACC2-style state machine or a BehaviorTree.CPP-style behavior tree while the robot runs.
 
 ## Overview
 
-MITI provides two monitoring modes:
+The State Machine panel has two tabs:
 
-1. **SMACC2 State Machine Monitor** - Visualize SMACC2 state transitions and current state
-2. **BehaviorTree Monitor** - Monitor behavior tree execution and node status
+1. **SMACC2**: the current and previous state, all states, and the transition history
+2. **Behavior Tree**: the tree with each node's status, and the tick count
 
-## SMACC2 State Machine Monitoring
+Each tab subscribes to one topic through foxglove_bridge. MITI does not read SMACC2's or BehaviorTree.CPP's own topics directly: a node on the robot publishes a status message with the fields described below.
 
-### Setup
+## Adding the panel
 
-1. Ensure your SMACC2 state machine publishes status to a ROS2 topic
-2. Topic should follow this message structure:
+1. Click **Add panel** in the title bar and choose **State Machine**.
+2. Select the panel and open **Panel** in the activity bar.
+3. Under **General**, set **SMACC2 Status Topic** (default `/smacc2/status`) and **BehaviorTree Status Topic** (default `/behavior_tree/execution_status`). Topic suggestions come from the live topic list.
+4. Switch between **SMACC2** and **Behavior Tree** with the tabs at the top of the panel.
 
-```typescript
-interface SMACC2StateMachineStatus {
-  machine_id: string;
-  current_state: string;
-  previous_state?: string;
-  timestamp: int64;
-  is_running: bool;
-  states: SMACC2State[];
-  transition_history: SMACC2Transition[];
-}
+## Message format
+
+MITI decodes messages with the definitions foxglove_bridge advertises, so the status topics need a ROS 2 message type that the bridge can load. When foxglove_bridge runs beside MITI (pixi or Docker), add the package to `ros/overlay/src`; see [DEPLOYMENT.md](DEPLOYMENT.md). MITI reads fields by name, so the package and type names are up to you.
+
+Use `float64` for timestamps and 32-bit integers for counts: 64-bit integers (`int64`, `uint64`) arrive in the browser as `BigInt`, which the panel does not convert.
+
+### SMACC2 tab
+
+```
+# your_msgs/msg/StateInfo.msg
+string name
+bool is_active
+
+# your_msgs/msg/Transition.msg
+string from_state
+string to_state
+float64 timestamp            # nanoseconds since the epoch
+
+# your_msgs/msg/StateMachineStatus.msg
+string machine_id
+string current_state
+string previous_state
+bool is_running
+StateInfo[] states           # optional: shown as chips, active ones highlighted
+Transition[] transition_history
 ```
 
-### Usage
+The panel shows:
 
-1. Open MITI dashboard
-2. Add a new "State Machine Monitor" widget
-3. Select "SMACC2" tab
-4. Enter your state machine topic (default: `/smacc2/status`)
-5. Monitor real-time state transitions
+- **Machine ID** with a RUNNING or STOPPED badge from `is_running`
+- **Current State** and **Previous State**
+- **All States**, when `states` is not empty
+- **Transition History**, newest first, with the time of each transition
+- The time the last message arrived
 
-### Features
+### Behavior Tree tab
 
-- **State Diagram**: Visual representation of current and previous states
-- **State Information**: Current state, running status, message count
-- **Transition History**: Log of recent state transitions with timestamps
-
-## BehaviorTree Monitoring
-
-### Setup
-
-1. Ensure your BehaviorTree publishes status to a ROS2 topic
-2. Topics should follow these message structures:
-
-**Tree Structure Topic** (`/behavior_tree/tree_structure`):
-
-```typescript
-interface BehaviorTreeNode {
-  id: string;
-  name: string;
-  type: NodeType; // Root, Sequence, Selector, Action, etc.
-  status: NodeStatus; // IDLE, RUNNING, SUCCESS, FAILURE
-  children?: BehaviorTreeNode[];
-}
+```
+# your_msgs/msg/BehaviorTreeStatus.msg
+string tree_id
+TreeNode root_node
+bool is_running
+uint32 total_ticks
 ```
 
-**Execution Status Topic** (`/behavior_tree/execution_status`):
+Each node has these fields:
 
-```typescript
-interface BehaviorTreeStatus {
-  tree_id: string;
-  root_node: BehaviorTreeNode;
-  current_executions: BehaviorTreeExecutionInfo[];
-  execution_history: BehaviorTreeExecutionInfo[];
-  is_running: bool;
-  total_ticks: int32;
-  timestamp: int64;
-}
+```
+string id
+string name
+string type     # Root, Sequence, Selector, Action, Condition or Decorator (others get a dot)
+string status   # IDLE, RUNNING, SUCCESS or FAILURE
+<child node type>[] children
 ```
 
-### Usage
+ROS 2 message types cannot contain themselves, so `children` needs a separate type for each level (for example `TreeNode` with `TreeNodeL1[] children`, `TreeNodeL1` with `TreeNodeL2[] children`). The number of types you define is the deepest level the panel can show.
 
-1. Open MITI dashboard
-2. Add a new "State Machine Monitor" widget
-3. Select "Behavior Tree" tab
-4. Enter your tree status topic (default: `/behavior_tree/execution_status`)
-5. Enter your tree structure topic (default: `/behavior_tree/tree_structure`)
-6. Monitor tree execution
+The panel shows the tree ID, the tick count and a RUNNING or IDLE badge, then the tree with one row per node. Click a node with children to collapse or expand it. Status colors:
 
-### Features
+- Green: SUCCESS
+- Red: FAILURE
+- Yellow: RUNNING
+- Gray: IDLE
 
-- **Tree Visualization**: Hierarchical tree structure with node status
-- **Status Indicators**:
-  - 🟢 Green = SUCCESS
-  - 🔴 Red = FAILURE
-  - 🟡 Yellow = RUNNING
-  - ⚪ Gray = IDLE
-- **Statistics**: Total ticks, running nodes, last update time
-- **Execution Log**: History of node executions
-
-## Custom Topic Mapping
-
-You can configure custom topic names:
-
-### SMACC2
-
-- Status topic: Customize in monitor settings
-
-### BehaviorTree
-
-- Status topic: Customize in monitor settings
-- Structure topic: Customize in monitor settings
-
-## Example: Publishing from ROS2 Package
-
-### SMACC2 Example
+## Example: publishing from a ROS 2 node
 
 ```cpp
 #include "rclcpp/rclcpp.hpp"
-#include "your_msgs/SMACC2StateMachineStatus.hpp"
+#include "your_msgs/msg/state_machine_status.hpp"
 
-class SMACCPublisher : public rclcpp::Node {
+class StateMachineStatusPublisher : public rclcpp::Node {
 public:
-  SMACCPublisher() : Node("smacc_status_publisher") {
-    publisher_ = this->create_publisher<your_msgs::SMACC2StateMachineStatus>(
-      "/smacc2/status", 10);
+  StateMachineStatusPublisher() : Node("state_machine_status_publisher") {
+    publisher_ = create_publisher<your_msgs::msg::StateMachineStatus>("/smacc2/status", 10);
+  }
 
-    // Publish state machine status
-    auto msg = your_msgs::SMACC2StateMachineStatus();
+  void publish_transition(const std::string & from, const std::string & to) {
+    your_msgs::msg::Transition transition;
+    transition.from_state = from;
+    transition.to_state = to;
+    transition.timestamp = static_cast<double>(now().nanoseconds());
+    history_.push_back(transition);
+    if (history_.size() > 50) history_.erase(history_.begin());
+
+    your_msgs::msg::StateMachineStatus msg;
     msg.machine_id = "robot_sm";
-    msg.current_state = "State1";
-    msg.timestamp = this->now().nanoseconds();
+    msg.current_state = to;
+    msg.previous_state = from;
     msg.is_running = true;
-
+    msg.transition_history = history_;
     publisher_->publish(msg);
   }
 
 private:
-  rclcpp::Publisher<your_msgs::SMACC2StateMachineStatus>::SharedPtr publisher_;
+  rclcpp::Publisher<your_msgs::msg::StateMachineStatus>::SharedPtr publisher_;
+  std::vector<your_msgs::msg::Transition> history_;
 };
 ```
 
-### BehaviorTree Example
-
-```cpp
-#include "rclcpp/rclcpp.hpp"
-#include "your_msgs/BehaviorTreeStatus.hpp"
-
-class TreeStatusPublisher : public rclcpp::Node {
-public:
-  TreeStatusPublisher() : Node("tree_status_publisher") {
-    publisher_ = this->create_publisher<your_msgs::BehaviorTreeStatus>(
-      "/behavior_tree/execution_status", 10);
-  }
-
-private:
-  rclcpp::Publisher<your_msgs::BehaviorTreeStatus>::SharedPtr publisher_;
-};
-```
+A behavior tree publisher works the same way: build the `BehaviorTreeStatus` message from the tree after each tick (or at a fixed rate) and publish it on `/behavior_tree/execution_status`.
 
 ## Troubleshooting
 
-### Monitor shows "Waiting for data..."
+### The panel shows "Not connected to ROS"
 
-1. Verify topic names are correct
-2. Check that the ROS2 node is publishing to the topic:
+MITI is not connected to foxglove_bridge. Check the connection box in the status bar and the bridge address in **Connection settings**.
+
+### The panel shows "Waiting for data..."
+
+1. Check the topic name in the panel settings.
+2. Check that the topic is published:
    ```bash
    ros2 topic echo /smacc2/status
    ```
-3. Verify WebSocket connection is active
+3. Check that the topic appears in the **Topics** view of the activity bar. If it is missing, foxglove_bridge cannot load the message type (install the message package beside the bridge) or its topic whitelist excludes it; the bridge's log says which.
 
-### Message rate is slow
+### The panel shows data but fields are empty
 
-- Increase publishing frequency in your ROS2 node
-- Check network latency
-- Monitor browser console for errors
+Field names must match the ones above exactly. Missing fields are shown as `—`.
 
-### Visualizations not updating
+### The panel stops updating or shows an error
 
-- Verify message structure matches expected interface
-- Check that all required fields are populated
-- Try reconnecting to foxglove_bridge
+Check the browser console. A 64-bit integer field (for example `int64 timestamp`) is decoded as `BigInt` and breaks the transition times; use `float64`.
 
-## Widget Configuration
+## Performance tips
 
-The State Machine Monitor widget is registered as:
+1. **Keep the history short.** The whole `transition_history` is sent in every message; keep the last few dozen transitions.
+2. **Publish only as often as needed.** A state machine changes rarely; publish on each transition, or at a few hertz at most. For behavior trees, 10 Hz is usually enough.
+3. **Keep trees small.** Every message carries the full tree; publish the part of the tree you need to watch.
 
-- **Type**: `state_machine`
-- **Default Size**: 6×4 (width × height)
-- **Available Modes**: SMACC2, BehaviorTree
+## Not implemented
 
-### Adding to Dashboard
+- Playback of past states
+- Export of the history as CSV or JSON
+- A drawn state diagram or nested states
+- Breakpoints and stepping
 
-Click the "+" button → Select "State Machine" → Configure topic names
+## Related documentation
 
-## Performance Tips
-
-1. **Reduce history size** - Only keep recent transitions/executions
-2. **Throttle publish rate** - Don't publish more than 10Hz if not needed
-3. **Optimize visualization** - Limit tree depth visualization to 5 levels
-
-## Future Enhancements
-
-- [ ] State machine history playback
-- [ ] Export logs as CSV/JSON
-- [ ] Custom state diagrams
-- [ ] Nested state visualization
-- [ ] Breakpoint and stepping (debugging)
-- [ ] Performance profiling
-
-## Related Documentation
-
-- [Widget System](./WIDGETS.md)
-- [ROS2 Integration](./ROS2_INTEGRATION.md)
-- [Customization Guide](./CUSTOMIZATION.md)
+- [README](../README.md)
+- [Architecture](ARCHITECTURE.md)
+- [Deployment](DEPLOYMENT.md)
