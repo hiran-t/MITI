@@ -3,23 +3,15 @@ import { MITI_CYAN } from '@/lib/theme';
 import { useEffect, useMemo, useState } from 'react';
 import { Line } from '@react-three/drei';
 import * as THREE from 'three';
-import type { Header, SceneLayerConfig } from '@/types/scene';
+import type { SceneLayerConfig } from '@/types/scene';
 import type { sensor_msgs } from '@/types/ros-messages';
 import type { BridgeClient } from '@/lib/bridge/client';
 import { useTopic } from '@/hooks/useTopic';
 import { drawImageMessage } from '@/lib/parsers/image-parser';
 import { frameName } from '@/lib/scene/transforms';
-export interface CameraInfo {
-  header: Header;
-  width: number;
-  height: number;
-  k: number[];
-  p: number[];
-  d: number[];
-  binning_x?: number;
-  binning_y?: number;
-  roi?: { x_offset: number; y_offset: number; width: number; height: number };
-}
+import type { CameraInfo } from '@/lib/camera/projection';
+
+export type { CameraInfo };
 // Image frames are throttled like other sensor layers; only the newest frame is queued.
 const IMAGE_OPTIONS = { throttleRate: 100 };
 

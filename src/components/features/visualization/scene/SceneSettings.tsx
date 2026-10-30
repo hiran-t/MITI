@@ -39,6 +39,7 @@ import {
   type SceneConfig,
   type TopicLayerType,
   type TopicSettings,
+  type TransformSettings,
   type UrdfControlMode,
   type UrdfDisplayMode,
   type UrdfLayerConfig,
@@ -846,6 +847,181 @@ function UrdfLayerFields({
   );
 }
 
+/** TF frames drawn in the scene, with their display settings, as in Foxglove's Transforms. */
+export function TransformsSection({
+  transforms,
+  frames,
+  tree,
+  onChange,
+}: {
+  transforms: TransformSettings;
+  frames: string[];
+  tree: TFTree;
+  onChange: (patch: Partial<TransformSettings>) => void;
+}) {
+  const setAllFrames = (visible: boolean) =>
+    onChange({ frames: Object.fromEntries(frames.map((frame) => [frame, { visible }])) });
+  const now = Date.now();
+  return (
+    <TreeSection
+      title="Transforms"
+      keywords={`tf frames labels axis ${frames.join(' ')}`}
+      defaultOpen={false}
+      visible={transforms.visible}
+      onVisibleChange={(visible) => onChange({ visible })}
+      actions={[
+        { label: 'Show all frames', onSelect: () => setAllFrames(true) },
+        { label: 'Hide all frames', onSelect: () => setAllFrames(false) },
+      ]}
+    >
+      <ToggleField
+        label="Labels"
+        value={transforms.showLabels}
+        onChange={(showLabels) => onChange({ showLabels })}
+      />
+      <NumberField
+        label="Label size (px)"
+        value={transforms.labelSize}
+        min={4}
+        max={48}
+        onCommit={(labelSize) => onChange({ labelSize })}
+      />
+      <NumberField
+        label="Axis scale"
+        value={transforms.axisScale}
+        min={0.01}
+        step={0.1}
+        onCommit={(axisScale) => onChange({ axisScale })}
+      />
+      <NumberField
+        label="Line width"
+        value={transforms.lineWidth}
+        min={0.1}
+        step={0.5}
+        onCommit={(lineWidth) => onChange({ lineWidth })}
+      />
+      <ColorField
+        label="Line color"
+        value={transforms.lineColor}
+        onChange={(lineColor) => onChange({ lineColor })}
+      />
+      <TextField
+        label="TF topics"
+        value={transforms.tfTopics.join(', ')}
+        onCommit={(value) => onChange({ tfTopics: splitTopics(value) })}
+      />
+      <TextField
+        label="Static TF topics"
+        value={transforms.staticTfTopics?.join(', ') ?? ''}
+        placeholder="topics named *static*"
+        onCommit={(value) =>
+          onChange({
+            staticTfTopics: value.trim() ? splitTopics(value) : undefined,
+          })
+        }
+      />
+      {frames.map((name) => {
+        const info = tree.frames.get(name);
+        return (
+          <TreeSection
+            key={name}
+            title={name}
+            depth={1}
+            defaultOpen={false}
+            visible={transforms.frames[name]?.visible !== false}
+            onVisibleChange={(visible) =>
+              onChange({
+                frames: { ...transforms.frames, [name]: { visible } },
+              })
+            }
+          >
+            <TreeField label="Parent">
+              <span className="font-mono text-gray-300">{info?.parent ?? '(root)'}</span>
+            </TreeField>
+            <TreeField label="Age">
+              <span className="text-gray-300">
+                {!info
+                  ? '—'
+                  : info.isStatic
+                    ? 'static'
+                    : `${((now - info.timestamp) / 1000).toFixed(1)} s`}
+              </span>
+            </TreeField>
+          </TreeSection>
+        );
+      })}
+    </TreeSection>
+  );
+}
+
+/** Topics a scene can show, each with a visibility toggle and its display settings. */
+export function TopicsSection({
+  topicRows,
+  topics,
+  statuses,
+  layerInfo,
+  onTopicChange,
+  onSetAll,
+  onReloadRobots,
+  emptyText = 'No topics the 3D scene can show. Connect to ROS, or refresh the topic list.',
+}: {
+  topicRows: TopicRow[];
+  topics: TopicInfo[];
+  statuses: Record<string, LayerStatus>;
+  layerInfo: Record<string, LayerInfo>;
+  onTopicChange: (row: TopicRow, patch: TopicSettings) => void;
+  onSetAll: (visible: boolean) => void;
+  onReloadRobots: () => void;
+  emptyText?: string;
+}) {
+  return (
+    <TreeSection
+      title="Topics"
+      keywords={topicRows.map((row) => row.topic).join(' ')}
+      actions={[
+        { label: 'Show all', onSelect: () => onSetAll(true) },
+        { label: 'Hide all', onSelect: () => onSetAll(false) },
+      ]}
+    >
+      {topicRows.length === 0 && <p className="px-4 py-2 text-xs text-gray-400">{emptyText}</p>}
+      {topicRows.map((row) => {
+        const status = statuses[`topic:${row.topic}`];
+        return (
+          <TreeSection
+            key={row.topic}
+            title={row.topic}
+            keywords={row.messageType}
+            depth={1}
+            defaultOpen={false}
+            visible={row.visible}
+            onVisibleChange={(visible) => onTopicChange(row, { visible })}
+            actions={
+              row.type === 'urdf'
+                ? [{ label: 'Reload model (clear mesh cache)', onSelect: onReloadRobots }]
+                : undefined
+            }
+            error={row.visible && status?.level === 'error' ? status.message : undefined}
+          >
+            <TreeField label="Type">
+              <span className="font-mono text-gray-300">
+                {row.messageType}
+                {!row.published && ' · not published'}
+              </span>
+            </TreeField>
+            <TopicFields
+              row={row}
+              topics={topics}
+              info={layerInfo[`topic:${row.topic}`]}
+              onChange={(patch) => onTopicChange(row, patch)}
+            />
+            {row.visible && <StatusLine status={status} />}
+          </TreeSection>
+        );
+      })}
+    </TreeSection>
+  );
+}
+
 export default function SceneSettings({
   config,
   onChange,
@@ -900,10 +1076,6 @@ export default function SceneSettings({
     });
   const addLayer = (layer: CustomLayerConfig) =>
     onChange({ ...config, layers: [...config.layers, layer] });
-  const setAllFrames = (visible: boolean) =>
-    update('transforms', {
-      frames: Object.fromEntries(frames.map((frame) => [frame, { visible }])),
-    });
 
   const frameOptions = (current: string) =>
     Array.from(new Set([...frames, ...(current ? [current] : [])]))
@@ -914,7 +1086,6 @@ export default function SceneSettings({
       ? `Frame ${frame} is not in the TF tree`
       : undefined;
   const { frame, scene, view, transforms, publish } = config;
-  const now = Date.now();
 
   return (
     <div className="scene-settings">
@@ -1053,143 +1224,22 @@ export default function SceneSettings({
         />
       </TreeSection>
 
-      <TreeSection
-        title="Transforms"
-        keywords={`tf frames labels axis ${frames.join(' ')}`}
-        defaultOpen={false}
-        visible={transforms.visible}
-        onVisibleChange={(visible) => update('transforms', { visible })}
-        actions={[
-          { label: 'Show all frames', onSelect: () => setAllFrames(true) },
-          { label: 'Hide all frames', onSelect: () => setAllFrames(false) },
-        ]}
-      >
-        <ToggleField
-          label="Labels"
-          value={transforms.showLabels}
-          onChange={(showLabels) => update('transforms', { showLabels })}
-        />
-        <NumberField
-          label="Label size (px)"
-          value={transforms.labelSize}
-          min={4}
-          max={48}
-          onCommit={(labelSize) => update('transforms', { labelSize })}
-        />
-        <NumberField
-          label="Axis scale"
-          value={transforms.axisScale}
-          min={0.01}
-          step={0.1}
-          onCommit={(axisScale) => update('transforms', { axisScale })}
-        />
-        <NumberField
-          label="Line width"
-          value={transforms.lineWidth}
-          min={0.1}
-          step={0.5}
-          onCommit={(lineWidth) => update('transforms', { lineWidth })}
-        />
-        <ColorField
-          label="Line color"
-          value={transforms.lineColor}
-          onChange={(lineColor) => update('transforms', { lineColor })}
-        />
-        <TextField
-          label="TF topics"
-          value={transforms.tfTopics.join(', ')}
-          onCommit={(value) => update('transforms', { tfTopics: splitTopics(value) })}
-        />
-        <TextField
-          label="Static TF topics"
-          value={transforms.staticTfTopics?.join(', ') ?? ''}
-          placeholder="topics named *static*"
-          onCommit={(value) =>
-            update('transforms', {
-              staticTfTopics: value.trim() ? splitTopics(value) : undefined,
-            })
-          }
-        />
-        {frames.map((name) => {
-          const info = tree.frames.get(name);
-          return (
-            <TreeSection
-              key={name}
-              title={name}
-              depth={1}
-              defaultOpen={false}
-              visible={transforms.frames[name]?.visible !== false}
-              onVisibleChange={(visible) =>
-                update('transforms', {
-                  frames: { ...transforms.frames, [name]: { visible } },
-                })
-              }
-            >
-              <TreeField label="Parent">
-                <span className="font-mono text-gray-300">{info?.parent ?? '(root)'}</span>
-              </TreeField>
-              <TreeField label="Age">
-                <span className="text-gray-300">
-                  {!info
-                    ? '—'
-                    : info.isStatic
-                      ? 'static'
-                      : `${((now - info.timestamp) / 1000).toFixed(1)} s`}
-                </span>
-              </TreeField>
-            </TreeSection>
-          );
-        })}
-      </TreeSection>
+      <TransformsSection
+        transforms={transforms}
+        frames={frames}
+        tree={tree}
+        onChange={(patch) => update('transforms', patch)}
+      />
 
-      <TreeSection
-        title="Topics"
-        keywords={topicRows.map((row) => row.topic).join(' ')}
-        actions={[
-          { label: 'Show all', onSelect: () => setAllTopics(true) },
-          { label: 'Hide all', onSelect: () => setAllTopics(false) },
-        ]}
-      >
-        {topicRows.length === 0 && (
-          <p className="px-4 py-2 text-xs text-gray-400">
-            No topics the 3D scene can show. Connect to ROS, or refresh the topic list.
-          </p>
-        )}
-        {topicRows.map((row) => {
-          const status = statuses[`topic:${row.topic}`];
-          return (
-            <TreeSection
-              key={row.topic}
-              title={row.topic}
-              keywords={row.messageType}
-              depth={1}
-              defaultOpen={false}
-              visible={row.visible}
-              onVisibleChange={(visible) => updateTopic(row, { visible })}
-              actions={
-                row.type === 'urdf'
-                  ? [{ label: 'Reload model (clear mesh cache)', onSelect: onReloadRobots }]
-                  : undefined
-              }
-              error={row.visible && status?.level === 'error' ? status.message : undefined}
-            >
-              <TreeField label="Type">
-                <span className="font-mono text-gray-300">
-                  {row.messageType}
-                  {!row.published && ' · not published'}
-                </span>
-              </TreeField>
-              <TopicFields
-                row={row}
-                topics={topics}
-                info={layerInfo[`topic:${row.topic}`]}
-                onChange={(patch) => updateTopic(row, patch)}
-              />
-              {row.visible && <StatusLine status={status} />}
-            </TreeSection>
-          );
-        })}
-      </TreeSection>
+      <TopicsSection
+        topicRows={topicRows}
+        topics={topics}
+        statuses={statuses}
+        layerInfo={layerInfo}
+        onTopicChange={updateTopic}
+        onSetAll={setAllTopics}
+        onReloadRobots={onReloadRobots}
+      />
 
       <TreeSection
         title={`Custom layers (${config.layers.length})`}

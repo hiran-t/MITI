@@ -1249,3 +1249,16 @@ button:disabled {
     scroll-behavior: auto !important;
   }
 }
+
+/* ─── Image panel (camera) ─────────────────────────────────────────────────── */
+.image-view {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.image-view-canvas {
+  flex: none;
+}

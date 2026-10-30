@@ -99,15 +99,9 @@ export default function WidgetContainer({
         return (
           <CameraViewer
             client={client}
-            topic={widget.props.topic}
             topics={topics}
-            onTopicChange={(topic) =>
-              onUpdateWidget(widget.i, { props: { ...widget.props, topic } })
-            }
-            maxFps={widget.props.maxFps}
-            onMaxFpsChange={(maxFps) =>
-              onUpdateWidget(widget.i, { props: { ...widget.props, maxFps } })
-            }
+            props={widget.props}
+            onPropsChange={(props) => onUpdateWidget(widget.i, { props })}
           />
         );
       case 'state-machine':
