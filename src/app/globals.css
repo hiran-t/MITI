@@ -309,6 +309,10 @@ button:disabled {
   background: var(--miti-bg-hover);
   color: var(--miti-text-strong);
 }
+.connection-notice code {
+  font-family: var(--miti-font-mono);
+  color: var(--miti-text-strong);
+}
 .connection-notice {
   display: flex;
   align-items: center;

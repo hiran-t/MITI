@@ -3,6 +3,7 @@
 #   pixi run -e jazzy miti-bridge  MITI plus foxglove_bridge on this machine, joined to the robot
 #                                  over DDS (use -e humble for a Humble robot)
 #   pixi run -e jazzy bridge       foxglove_bridge only
+#   pixi run remove                delete everything generated (pixi run miti restores it)
 # See docs/DEPLOYMENT.md.
 
 [workspace]
@@ -18,6 +19,10 @@ install = { cmd = "npm ci --no-audit --no-fund", inputs = ["package.json", "pack
 build = { cmd = "npm run build", depends-on = ["install"], inputs = ["src/**", "public/**", "package.json", "next.config.js", "tailwind.config.ts", "postcss.config.js", "tsconfig.json"], outputs = [".next/BUILD_ID"] }
 miti = { cmd = "npm run start -- --hostname 0.0.0.0 --port {{ port }}", args = [{ arg = "port", default = "3000" }], depends-on = ["build"], description = "Build if needed and serve MITI (default port 3000)" }
 dev = { cmd = "npm run dev", depends-on = ["install"], description = "Development server with hot reload" }
+# Deletes everything generated (builds, npm packages, the robot message build, pixi environments);
+# `pixi run miti` brings it back. Source, .env and ros/overlay/src stay. pixi's task shell runs
+# `rm` itself, so this works on Windows too.
+remove = { cmd = "rm -rf .next node_modules coverage ros/overlay/build ros/overlay/install ros/overlay/log && pixi clean", description = "Delete builds, npm packages and pixi environments" }
 
 # foxglove_bridge from RoboStack. It subscribes to the robot's topics over DDS, so the robot only
 # publishes as usual and the bridge's work happens on this machine. Pick the robot's ROS distro:

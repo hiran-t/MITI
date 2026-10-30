@@ -73,18 +73,20 @@ cd MITI
 ```bash
 pixi run miti          # install, build and serve MITI on http://<this machine>:3000
 pixi run miti 8080     # on another port
+pixi run remove        # delete builds, npm packages and pixi environments
 pixi run dev           # development server with hot reload
 ```
 
 The first run installs Node.js 22 and the npm packages and builds MITI. Later runs skip both unless `package-lock.json` or the source changed, and start in about a second. Supported: Linux x86-64 and ARM64, macOS on Apple silicon, Windows x86-64 ([notes](#windows)).
 
-| Task                                      | What it does                                                                    |
-| ----------------------------------------- | ------------------------------------------------------------------------------- |
-| `pixi run miti [port]`                    | Build if needed and serve MITI                                                  |
-| `pixi run dev`                            | Development server                                                              |
-| `pixi run -e <distro> miti-bridge [port]` | MITI and foxglove_bridge together ([beside MITI](#foxglove_bridge-beside-miti)) |
-| `pixi run -e <distro> bridge`             | foxglove_bridge only                                                            |
-| `pixi run -e <distro> build-msgs`         | Build the robot's message packages in `ros/overlay/src`                         |
+| Task                                      | What it does                                                                                                                                                                       |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pixi run miti [port]`                    | Build if needed and serve MITI                                                                                                                                                     |
+| `pixi run dev`                            | Development server                                                                                                                                                                 |
+| `pixi run -e <distro> miti-bridge [port]` | MITI and foxglove_bridge together ([beside MITI](#foxglove_bridge-beside-miti))                                                                                                    |
+| `pixi run -e <distro> bridge`             | foxglove_bridge only                                                                                                                                                               |
+| `pixi run -e <distro> build-msgs`         | Build the robot's message packages in `ros/overlay/src`                                                                                                                            |
+| `pixi run remove`                         | Delete `.next`, `node_modules`, the message build in `ros/overlay` and the pixi environments; source, `.env` and `ros/overlay/src` stay. `pixi run miti` installs everything again |
 
 `<distro>` is `humble` or `jazzy`. Don't build MITI (`pixi run miti`, `npm run build`) while `next dev` runs from the same folder: both use `.next`, and the dev server stops serving pages until it is restarted.
 
@@ -284,6 +286,22 @@ winget install Microsoft.VisualStudio.2022.BuildTools --override "--wait --passi
 schtasks /Create /TN MITI /SC ONLOGON /TR "cmd /c cd /d C:\MITI && pixi run miti"
 ```
 
+**Keep MITI out of OneDrive.** Put the folder somewhere like `C:\MITI`, not under `Desktop` or `Documents` when those sync to OneDrive: pixi installs thousands of files in `.pixi`, which OneDrive then tries to upload.
+
+**Bridge fails with `LoadLibrary error: 4551`** (for example on `rmw_fastrtps_cpp.dll`): Windows blocked a library pixi downloaded, because it is not signed. Error 4551 means _An Application Control policy has blocked this file_: Smart App Control (Windows 11) or an App Control policy set by your organization. To confirm, run in PowerShell:
+
+```powershell
+(Get-MpComputerStatus).SmartAppControlState     # On / Evaluation / Off
+Get-WinEvent -LogName "Microsoft-Windows-CodeIntegrity/Operational" -MaxEvents 20 |
+  Where-Object Id -in 3033,3077 | Format-List TimeCreated, Message
+```
+
+Then, depending on the machine:
+
+- **Smart App Control is On or Evaluation**: turn it off in Windows Security > App & browser control > Smart App Control. Windows can only turn it back on by resetting or reinstalling Windows.
+- **A company-managed PC**: ask IT to allow the MITI folder (its `.pixi` directory), or use one of the options below.
+- **Without changing Windows**: run the bridge in **WSL 2** (mirrored networking, as below) with `pixi run -e humble bridge` there, and MITI on Windows with `pixi run miti`; or run foxglove_bridge on the robot.
+
 **Docker Desktop** can run MITI (`docker compose up -d`) but not the `bridge` profile, which needs Linux host networking. **WSL 2** works like Linux for MITI itself; for the bridge, turn on mirrored networking (`networkingMode=mirrored` in `%UserProfile%\.wslconfig`, Windows 11) so DDS can reach the robot.
 
 ## Kiosk and offline installs
@@ -346,6 +364,6 @@ npm ci && npm run build        # from source
 | Bridge beside MITI sees few or no topics    | Same `ROS_DOMAIN_ID` and distro as the robot; [Network and DDS](#network-and-dds)                                             |
 | Bridge log: `package '...' not found`       | [Add the message package](#the-robots-own-message-types)                                                                      |
 | Robot model without meshes                  | [Robot meshes](#robot-meshes)                                                                                                 |
-| `pixi run miti` fails in `npm ci`           | Delete `node_modules` and run it again                                                                                        |
+| `pixi run miti` fails in `npm ci`           | `pixi run remove`, then `pixi run miti`                                                                                       |
 | Dev server shows a blank page after a build | Restart `npm run dev`; builds and the dev server share `.next`                                                                |
 | Container restarts                          | `docker compose logs miti`; `docker stats` for memory                                                                         |

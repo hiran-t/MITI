@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [3.3.1] - 2026-10-30
+
+### Added
+
+- `pixi run remove` deletes everything generated (`.next`, `node_modules`, the message build in `ros/overlay`, the pixi environments) on Linux, macOS and Windows; source, `.env` and `ros/overlay/src` stay, and `pixi run miti` installs everything again
+- Windows notes for the bridge being blocked by Smart App Control or App Control (`LoadLibrary error: 4551`), and for keeping MITI out of OneDrive
+
+### Changed
+
+- When MITI cannot reach foxglove_bridge, the notice names the address it tried and says what to do: start the bridge on the robot and enter its address, or run `pixi run -e <distro> miti-bridge`
+
 ## [3.3.0] - 2026-10-30
 
 ### Added

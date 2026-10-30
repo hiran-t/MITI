@@ -76,6 +76,7 @@ Run MITI:
 ```bash
 pixi run miti          # http://<this machine>:3000
 pixi run miti 8080     # on another port
+pixi run remove        # delete everything pixi and the build generated; pixi run miti restores it
 ```
 
 The first run installs Node.js and the npm packages and builds MITI; later runs start in about a second unless the source changed.

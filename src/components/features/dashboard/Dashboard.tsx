@@ -167,8 +167,10 @@ export default function Dashboard() {
           <div role="status" className="connection-notice">
             <Radio size={14} />
             <span>
-              Connection unavailable — {error.message}. Check your foxglove_bridge address in
-              connection settings.
+              No foxglove_bridge at <code>{bridgeUrl}</code>. Start it on the robot and enter the
+              robot&apos;s address with the gear in the status bar, or run{' '}
+              <code>pixi run -e humble miti-bridge</code> (or <code>-e jazzy</code>) to run one
+              beside MITI.
             </span>
           </div>
         )}
