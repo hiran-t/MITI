@@ -237,8 +237,11 @@ All styles are centralized in `src/styles/`. Edit the relevant module:
 
 - `common.styles.ts` - Buttons, inputs, cards, modals
 - `visualization.styles.ts` - Camera, URDF, point cloud viewers
-- `widget.styles.ts` - Widget containers
-- `dashboard.styles.ts` - Dashboard layout
+- `widget.styles.ts` - Panel tabs and containers
+- `topic.styles.ts` - Topic list
+- `connection.styles.ts` - Connection status and settings dialog
+
+Colors come from the tokens in `src/lib/theme.ts`; the workspace shell is styled in `src/app/globals.css`.
 
 ### Connection settings
 

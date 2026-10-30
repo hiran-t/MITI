@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [3.1.1] - 2026-10-30
+
+### Removed
+
+- Unused code: `LayoutConfig`, `TopicDataDisplay`, `PointCloudRenderer` and `ViewerControls` components, the `useUrdfConfig` hook, the `dashboard` and `layout-config` style modules, and unused style groups
+- Unused `public/icon.png` (left over from the Electron build)
+- Unused dependencies `zustand`, `clsx` and `@jest/globals`
+
 ## [3.1.0] - 2026-10-30
 
 ### Added

@@ -47,10 +47,4 @@ export const topicStyles = {
     stats: 'flex items-center justify-between text-xs text-gray-400 mb-2',
     json: 'mt-2 p-2 bg-gray-950 rounded text-xs font-mono text-gray-300 max-h-32 overflow-auto',
   },
-
-  // Topic data display
-  data: {
-    container: 'bg-gray-950 rounded p-4 font-mono text-sm text-gray-300 overflow-auto max-h-96',
-    emptyState: 'text-center text-gray-500 py-8',
-  },
 } as const;

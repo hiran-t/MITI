@@ -165,23 +165,6 @@ function useLayoutConfig(): {
 
 ---
 
-### useUrdfConfig
-
-Manage URDF viewer configuration.
-
-```typescript
-function useUrdfConfig(): {
-  config: UrdfConfig;
-  setMode: (mode: 'topic' | 'url') => void;
-  setTopic: (topic: string) => void;
-  setUrdfUrl: (url: string) => void;
-  setMeshBaseUrl: (url: string) => void;
-  setPackageMapping: (mapping: Record<string, string>) => void;
-};
-```
-
----
-
 ### useLocalStorage
 
 Persist state in browser localStorage.

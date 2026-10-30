@@ -95,7 +95,6 @@ src/
 │   ├── useTopic.ts       # Topic subscription
 │   ├── useTopicList.ts   # Topic discovery
 │   ├── useTF.ts          # Transform handling
-│   ├── useUrdfConfig.ts  # URDF configuration
 │   ├── useLayoutConfig.ts # Layout state
 │   └── useLocalStorage.ts # Persistent storage
 │
