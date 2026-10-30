@@ -2,6 +2,8 @@ import { Matrix4, Vector3 } from 'three';
 import { transformMatrix, lookupTransform, stampSeconds } from './transforms';
 import type { Header, Pose, Vec3, Marker } from '@/types/scene';
 import type { TFTree } from '@/types/tf-messages';
+import type { PointData } from '@/lib/parsers/pointcloud-parser';
+import { DEFAULT_MAP_COLORS, occupancyPalette } from './colors';
 export const xyz = (p: Vec3): [number, number, number] => {
   if (!p || ![p.x, p.y, p.z].every(Number.isFinite)) throw new Error('Invalid XYZ coordinates');
   return [p.x, p.y, p.z];
@@ -16,33 +18,64 @@ export function messageTransform(tree: TFTree, fixed: string, header: Header, sy
     sync ? stampSeconds(header?.stamp) : 0
   );
 }
-export function laserPoints(
-  msg: {
-    ranges: number[];
-    angle_min: number;
-    angle_increment: number;
-    range_min: number;
-    range_max: number;
-  },
-  max = 200000
-) {
+type LaserScan = {
+  ranges: number[] | Float32Array;
+  intensities?: number[] | Float32Array;
+  angle_min: number;
+  angle_increment: number;
+  range_min: number;
+  range_max: number;
+};
+/** Points of a LaserScan in its frame; `range` and `intensity` can color them. */
+export function laserCloud(msg: LaserScan, max = 200000): PointData {
   if (
-    !Array.isArray(msg.ranges) ||
+    !msg.ranges ||
+    typeof msg.ranges.length !== 'number' ||
     ![msg.angle_min, msg.angle_increment, msg.range_min, msg.range_max].every(Number.isFinite)
   )
     throw new Error('Invalid LaserScan');
-  const points: number[] = [];
+  const kept: number[] = [];
   const stride = Math.max(1, Math.ceil(msg.ranges.length / max));
   for (let i = 0; i < msg.ranges.length; i += stride) {
     const r = msg.ranges[i];
-    if (Number.isFinite(r) && r >= msg.range_min && r <= msg.range_max) {
-      const a = msg.angle_min + i * msg.angle_increment;
-      points.push(r * Math.cos(a), r * Math.sin(a), 0);
-    }
+    if (Number.isFinite(r) && r >= msg.range_min && r <= msg.range_max) kept.push(i);
   }
-  return points;
+  const positions = new Float32Array(kept.length * 3);
+  kept.forEach((index, i) => {
+    const r = msg.ranges[index],
+      a = msg.angle_min + index * msg.angle_increment;
+    positions[i * 3] = r * Math.cos(a);
+    positions[i * 3 + 1] = r * Math.sin(a);
+  });
+  const intensities =
+    msg.intensities && msg.intensities.length === msg.ranges.length ? msg.intensities : undefined;
+  const axes = ['x', 'y', 'z'];
+  return {
+    count: kept.length,
+    positions,
+    fields: intensities ? ['range', 'intensity', ...axes] : ['range', ...axes],
+    hasColors: false,
+    values(field) {
+      const source = field === 'range' ? msg.ranges : field === 'intensity' ? intensities : null;
+      const axis = axes.indexOf(field);
+      if (!source && axis < 0) return undefined;
+      const out = new Float32Array(kept.length);
+      kept.forEach((index, i) => (out[i] = source ? source[index] : positions[i * 3 + axis]));
+      return out;
+    },
+    colors: () => undefined,
+  };
 }
-export function occupancyPixels(width: number, height: number, data: ArrayLike<number> | string) {
+export function laserPoints(msg: LaserScan, max = 200000) {
+  return Array.from(laserCloud(msg, max).positions);
+}
+/** RGBA pixels of an occupancy grid, colored by a 256-entry palette indexed by the cell byte. */
+export function occupancyPixels(
+  width: number,
+  height: number,
+  data: ArrayLike<number> | string,
+  palette: Uint8Array = occupancyPalette({ colorMode: 'custom', ...DEFAULT_MAP_COLORS })
+) {
   if (
     !Number.isInteger(width) ||
     !Number.isInteger(height) ||
@@ -57,10 +90,11 @@ export function occupancyPixels(width: number, height: number, data: ArrayLike<n
     throw new Error('Map data is truncated');
   const pixels = new Uint8Array(width * height * 4);
   for (let i = 0; i < width * height; i++) {
-    const value = cells[i];
-    const unknown = value < 0 || value === 255;
-    const shade = unknown ? 100 : Math.round(255 * (1 - Math.max(0, Math.min(value, 100)) / 100));
-    pixels.set([shade, shade, shade, unknown ? 100 : 255], i * 4);
+    const p = (cells[i] & 0xff) * 4;
+    pixels[i * 4] = palette[p];
+    pixels[i * 4 + 1] = palette[p + 1];
+    pixels[i * 4 + 2] = palette[p + 2];
+    pixels[i * 4 + 3] = palette[p + 3];
   }
   return pixels;
 }

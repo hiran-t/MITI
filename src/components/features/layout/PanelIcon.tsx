@@ -1,4 +1,4 @@
-import { Box, Camera, Cloud, GitBranch, ListTree, ToggleLeft } from 'lucide-react';
+import { Box, Camera, Cloud, GitBranch, ListTree, ScrollText, ToggleLeft } from 'lucide-react';
 import type { WidgetType } from '@/types/widget';
 
 const icons = {
@@ -8,6 +8,7 @@ const icons = {
   'camera-viewer': Camera,
   'state-machine': GitBranch,
   'button-switch': ToggleLeft,
+  log: ScrollText,
 };
 
 export default function PanelIcon({ type }: { type: WidgetType }) {

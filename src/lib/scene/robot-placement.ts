@@ -12,7 +12,9 @@ export function placeLinks(
   robot: URDFRobot,
   tree: TFTree,
   fixedFrame: string,
-  prefix: string
+  prefix: string,
+  /** false poses every link from URDF joints (manual control); only the root follows TF. */
+  linkTf = true
 ): { rootMissing: boolean; missingLinks: number } {
   const root = prefix + robot.urdfName;
   let rootMissing = false;
@@ -30,7 +32,10 @@ export function placeLinks(
     const parent = relative.get(object.parent);
     const link = object as THREE.Object3D & { isURDFLink?: boolean; isURDFJoint?: boolean };
     if (!parent || !(link.isURDFLink || link.isURDFJoint)) return;
-    if (link.isURDFLink) {
+    if (link.isURDFLink && !linkTf) {
+      link.matrixAutoUpdate = false;
+      link.matrix.identity();
+    } else if (link.isURDFLink) {
       link.matrixAutoUpdate = false;
       try {
         const target = lookupTransform(

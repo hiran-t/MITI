@@ -10,6 +10,7 @@ import PointCloudViewer from '../visualization/pointcloud/PointCloudViewer';
 import CameraViewer from '../visualization/camera/CameraViewer';
 import StateMachineMonitor from '../visualization/state-machine/StateMachineMonitor';
 import ButtonSwitchWidget from '../controls/ButtonSwitchWidget';
+import LogPanel from '../logs/LogPanel';
 import TopicInput from '../topic-viewer/TopicInput';
 import WidgetSettingsPortal, {
   WidgetSettingsContext,
@@ -120,6 +121,17 @@ export default function WidgetContainer({
         return (
           <ButtonSwitchWidget
             client={client}
+            props={widget.props}
+            onConfigChange={(updates) =>
+              onUpdateWidget(widget.i, { props: { ...widget.props, ...updates } })
+            }
+          />
+        );
+      case 'log':
+        return (
+          <LogPanel
+            client={client}
+            topics={topics}
             props={widget.props}
             onConfigChange={(updates) =>
               onUpdateWidget(widget.i, { props: { ...widget.props, ...updates } })

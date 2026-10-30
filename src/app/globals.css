@@ -26,118 +26,76 @@ html {
   margin: 0;
 }
 
-/* React Grid Layout styles customization */
-.react-grid-layout {
-  position: relative;
-  transition: height 200ms ease;
+/* Panel layout: a Foxglove-style split mosaic (react-mosaic). */
+.miti-mosaic {
+  background: #111216;
 }
-
-.react-grid-item {
-  transition: all 200ms ease;
-  transition-property: left, top, width, height;
+.miti-mosaic .mosaic-root {
+  inset: 2px;
 }
-
-.react-grid-item.cssTransforms {
-  transition-property: transform, width, height;
+.miti-mosaic .mosaic-tile {
+  margin: 2px;
 }
-
-.react-grid-item.resizing {
-  transition: none;
-  z-index: 100;
+.miti-mosaic .mosaic-split {
+  z-index: 3;
 }
-
-.react-grid-item.react-draggable-dragging {
-  transition: none;
-  z-index: 100;
-  will-change: transform;
+.miti-mosaic .mosaic-split:hover,
+.miti-mosaic .mosaic-split:active {
+  background: transparent;
 }
-
-.react-grid-item.react-grid-placeholder {
-  background: rgb(59, 130, 246, 0.2);
-  opacity: 0.5;
-  transition-duration: 100ms;
-  z-index: 2;
-  border-radius: 0.5rem;
-  border: 2px dashed rgb(59, 130, 246);
+.miti-mosaic .mosaic-split:hover .mosaic-split-line,
+.miti-mosaic .mosaic-split:active .mosaic-split-line {
+  background: #a78bfa;
 }
-
-.react-resizable-handle {
+.miti-mosaic .mosaic-split.-row .mosaic-split-line {
+  left: 2px;
+  right: 2px;
+}
+.miti-mosaic .mosaic-split.-column .mosaic-split-line {
+  top: 2px;
+  bottom: 2px;
+}
+.miti-mosaic .mosaic-window {
+  box-shadow: none;
+}
+.miti-mosaic .mosaic-window .mosaic-window-toolbar {
+  height: auto;
+  background: transparent;
+  box-shadow: none;
+}
+.miti-mosaic .mosaic-window .mosaic-window-toolbar > * {
+  flex: 1;
+  min-width: 0;
+}
+.miti-mosaic .mosaic-window .mosaic-window-toolbar:not(.draggable) .drag-handle {
+  cursor: default;
+}
+.miti-mosaic .mosaic-window .mosaic-window-body {
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+}
+.miti-mosaic .mosaic-window-body-overlay {
+  display: none !important;
+}
+/* Drop zones: the half of the panel the dragged panel will take. */
+.miti-mosaic .mosaic-drop-target .drop-target-container .drop-target {
+  background: #a78bfa33;
+  border: 2px solid #a78bfa;
+  border-radius: 4px;
+}
+.panel-drag-preview {
   position: absolute;
-  width: 20px;
-  height: 20px;
-}
-
-.react-resizable-handle-sw {
-  bottom: 0;
-  left: 0;
-  cursor: sw-resize;
-  transform: rotate(90deg);
-}
-
-.react-resizable-handle-se {
-  bottom: 0;
-  right: 0;
-  cursor: se-resize;
-}
-
-.react-resizable-handle-nw {
-  top: 0;
-  left: 0;
-  cursor: nw-resize;
-  transform: rotate(180deg);
-}
-
-.react-resizable-handle-ne {
-  top: 0;
-  right: 0;
-  cursor: ne-resize;
-  transform: rotate(270deg);
-}
-
-.react-resizable-handle-w,
-.react-resizable-handle-e {
-  top: 50%;
-  margin-top: -10px;
-  cursor: ew-resize;
-}
-
-.react-resizable-handle-w {
-  left: 0;
-  transform: rotate(135deg);
-}
-
-.react-resizable-handle-e {
-  right: 0;
-  transform: rotate(315deg);
-}
-
-.react-resizable-handle-n,
-.react-resizable-handle-s {
-  left: 50%;
-  margin-left: -10px;
-  cursor: ns-resize;
-}
-
-.react-resizable-handle-n {
-  top: 0;
-  transform: rotate(225deg);
-}
-
-.react-resizable-handle-s {
-  bottom: 0;
-  transform: rotate(45deg);
-}
-
-/* Custom resize handle styling */
-.react-resizable-handle::after {
-  content: '';
-  position: absolute;
-  right: 3px;
-  bottom: 3px;
-  width: 5px;
-  height: 5px;
-  border-right: 2px solid rgba(156, 163, 175, 0.5);
-  border-bottom: 2px solid rgba(156, 163, 175, 0.5);
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #a78bfa;
+  border-radius: 4px;
+  background: #1f2129;
+  color: #e8eaf0;
+  font-size: 12px;
 }
 
 /* MITI engineering workspace */
@@ -279,10 +237,12 @@ button:disabled {
   color: #969db0;
 }
 .workspace-canvas {
+  position: relative;
   flex: 1;
   min-width: 0;
-  overflow: auto;
-  padding: 8px;
+  overflow: hidden;
+  /* Expanded panels are fixed to the canvas, beside the sidebar. */
+  transform: translateZ(0);
 }
 .workspace-footer {
   display: flex;
@@ -321,21 +281,17 @@ button:disabled {
 .panel-shell .drag-handle {
   touch-action: none;
 }
-.panel-expanded.react-grid-item {
-  position: fixed !important;
-  inset: 8px !important;
-  width: auto !important;
-  height: auto !important;
-  transform: none !important;
-  z-index: 45 !important;
+.panel-expanded.mosaic-window {
+  position: fixed;
+  inset: 4px;
+  width: auto;
+  height: auto;
+  z-index: 45;
   border-color: #a78bfa;
-  box-shadow: 0 0 0 100vmax #111216e8;
 }
-.has-expanded-panel .panel-shell:not(.panel-expanded) {
+.has-expanded-panel .panel-shell:not(.panel-expanded),
+.has-expanded-panel .mosaic-split {
   visibility: hidden;
-}
-.panel-expanded > .react-resizable-handle {
-  display: none;
 }
 .workspace-empty {
   min-height: 400px;
@@ -352,11 +308,6 @@ button:disabled {
 }
 .topics-scrim {
   display: none;
-}
-.react-grid-item.react-grid-placeholder {
-  background: #a78bfa20;
-  border: 1px dashed #a78bfa;
-  border-radius: 4px;
 }
 @media (max-width: 1023px) {
   .topics-sidebar {
@@ -406,9 +357,6 @@ button:disabled {
   .panel-shell .drag-handle {
     height: 48px;
     cursor: default;
-  }
-  .panel-expanded.react-grid-item {
-    inset: 8px !important;
   }
   .workspace-footer {
     font-size: 10px;
@@ -472,9 +420,6 @@ button:disabled {
 .widget-settings-content textarea {
   min-width: 0;
 }
-.settings-open .panel-expanded.react-grid-item {
-  left: 348px !important;
-}
 @media (max-width: 1279px) {
   .settings-toggle span {
     display: none;
@@ -489,9 +434,6 @@ button:disabled {
     width: min(340px, 90vw);
     box-shadow: 12px 0 30px #0005;
   }
-  .settings-open .panel-expanded.react-grid-item {
-    left: 8px !important;
-  }
 }
 @media (max-width: 767px) {
   .reset-action span {
@@ -504,8 +446,10 @@ button:disabled {
 
 /* Shared left inspector: compact tabs and property groups. */
 .workspace-sidebar {
+  position: relative;
   display: none;
-  flex: 0 0 380px;
+  flex: 0 0 var(--sidebar-width, 380px);
+  max-width: 80vw;
   min-height: 0;
   min-width: 0;
   flex-direction: column;
@@ -760,8 +704,41 @@ button:disabled {
   padding: 12px;
   border-top: 1px solid #2b2e39;
 }
-.settings-open .panel-expanded.react-grid-item {
-  left: 388px !important;
+/* Drag the sidebar's edge to resize it, as in Foxglove. */
+.sidebar-resizer {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  bottom: 0;
+  width: 8px;
+  z-index: 60;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.sidebar-resizer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 2px;
+  background: transparent;
+  transition: background 120ms;
+}
+.sidebar-resizer:hover::after,
+.sidebar-resizer:focus-visible::after,
+.is-resizing .sidebar-resizer::after {
+  background: #a78bfa;
+}
+.sidebar-resizer:focus-visible {
+  outline: none;
+}
+.workspace-body.is-resizing {
+  cursor: ew-resize;
+  user-select: none;
+}
+.workspace-body.is-resizing .workspace-canvas {
+  pointer-events: none;
 }
 @media (max-width: 1023px) {
   .workspace-sidebar {
@@ -770,8 +747,8 @@ button:disabled {
     width: min(380px, 94vw);
     box-shadow: 12px 0 30px #0005;
   }
-  .settings-open .panel-expanded.react-grid-item {
-    left: 8px !important;
+  .sidebar-resizer {
+    display: none;
   }
   .inspector-tabs [role='tab'] {
     padding: 14px 7px;
@@ -920,7 +897,7 @@ button:disabled {
 .tree-control {
   min-width: 0;
 }
-.tree-control input:not([type='checkbox']):not([type='color']),
+.tree-control input:not([type='checkbox']):not([type='color']):not([type='range']),
 .tree-control select,
 .tree-vec3 input {
   width: 100%;
@@ -975,6 +952,24 @@ button:disabled {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
+}
+.tree-slider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #a4a8b8;
+}
+.tree-slider input[type='range'] {
+  flex: 1;
+  min-width: 0;
+  accent-color: #a78bfa;
+}
+.tree-slider input[type='range']:disabled {
+  opacity: 0.6;
+}
+.tree-slider span {
+  min-width: 44px;
+  text-align: right;
 }
 .tree-color {
   display: flex;
@@ -1070,4 +1065,119 @@ button:disabled {
 }
 .scene-tool-hint + .scene-stats {
   top: 36px;
+}
+
+/* ─── Log panel ──────────────────────────────────────────────────────────────── */
+.log-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: #15161a;
+}
+.log-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border-bottom: 1px solid #ffffff0d;
+}
+.log-filter-field {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 3px 6px;
+  border: 1px solid #ffffff1a;
+  border-radius: 4px;
+  background: #1d1f26;
+}
+.log-filter-field:focus-within {
+  border-color: #a78bfa;
+}
+.log-filter-field input {
+  flex: 1;
+  min-width: 120px;
+  padding: 3px 2px;
+  background: transparent;
+  color: #e8eaf0;
+  font-size: 12px;
+  outline: none;
+}
+.log-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 8px;
+  border-radius: 999px;
+  background: #3a3d4a;
+  color: #e8eaf0;
+  font-size: 11px;
+}
+.log-chip button {
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: #a4a8b8;
+}
+.log-chip button:hover {
+  color: #fff;
+}
+.log-tool {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  color: #a4a8b8;
+}
+.log-tool:hover {
+  background: #ffffff10;
+  color: #fff;
+}
+.log-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 4px 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  line-height: 1.45;
+}
+.log-row {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.log-row > span + span {
+  margin-left: 0.5em;
+}
+.log-level {
+  font-weight: 600;
+}
+.log-meta {
+  color: #8b8fa0;
+}
+.log-name {
+  color: #c4b5fd;
+}
+.log-empty {
+  padding: 6px 0;
+  color: #8b8fa0;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+.log-follow {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid #a78bfa;
+  border-radius: 999px;
+  background: #2a2340;
+  color: #e8eaf0;
+  font-size: 11px;
 }

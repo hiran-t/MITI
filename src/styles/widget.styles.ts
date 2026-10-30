@@ -27,7 +27,7 @@ export const widgetStyles = {
 
   // Widget content area styles
   content: {
-    wrapper: 'flex-1 min-h-0 overflow-hidden p-1 react-grid-item-content',
+    wrapper: 'flex-1 min-h-0 overflow-hidden p-1',
     inner: 'h-full w-full min-h-0 overflow-hidden',
   },
 

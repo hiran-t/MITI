@@ -67,10 +67,41 @@ test('empty saved layout stays empty; reset restores the new default', () => {
   expect(result.current.layout).toEqual(DEFAULT_LAYOUT);
 });
 
-test('new panels are placed below all existing panels without overwriting them', () => {
+test('a saved grid layout converts to splits; panels are added beside a panel and removed', () => {
+  localStorage.setItem(
+    key,
+    JSON.stringify({
+      widgets: [
+        { i: 'left', type: 'topics', title: 'Left', x: 0, y: 0, w: 6, h: 8 },
+        { i: 'right', type: 'topics', title: 'Right', x: 6, y: 0, w: 6, h: 8 },
+      ],
+    })
+  );
   const { result } = renderHook(() => useLayoutConfig());
-  act(() => result.current.addWidget('topics'));
-  expect(result.current.layout.widgets.at(-1)).toMatchObject({ type: 'topics', y: 18 });
+  expect(result.current.layout.mosaic).toEqual({
+    direction: 'row',
+    first: 'left',
+    second: 'right',
+    splitPercentage: 50,
+  });
+  act(() => result.current.addWidget('log', 'right'));
+  expect(result.current.layout.widgets.at(-1)).toMatchObject({ i: 'log-1', type: 'log' });
+  expect(result.current.layout.mosaic).toMatchObject({
+    second: { direction: 'row', first: 'right', second: 'log-1' },
+  });
+  act(() => result.current.removeWidget('left'));
+  expect(result.current.layout.mosaic).toEqual({
+    direction: 'row',
+    first: 'right',
+    second: 'log-1',
+    splitPercentage: 50,
+  });
+  act(() => result.current.updateMosaic({ direction: 'column', first: 'log-1', second: 'right' }));
+  expect(JSON.parse(localStorage.getItem(key)!).mosaic).toEqual({
+    direction: 'column',
+    first: 'log-1',
+    second: 'right',
+  });
 });
 
 test('migrates shared URDF settings to independent widgets and keeps later edits isolated', () => {

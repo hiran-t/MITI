@@ -1,7 +1,9 @@
 'use client';
 
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState, useCallback } from 'react';
+import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import {
   ListTree,
   PanelLeftClose,
@@ -18,12 +20,17 @@ import { useTopicList } from '@/hooks/useTopicList';
 import { useLayoutConfig } from '@/hooks/useLayoutConfig';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import ConnectionStatus from '../connection/ConnectionStatus';
-import DraggableGridLayout from '../layout/DraggableGridLayout';
 import AddWidgetButton from '../layout/AddWidgetButton';
 import ConnectionSettings from '../connection/ConnectionSettings';
 import { SettingsSearchContext } from '../layout/WidgetSettingsPortal';
 
+// Drag and drop needs the browser, so the panel layout is not rendered on the server.
+const PanelMosaic = dynamic(() => import('../layout/PanelMosaic'), { ssr: false });
+
 const SIDEBAR_TABS = ['Panel', 'Topics', 'Problems', 'Sources'] as const;
+const STORAGE_KEY_SIDEBAR_WIDTH = 'miti_sidebar_width';
+const SIDEBAR_MIN_WIDTH = 240;
+const SIDEBAR_DEFAULT_WIDTH = 380;
 type SidebarTab = (typeof SIDEBAR_TABS)[number];
 
 const STORAGE_KEY_BRIDGE_URL = 'miti_bridge_url';
@@ -55,11 +62,37 @@ export default function Dashboard() {
     layout,
     addWidget,
     removeWidget,
-    updateLayout,
+    updateMosaic,
     resetLayout,
     toggleLock,
   } = useLayoutConfig();
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
+  const [sidebarWidth, setSidebarWidth] = useLocalStorage(
+    STORAGE_KEY_SIDEBAR_WIDTH,
+    SIDEBAR_DEFAULT_WIDTH
+  );
+  const [resizingSidebar, setResizingSidebar] = useState(false);
+  const sidebarRef = useRef<HTMLElement>(null);
+  /** Drag the sidebar's edge to resize it, as in Foxglove. */
+  const startSidebarResize = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const left = sidebarRef.current?.getBoundingClientRect().left ?? 0;
+    const handle = event.currentTarget;
+    handle.setPointerCapture(event.pointerId);
+    setResizingSidebar(true);
+    const move = (e: PointerEvent) =>
+      setSidebarWidth(
+        Math.round(Math.min(window.innerWidth * 0.8, Math.max(SIDEBAR_MIN_WIDTH, e.clientX - left)))
+      );
+    const stop = () => {
+      setResizingSidebar(false);
+      handle.removeEventListener('pointermove', move);
+      handle.removeEventListener('pointerup', stop);
+      handle.removeEventListener('pointercancel', stop);
+    };
+    handle.addEventListener('pointermove', move);
+    handle.addEventListener('pointerup', stop);
+    handle.addEventListener('pointercancel', stop);
+  };
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<SidebarTab>('Topics');
   const [settingsSearch, setSettingsSearch] = useState('');
@@ -159,7 +192,7 @@ export default function Dashboard() {
               <RotateCcw size={14} />
               <span>Reset layout</span>
             </button>
-            <AddWidgetButton onAddWidget={addWidget} />
+            <AddWidgetButton onAddWidget={(type) => addWidget(type, selectedWidgetId)} />
           </div>
         </div>
         {error && (
@@ -171,7 +204,10 @@ export default function Dashboard() {
             </span>
           </div>
         )}
-        <div className={`workspace-body ${sidebarOpen ? 'settings-open' : ''}`}>
+        <div
+          className={`workspace-body ${sidebarOpen ? 'settings-open' : ''} ${resizingSidebar ? 'is-resizing' : ''}`}
+          style={{ '--sidebar-width': `${sidebarWidth}px` } as CSSProperties}
+        >
           {sidebarOpen && (
             <button
               className="topics-scrim"
@@ -180,6 +216,7 @@ export default function Dashboard() {
             />
           )}
           <aside
+            ref={sidebarRef}
             id="workspace-sidebar"
             aria-label="Workspace sidebar"
             className={`workspace-sidebar ${sidebarOpen ? 'is-open' : ''}`}
@@ -354,12 +391,31 @@ export default function Dashboard() {
                 </div>
               </details>
             </div>
+            <div
+              className="sidebar-resizer"
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Resize sidebar"
+              aria-valuenow={sidebarWidth}
+              aria-valuemin={SIDEBAR_MIN_WIDTH}
+              tabIndex={0}
+              onPointerDown={startSidebarResize}
+              onDoubleClick={() => setSidebarWidth(SIDEBAR_DEFAULT_WIDTH)}
+              onKeyDown={(event) => {
+                const step = event.shiftKey ? 48 : 16;
+                if (event.key === 'ArrowLeft')
+                  setSidebarWidth(Math.max(SIDEBAR_MIN_WIDTH, sidebarWidth - step));
+                else if (event.key === 'ArrowRight')
+                  setSidebarWidth(Math.min(window.innerWidth * 0.8, sidebarWidth + step));
+              }}
+            />
           </aside>
           <main className="workspace-canvas" aria-label="Visualization workspace">
             {hydrated && (
-              <DraggableGridLayout
+              <PanelMosaic
                 widgets={layout.widgets}
-                onLayoutChange={updateLayout}
+                mosaic={layout.mosaic ?? null}
+                onMosaicChange={updateMosaic}
                 onRemoveWidget={removeWidget}
                 onToggleLock={toggleLock}
                 client={connected ? client : null}

@@ -4,7 +4,9 @@ import { AlertCircle, CheckCircle2, Clock } from 'lucide-react';
 import {
   ColorField,
   NumberField,
+  OptionalNumberField,
   SelectField,
+  SliderField,
   TextField,
   ToggleField,
   TreeField,
@@ -13,7 +15,17 @@ import {
 } from '../../layout/SettingsTree';
 import TopicInput from '../../topic-viewer/TopicInput';
 import type { TopicInfo } from '@/lib/bridge/types';
-import type { LayerStatus } from '@/types/scene';
+import type { LayerStatus, PoseDisplayType } from '@/types/scene';
+import {
+  autoPointColors,
+  DEFAULT_GRADIENT,
+  DEFAULT_MAP_COLORS,
+  type ColorMapName,
+  type MapColorMode,
+  type PointColorMode,
+} from '@/lib/scene/colors';
+import { defaultPoseType, type LayerInfo } from './SceneLayer';
+import { DEFAULT_ARROW, DEFAULT_COVARIANCE_COLOR, DEFAULT_PATH_GRADIENT } from './PoseShapes';
 import {
   DEFAULT_URDF_OPTIONS,
   DEFAULT_VIEW,
@@ -26,6 +38,7 @@ import {
   type SceneConfig,
   type TopicLayerType,
   type TopicSettings,
+  type UrdfControlMode,
   type UrdfDisplayMode,
   type UrdfLayerConfig,
   type UrdfOptions,
@@ -52,6 +65,10 @@ const DISPLAY_MODES: { value: UrdfDisplayMode; label: string }[] = [
   { value: 'visual', label: 'Visual' },
   { value: 'collision', label: 'Collision' },
 ];
+const CONTROL_MODES: { value: UrdfControlMode; label: string }[] = [
+  { value: 'jointStates', label: 'Joint states' },
+  { value: 'manual', label: 'Manual' },
+];
 const URDF_SOURCES: { value: UrdfSource; label: string }[] = [
   { value: 'url', label: 'URL' },
   { value: 'filePath', label: 'File path' },
@@ -65,6 +82,29 @@ const PUBLISH_TYPES: { value: PublishType; label: string }[] = [
     value: 'pose_estimate',
     label: 'Pose estimate (geometry_msgs/PoseWithCovarianceStamped)',
   },
+];
+const POINT_COLOR_MODES: { value: PointColorMode; label: string }[] = [
+  { value: 'flat', label: 'Flat' },
+  { value: 'colormap', label: 'Color map' },
+  { value: 'gradient', label: 'Gradient' },
+  { value: 'rgb', label: 'RGB' },
+  { value: 'rgba', label: 'RGBA' },
+];
+const COLOR_MAPS: { value: ColorMapName; label: string }[] = [
+  { value: 'turbo', label: 'Turbo' },
+  { value: 'rainbow', label: 'Rainbow' },
+];
+const POSE_TYPES: TopicLayerType[] = ['path', 'pose', 'posecov', 'poses', 'odometry'];
+const POSE_DISPLAY_TYPES: { value: PoseDisplayType; label: string }[] = [
+  { value: 'axis', label: 'Axis' },
+  { value: 'arrow', label: 'Arrow' },
+  { value: 'line', label: 'Line' },
+];
+const MAP_COLOR_MODES: { value: MapColorMode; label: string }[] = [
+  { value: 'custom', label: 'Custom' },
+  { value: 'map', label: 'Map' },
+  { value: 'costmap', label: 'Costmap' },
+  { value: 'raw', label: 'Raw' },
 ];
 const IMAGE_TYPES = ['sensor_msgs/msg/Image', 'sensor_msgs/msg/CompressedImage'];
 
@@ -103,34 +143,43 @@ function UrdfFields({
   options,
   onChange,
   topics,
+  info,
 }: {
   options: UrdfOptions;
   onChange: (patch: Partial<UrdfOptions>) => void;
   topics: TopicInfo[];
+  /** Joints and links of the loaded model. */
+  info?: LayerInfo;
 }) {
+  const manual = options.controlMode === 'manual';
+  const joints = info?.joints ?? [];
+  const links = info?.links ?? [];
+  const hidden = options.hiddenLinks ?? [];
   return (
     <>
-      <TreeField label="Joint states topic">
-        <TopicInput
-          aria-label="Joint states topic"
-          value={options.jointStatesTopic}
-          onCommit={(jointStatesTopic) => onChange({ jointStatesTopic })}
-          topics={topics}
-          messageType="sensor_msgs/msg/JointState"
-          placeholder="/joint_states"
-        />
-      </TreeField>
+      <SelectField
+        label="Control mode"
+        value={options.controlMode ?? 'jointStates'}
+        options={CONTROL_MODES}
+        onChange={(controlMode) => onChange({ controlMode })}
+      />
+      {!manual && (
+        <TreeField label="Joint states topic">
+          <TopicInput
+            aria-label="Joint states topic"
+            value={options.jointStatesTopic}
+            onCommit={(jointStatesTopic) => onChange({ jointStatesTopic })}
+            topics={topics}
+            messageType="sensor_msgs/msg/JointState"
+            placeholder="/joint_states"
+          />
+        </TreeField>
+      )}
       <SelectField
         label="Display mode"
         value={options.displayMode}
         options={DISPLAY_MODES}
         onChange={(displayMode) => onChange({ displayMode })}
-      />
-      <TextField
-        label="Frame prefix"
-        value={options.framePrefix}
-        placeholder="none"
-        onCommit={(framePrefix) => onChange({ framePrefix })}
       />
       <ColorField
         label="Color"
@@ -138,11 +187,432 @@ function UrdfFields({
         emptyLabel="URDF materials"
         onChange={(color) => onChange({ color })}
       />
+      <NumberField
+        label="Opacity"
+        value={options.opacity ?? 1}
+        min={0}
+        max={1}
+        step={0.05}
+        onCommit={(opacity) => onChange({ opacity })}
+      />
+      <ToggleField
+        label="Show outlines"
+        value={!!options.showOutlines}
+        onChange={(showOutlines) => onChange({ showOutlines })}
+      />
+      <ToggleField
+        label="Show axis"
+        value={!!options.showAxis}
+        onChange={(showAxis) => onChange({ showAxis })}
+      />
+      {options.showAxis && (
+        <NumberField
+          label="Axis scale"
+          value={options.axisScale ?? 1}
+          min={0.01}
+          step={0.1}
+          onCommit={(axisScale) => onChange({ axisScale })}
+        />
+      )}
+      <TextField
+        label="Frame prefix"
+        value={options.framePrefix}
+        placeholder="none"
+        onCommit={(framePrefix) => onChange({ framePrefix })}
+      />
       <TextField
         label="Mesh server URL"
         value={options.meshBaseUrl}
         placeholder="MITI server (package://)"
         onCommit={(meshBaseUrl) => onChange({ meshBaseUrl })}
+      />
+      {joints.length > 0 && (
+        <TreeSection
+          title={`Joint states (${joints.length})`}
+          keywords={joints.map((joint) => joint.name).join(' ')}
+          depth={2}
+          defaultOpen={false}
+          actions={
+            manual
+              ? [{ label: 'Reset all to 0', onSelect: () => onChange({ manualJoints: {} }) }]
+              : undefined
+          }
+        >
+          {!manual && (
+            <p className="px-4 py-1 text-[11px] text-gray-400">
+              Positions from {options.jointStatesTopic || 'joint states'}. Switch Control mode to
+              Manual to set them here.
+            </p>
+          )}
+          {joints.map((joint) => (
+            <SliderField
+              key={joint.name}
+              label={joint.name}
+              value={manual ? (options.manualJoints?.[joint.name] ?? 0) : joint.value}
+              min={joint.lower}
+              max={joint.upper}
+              step={joint.type === 'prismatic' ? 0.001 : 0.01}
+              disabled={!manual}
+              onChange={(value) =>
+                onChange({ manualJoints: { ...options.manualJoints, [joint.name]: value } })
+              }
+            />
+          ))}
+        </TreeSection>
+      )}
+      {links.length > 0 && (
+        <TreeSection
+          title={`Links (${links.length})`}
+          keywords={links.join(' ')}
+          depth={2}
+          defaultOpen={false}
+          actions={[
+            { label: 'Show all', onSelect: () => onChange({ hiddenLinks: [] }) },
+            { label: 'Hide all', onSelect: () => onChange({ hiddenLinks: links }) },
+          ]}
+        >
+          {links.map((link) => (
+            <TreeSection
+              key={link}
+              title={link}
+              depth={3}
+              visible={!hidden.includes(link)}
+              onVisibleChange={(visible) =>
+                onChange({
+                  hiddenLinks: visible ? hidden.filter((name) => name !== link) : [...hidden, link],
+                })
+              }
+            />
+          ))}
+        </TreeSection>
+      )}
+    </>
+  );
+}
+
+/** Point size, shape, decay and coloring, as in Foxglove's point cloud and laser scan settings. */
+function PointFields({
+  type,
+  settings,
+  info,
+  onChange,
+}: {
+  type: 'pointcloud' | 'scan';
+  settings: TopicSettings;
+  /** Fields of the latest message; undefined until one arrives. */
+  info?: LayerInfo;
+  onChange: (patch: TopicSettings) => void;
+}) {
+  const auto = autoPointColors(info?.fields ?? [], info?.hasColors ?? false);
+  const colorMode = settings.colorMode ?? auto.colorMode;
+  const colorField = settings.colorField ?? auto.colorField;
+  const byField = colorMode === 'colormap' || colorMode === 'gradient';
+  const fields = info?.fields ?? [];
+  const fieldError =
+    info && byField && !fields.includes(colorField)
+      ? `${colorField} is not a field of this topic`
+      : undefined;
+  const colorError =
+    info && (colorMode === 'rgb' || colorMode === 'rgba') && !info.hasColors
+      ? 'This topic has no rgb, rgba or r/g/b fields'
+      : undefined;
+  const modes = POINT_COLOR_MODES.filter(
+    (mode) => type === 'pointcloud' || !['rgb', 'rgba'].includes(mode.value)
+  );
+  const gradient = settings.gradient ?? DEFAULT_GRADIENT;
+  return (
+    <>
+      <NumberField
+        label="Point size"
+        value={settings.pointSize ?? 2}
+        min={1}
+        max={50}
+        step={1}
+        onCommit={(pointSize) => onChange({ pointSize })}
+      />
+      <SelectField
+        label="Point shape"
+        value={settings.pointShape ?? 'circle'}
+        options={[
+          { value: 'circle', label: 'Circle' },
+          { value: 'square', label: 'Square' },
+        ]}
+        onChange={(pointShape) => onChange({ pointShape })}
+      />
+      <NumberField
+        label="Decay time (s)"
+        value={settings.decayTime ?? 0}
+        min={0}
+        max={60}
+        step={0.5}
+        onCommit={(decayTime) => onChange({ decayTime })}
+      />
+      <SelectField
+        label="Color mode"
+        value={colorMode}
+        options={modes}
+        onChange={(mode) => onChange({ colorMode: mode })}
+        error={colorError}
+      />
+      {colorMode === 'flat' && (
+        <ColorField
+          label="Color"
+          value={settings.color ?? '#a78bfa'}
+          onChange={(color) => onChange({ color })}
+        />
+      )}
+      <NumberField
+        label="Opacity"
+        value={settings.opacity ?? 1}
+        min={0}
+        max={1}
+        step={0.05}
+        onCommit={(opacity) => onChange({ opacity })}
+      />
+      {byField && (
+        <>
+          <SelectField
+            label="Color field"
+            value={colorField}
+            options={(fields.includes(colorField) ? fields : [colorField, ...fields]).map(
+              (field) => ({ value: field, label: field })
+            )}
+            onChange={(field) => onChange({ colorField: field })}
+            error={fieldError}
+          />
+          {colorMode === 'colormap' ? (
+            <SelectField
+              label="Color map"
+              value={settings.colorMap ?? 'turbo'}
+              options={COLOR_MAPS}
+              onChange={(colorMap) => onChange({ colorMap })}
+            />
+          ) : (
+            <>
+              <ColorField
+                label="Gradient start"
+                value={gradient[0]}
+                onChange={(start) => onChange({ gradient: [start, gradient[1]] })}
+              />
+              <ColorField
+                label="Gradient end"
+                value={gradient[1]}
+                onChange={(end) => onChange({ gradient: [gradient[0], end] })}
+              />
+            </>
+          )}
+          <OptionalNumberField
+            label="Value min"
+            value={settings.valueMin}
+            onCommit={(valueMin) => onChange({ valueMin })}
+          />
+          <OptionalNumberField
+            label="Value max"
+            value={settings.valueMax}
+            onCommit={(valueMax) => onChange({ valueMax })}
+          />
+        </>
+      )}
+      <ToggleField
+        label="Stixel view"
+        value={!!settings.stixels}
+        onChange={(stixels) => onChange({ stixels })}
+      />
+    </>
+  );
+}
+
+/** Axes, arrows or a line, and covariance, as in Foxglove's pose, pose array and path settings. */
+function PoseFields({
+  type,
+  settings,
+  onChange,
+}: {
+  type: TopicLayerType;
+  settings: TopicSettings;
+  onChange: (patch: TopicSettings) => void;
+}) {
+  const poseType = settings.poseType ?? defaultPoseType(type);
+  const lists = type === 'path' || type === 'poses';
+  const gradient = settings.gradient ?? DEFAULT_PATH_GRADIENT;
+  return (
+    <>
+      <SelectField
+        label="Type"
+        value={poseType}
+        options={POSE_DISPLAY_TYPES.filter((option) => lists || option.value !== 'line')}
+        onChange={(value) => onChange({ poseType: value })}
+      />
+      {poseType === 'axis' && (
+        <NumberField
+          label="Scale"
+          value={settings.axisScale ?? 1}
+          min={0.01}
+          step={0.1}
+          onCommit={(axisScale) => onChange({ axisScale })}
+        />
+      )}
+      {poseType === 'arrow' && (
+        <>
+          <ColorField
+            label="Color"
+            value={settings.color ?? '#a78bfa'}
+            onChange={(color) => onChange({ color })}
+          />
+          {(
+            [
+              ['shaftLength', 'Shaft length'],
+              ['shaftWidth', 'Shaft width'],
+              ['headLength', 'Head length'],
+              ['headWidth', 'Head width'],
+            ] as const
+          ).map(([key, label]) => (
+            <NumberField
+              key={key}
+              label={label}
+              value={settings[key] ?? DEFAULT_ARROW[key]}
+              min={0.001}
+              step={0.01}
+              onCommit={(value) => onChange({ [key]: value })}
+            />
+          ))}
+        </>
+      )}
+      {poseType === 'line' && (
+        <>
+          <NumberField
+            label="Line width"
+            value={settings.lineWidth ?? 0.05}
+            min={0.001}
+            step={0.01}
+            onCommit={(lineWidth) => onChange({ lineWidth })}
+          />
+          <ColorField
+            label="Gradient start"
+            value={gradient[0]}
+            onChange={(start) => onChange({ gradient: [start, gradient[1]] })}
+          />
+          <ColorField
+            label="Gradient end"
+            value={gradient[1]}
+            onChange={(end) => onChange({ gradient: [gradient[0], end] })}
+          />
+        </>
+      )}
+      <NumberField
+        label="Opacity"
+        value={settings.opacity ?? 1}
+        min={0}
+        max={1}
+        step={0.05}
+        onCommit={(opacity) => onChange({ opacity })}
+      />
+      {(type === 'posecov' || type === 'odometry') && (
+        <>
+          <ToggleField
+            label="Covariance"
+            value={settings.showCovariance ?? true}
+            onChange={(showCovariance) => onChange({ showCovariance })}
+          />
+          {(settings.showCovariance ?? true) && (
+            <ColorField
+              label="Covariance color"
+              value={settings.covarianceColor ?? DEFAULT_COVARIANCE_COLOR}
+              onChange={(covarianceColor) => onChange({ covarianceColor })}
+            />
+          )}
+        </>
+      )}
+    </>
+  );
+}
+
+/** Marker namespaces with visibility toggles, as in Foxglove's marker settings. */
+function NamespaceFields({
+  namespaces,
+  hidden,
+  onChange,
+}: {
+  namespaces: string[];
+  hidden: string[];
+  onChange: (hidden: string[]) => void;
+}) {
+  if (!namespaces.length) return null;
+  return (
+    <TreeSection
+      title={`Namespaces (${namespaces.length})`}
+      keywords={namespaces.join(' ')}
+      depth={2}
+      actions={[
+        { label: 'Show all', onSelect: () => onChange([]) },
+        { label: 'Hide all', onSelect: () => onChange(namespaces) },
+      ]}
+    >
+      {namespaces.map((ns) => (
+        <TreeSection
+          key={ns}
+          title={ns || '(no namespace)'}
+          depth={3}
+          visible={!hidden.includes(ns)}
+          onVisibleChange={(visible) =>
+            onChange(visible ? hidden.filter((name) => name !== ns) : [...hidden, ns])
+          }
+        />
+      ))}
+    </TreeSection>
+  );
+}
+
+/** Occupancy grid palette and placement, as in Foxglove's occupancy grid settings. */
+function MapFields({
+  settings,
+  onChange,
+}: {
+  settings: TopicSettings;
+  onChange: (patch: TopicSettings) => void;
+}) {
+  const mode = settings.mapColorMode ?? 'custom';
+  return (
+    <>
+      <SelectField
+        label="Color mode"
+        value={mode}
+        options={MAP_COLOR_MODES}
+        onChange={(mapColorMode) => onChange({ mapColorMode })}
+      />
+      {mode === 'custom' &&
+        (
+          [
+            ['minColor', 'Min color'],
+            ['maxColor', 'Max color'],
+            ['unknownColor', 'Unknown color'],
+            ['invalidColor', 'Invalid color'],
+          ] as const
+        ).map(([key, label]) => (
+          <ColorField
+            key={key}
+            label={label}
+            value={settings[key] ?? DEFAULT_MAP_COLORS[key]}
+            onChange={(color) => onChange({ [key]: color })}
+          />
+        ))}
+      <NumberField
+        label="Opacity"
+        value={settings.opacity ?? 1}
+        min={0}
+        max={1}
+        step={0.05}
+        onCommit={(opacity) => onChange({ opacity })}
+      />
+      <ToggleField
+        label="Frame lock"
+        value={!!settings.frameLocked}
+        onChange={(frameLocked) => onChange({ frameLocked })}
+      />
+      <ToggleField
+        label="Draw behind"
+        value={!!settings.drawBehind}
+        onChange={(drawBehind) => onChange({ drawBehind })}
       />
     </>
   );
@@ -151,10 +621,12 @@ function UrdfFields({
 function TopicFields({
   row,
   topics,
+  info,
   onChange,
 }: {
   row: TopicRow;
   topics: TopicInfo[];
+  info?: LayerInfo;
   onChange: (patch: TopicSettings) => void;
 }) {
   const { type, settings } = row;
@@ -164,13 +636,21 @@ function TopicFields({
         options={{ ...DEFAULT_URDF_OPTIONS, ...settings }}
         onChange={onChange}
         topics={topics}
+        info={info}
       />
     );
-  const hasColor = !['map', 'marker', 'markers'].includes(type);
-  const hasSize = !['map', 'marker', 'markers'].includes(type);
-  const hasPoints = !['map', 'camera'].includes(type);
+  const points = type === 'pointcloud' || type === 'scan';
+  const poses = POSE_TYPES.includes(type);
+  const styled = points || poses || type === 'map';
+  const hasColor = type === 'camera';
+  const hasSize = type === 'camera';
+  // Point limit bounds points, markers and pose lists; single poses have nothing to limit.
+  const hasPoints = !['map', 'camera', 'pose', 'posecov', 'odometry'].includes(type);
   return (
     <>
+      {points && <PointFields type={type} settings={settings} info={info} onChange={onChange} />}
+      {type === 'map' && <MapFields settings={settings} onChange={onChange} />}
+      {poses && <PoseFields type={type} settings={settings} onChange={onChange} />}
       {type === 'camera' && (
         <TreeField label="Image topic">
           <TopicInput
@@ -190,23 +670,19 @@ function TopicFields({
           onChange={(color) => onChange({ color })}
         />
       )}
-      <NumberField
-        label="Opacity"
-        value={settings.opacity ?? 1}
-        min={0}
-        max={1}
-        step={0.05}
-        onCommit={(opacity) => onChange({ opacity })}
-      />
+      {!styled && (
+        <NumberField
+          label="Opacity"
+          value={settings.opacity ?? 1}
+          min={0}
+          max={1}
+          step={0.05}
+          onCommit={(opacity) => onChange({ opacity })}
+        />
+      )}
       {hasSize && (
         <NumberField
-          label={
-            type === 'camera'
-              ? 'Image distance (m)'
-              : type === 'pointcloud' || type === 'scan'
-                ? 'Point size (m)'
-                : 'Arrow size (m)'
-          }
+          label="Image distance (m)"
           value={settings.size ?? defaultLayerSize(type)}
           min={0.001}
           step={0.01}
@@ -240,6 +716,13 @@ function TopicFields({
           min={0.5}
           step={0.5}
           onCommit={(staleAfter) => onChange({ staleAfter })}
+        />
+      )}
+      {(type === 'marker' || type === 'markers') && (
+        <NamespaceFields
+          namespaces={info?.namespaces ?? []}
+          hidden={settings.hiddenNamespaces ?? []}
+          onChange={(hiddenNamespaces) => onChange({ hiddenNamespaces })}
         />
       )}
     </>
@@ -308,10 +791,12 @@ function GridFields({
 function UrdfLayerFields({
   layer,
   topics,
+  info,
   onChange,
 }: {
   layer: UrdfLayerConfig;
   topics: TopicInfo[];
+  info?: LayerInfo;
   onChange: (patch: Partial<UrdfLayerConfig>) => void;
 }) {
   return (
@@ -359,7 +844,7 @@ function UrdfLayerFields({
           />
         </TreeField>
       )}
-      <UrdfFields options={layer} onChange={onChange} topics={topics} />
+      <UrdfFields options={layer} onChange={onChange} topics={topics} info={info} />
     </>
   );
 }
@@ -374,6 +859,7 @@ export default function SceneSettings({
   fixedFrame,
   displayFrame,
   statuses,
+  layerInfo = {},
   onReloadRobots,
 }: {
   config: SceneConfig;
@@ -385,6 +871,8 @@ export default function SceneSettings({
   fixedFrame: string;
   displayFrame: string;
   statuses: Record<string, LayerStatus>;
+  /** What each layer's latest messages hold (fields, namespaces, joints), by layer id. */
+  layerInfo?: Record<string, LayerInfo>;
   /** Clear cached robot meshes and load every robot model again. */
   onReloadRobots: () => void;
 }) {
@@ -697,6 +1185,7 @@ export default function SceneSettings({
               <TopicFields
                 row={row}
                 topics={topics}
+                info={layerInfo[`topic:${row.topic}`]}
                 onChange={(patch) => updateTopic(row, patch)}
               />
               {row.visible && <StatusLine status={status} />}
@@ -747,6 +1236,7 @@ export default function SceneSettings({
                 <UrdfLayerFields
                   layer={layer}
                   topics={topics}
+                  info={layerInfo[`layer:${layer.id}`]}
                   onChange={(patch) => updateLayer(layer.id, patch)}
                 />
               )}

@@ -176,10 +176,10 @@ The main application container that manages:
 
 ### 3. Widget System
 
-Draggable, resizable widgets powered by:
+Panels tile the workspace like Foxglove's layout, powered by:
 
-- `react-grid-layout`
-- Persistent layout storage
+- `react-mosaic-component`: a split tree (`src/lib/layout/mosaic.ts`); drag a panel's header onto an edge of another panel to split it, drag dividers to resize
+- Persistent layout storage (grid layouts from MITI 2.x are converted on load)
 - Widget-specific configurations
 
 ### 4. Visualization Components

@@ -2,11 +2,18 @@
  * 3D Scene panel settings, grouped like Foxglove's 3D panel so its users find the same controls.
  * Stored as the `urdf-viewer` widget's props (the widget type name predates the scene).
  */
-import type { LayerType } from './scene';
+import type {
+  LayerType,
+  MapDisplaySettings,
+  MarkerDisplaySettings,
+  PointDisplaySettings,
+  PoseDisplaySettings,
+} from './scene';
 
 export type FollowMode = 'pose' | 'position' | 'fixed';
 export type UrdfSource = 'topic' | 'url' | 'filePath' | 'parameter';
 export type UrdfDisplayMode = 'auto' | 'visual' | 'collision';
+export type UrdfControlMode = 'jointStates' | 'manual';
 export type PublishType = 'point' | 'pose' | 'pose_estimate';
 export type Vec3Tuple = [number, number, number];
 /** Renderable topic kinds: the scene layer types plus robot descriptions. */
@@ -66,9 +73,25 @@ export interface UrdfOptions {
   color: string;
   meshBaseUrl: string;
   packageMapping: Record<string, string>;
+  /** Joint states follows the joint states topic (and TF); manual uses `manualJoints`. */
+  controlMode: UrdfControlMode;
+  /** Joint positions for manual control, by joint name. */
+  manualJoints: Record<string, number>;
+  opacity: number;
+  showOutlines: boolean;
+  /** Draw each link's axes. */
+  showAxis: boolean;
+  axisScale: number;
+  hiddenLinks: string[];
 }
 
-export interface TopicSettings extends Partial<UrdfOptions> {
+export interface TopicSettings
+  extends
+    Partial<UrdfOptions>,
+    PointDisplaySettings,
+    MapDisplaySettings,
+    PoseDisplaySettings,
+    MarkerDisplaySettings {
   visible?: boolean;
   /** Last known kind, so the topic still renders before the topic list arrives. */
   type?: TopicLayerType;
@@ -141,6 +164,13 @@ export const DEFAULT_URDF_OPTIONS: UrdfOptions = {
   color: '',
   meshBaseUrl: '',
   packageMapping: {},
+  controlMode: 'jointStates',
+  manualJoints: {},
+  opacity: 1,
+  showOutlines: false,
+  showAxis: false,
+  axisScale: 1,
+  hiddenLinks: [],
 };
 
 export const DEFAULT_VIEW: ViewSettings = {

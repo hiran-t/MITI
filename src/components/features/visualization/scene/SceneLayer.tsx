@@ -6,9 +6,15 @@ import { useTopic } from '@/hooks/useTopic';
 import type { BridgeClient } from '@/lib/bridge/client';
 import type { TopicInfo } from '@/lib/bridge/types';
 import { topicTypeMismatch } from '@/lib/bridge/topics';
-import { parsePointCloud2 } from '@/lib/parsers/pointcloud-parser';
+import { readPointCloud, type PointData } from '@/lib/parsers/pointcloud-parser';
 import {
-  laserPoints,
+  autoPointColors,
+  DEFAULT_GRADIENT,
+  DEFAULT_MAP_COLORS,
+  occupancyPalette,
+} from '@/lib/scene/colors';
+import {
+  laserCloud,
   messageTransform,
   occupancyPixels,
   poseMatrix,
@@ -23,10 +29,20 @@ import {
   type Pose,
   type Marker,
   type LayerStatus,
+  type PoseDisplayType,
 } from '@/types/scene';
 import type { sensor_msgs } from '@/types/ros-messages';
 import type { TFTree } from '@/types/tf-messages';
-import { Cloud, PoseArrow, MapPlane } from './Primitives';
+import { MapPlane } from './Primitives';
+import {
+  CovarianceEllipsoid,
+  DEFAULT_ARROW,
+  DEFAULT_COVARIANCE_COLOR,
+  DEFAULT_PATH_GRADIENT,
+  PoseList,
+  type PoseStyle,
+} from './PoseShapes';
+import PointsLayer from './PointsLayer';
 import MarkerShape from './MarkerShape';
 import CameraLayer, { cameraCorners, type CameraInfo } from './CameraLayer';
 
@@ -53,6 +69,44 @@ const EMPTY_TOPICS: TopicInfo[] = [];
 // Sensor streams can exceed what the main thread can parse and render; ~10 Hz with the newest
 // message winning keeps the scene live. Markers must not be dropped.
 const HEAVY_TOPIC = { throttleRate: 100 };
+/** What the latest messages hold, for the topic's settings. */
+export interface LayerInfo {
+  /** Point cloud and laser scan fields. */
+  fields?: string[];
+  hasColors?: boolean;
+  /** Marker namespaces seen so far. */
+  namespaces?: string[];
+  /** Movable joints of a robot model, with their current positions. */
+  joints?: JointInfo[];
+  /** Link names of a robot model. */
+  links?: string[];
+}
+export interface JointInfo {
+  name: string;
+  type: string;
+  lower: number;
+  upper: number;
+  value: number;
+}
+
+/** Poses default to axes, pose arrays and odometry to arrows, and paths to a line, as in Foxglove. */
+export const defaultPoseType = (type: string): PoseDisplayType =>
+  type === 'path' ? 'line' : type === 'poses' || type === 'odometry' ? 'arrow' : 'axis';
+
+function poseStyle(layer: SceneLayerConfig): PoseStyle {
+  return {
+    type: layer.poseType ?? defaultPoseType(layer.type),
+    axisScale: layer.axisScale ?? 1,
+    color: layer.color ?? '#a78bfa',
+    opacity: layer.opacity ?? 1,
+    shaftLength: layer.shaftLength ?? DEFAULT_ARROW.shaftLength,
+    shaftWidth: layer.shaftWidth ?? DEFAULT_ARROW.shaftWidth,
+    headLength: layer.headLength ?? DEFAULT_ARROW.headLength,
+    headWidth: layer.headWidth ?? DEFAULT_ARROW.headWidth,
+    lineWidth: layer.lineWidth ?? 0.05,
+    gradient: layer.gradient ?? DEFAULT_PATH_GRADIENT,
+  };
+}
 export default function SceneLayer({
   layer,
   client,
@@ -64,6 +118,7 @@ export default function SceneLayer({
   packages = EMPTY_PACKAGES,
   topics = EMPTY_TOPICS,
   onFrame,
+  onInfo,
 }: {
   layer: SceneLayerConfig;
   client: BridgeClient | null;
@@ -76,6 +131,7 @@ export default function SceneLayer({
   topics?: TopicInfo[];
   /** Reports the frame_id of incoming messages, e.g. to choose a fixed frame without TF. */
   onFrame?: (frameId: string) => void;
+  onInfo?: (id: string, info: LayerInfo) => void;
 }) {
   const { data, lastUpdate } = useTopic<unknown>(
     layer.enabled ? client : null,
@@ -158,34 +214,59 @@ export default function SceneLayer({
     });
     if (changed) setMarkers(next);
   }, [tree, markers, fixedFrame, sync]);
-  const decoded = useMemo(() => {
+  const {
+    mapColorMode = 'custom',
+    minColor = DEFAULT_MAP_COLORS.minColor,
+    maxColor = DEFAULT_MAP_COLORS.maxColor,
+    unknownColor = DEFAULT_MAP_COLORS.unknownColor,
+    invalidColor = DEFAULT_MAP_COLORS.invalidColor,
+  } = layer;
+  const palette = useMemo(
+    () =>
+      occupancyPalette({ colorMode: mapColorMode, minColor, maxColor, unknownColor, invalidColor }),
+    [mapColorMode, minColor, maxColor, unknownColor, invalidColor]
+  );
+  const namespacesKey = useMemo(
+    () =>
+      Array.from(new Set(Array.from(markers.values(), (entry) => entry.marker.ns)))
+        .sort()
+        .join('\n'),
+    [markers]
+  );
+  useEffect(() => {
+    if (namespacesKey) onInfo?.(layer.id, { namespaces: namespacesKey.split('\n') });
+  }, [namespacesKey, layer.id, onInfo]);
+  const decoded = useMemo((): { error: string; points?: PointData; pixels?: Uint8Array } => {
     try {
       if (!data) return { error: '' };
       const max = Math.max(1, Math.min(layer.maxPoints ?? 100000, 1000000));
-      if (layer.type === 'pointcloud') {
-        const points = parsePointCloud2(data as sensor_msgs.PointCloud2, max);
-        return {
-          error: '',
-          positions: points.flatMap((p) => [p.x, p.y, p.z]),
-          colors: points.some((p) => p.r !== undefined)
-            ? points.flatMap((p) => [p.r ?? 1, p.g ?? 1, p.b ?? 1])
-            : undefined,
-        };
-      }
+      if (layer.type === 'pointcloud')
+        return { error: '', points: readPointCloud(data as sensor_msgs.PointCloud2, max) };
       if (layer.type === 'scan')
-        return {
-          error: '',
-          positions: laserPoints(data as Parameters<typeof laserPoints>[0], max),
-        };
+        return { error: '', points: laserCloud(data as Parameters<typeof laserCloud>[0], max) };
       if (layer.type === 'map') {
         const msg = data as { info: { width: number; height: number }; data: number[] | string };
-        return { error: '', pixels: occupancyPixels(msg.info.width, msg.info.height, msg.data) };
+        return {
+          error: '',
+          pixels: occupancyPixels(msg.info.width, msg.info.height, msg.data, palette),
+        };
       }
       return { error: '' };
     } catch (error) {
       return { error: error instanceof Error ? error.message : 'Invalid message' };
     }
-  }, [data, layer.type, layer.maxPoints]);
+  }, [data, layer.type, layer.maxPoints, palette]);
+  const fieldsKey = decoded.points
+    ? `${decoded.points.hasColors}:${decoded.points.fields.join(',')}`
+    : '';
+  useEffect(() => {
+    if (!fieldsKey) return;
+    const [hasColors, fields] = fieldsKey.split(':');
+    onInfo?.(layer.id, {
+      fields: fields ? fields.split(',') : [],
+      hasColors: hasColors === 'true',
+    });
+  }, [fieldsKey, layer.id, onInfo]);
   const prepared = useMemo(() => {
     if (!layer.enabled || !client || !data) return { node: null, error: '', empty: false };
     const color = layer.color ?? '#a78bfa',
@@ -195,7 +276,10 @@ export default function SceneLayer({
     try {
       if (decoded.error) throw new Error(decoded.error);
       if (layer.type === 'marker' || layer.type === 'markers') {
-        const active = Array.from(markers.values()).filter((entry) => entry.expires > now);
+        const hidden = layer.hiddenNamespaces ?? [];
+        const active = Array.from(markers.values()).filter(
+          (entry) => entry.expires > now && !hidden.includes(entry.marker.ns)
+        );
         if (active.length > 5000) throw new Error('Marker layer exceeds 5,000 entities');
         const errors: string[] = [];
         const children = active.map(({ marker, matrix }, index) => {
@@ -232,24 +316,45 @@ export default function SceneLayer({
         return { node: <>{children}</>, error: errors[0] ?? '', empty: active.length === 0 };
       }
       const header = (data as { header: Header }).header;
-      const matrix = messageTransform(tree, fixedFrame, header, sync);
+      // A frame-locked grid follows its frame's latest transform.
+      const matrix = messageTransform(
+        tree,
+        fixedFrame,
+        header,
+        layer.type === 'map' && layer.frameLocked ? false : sync
+      );
       let child: ReactNode = null,
         empty = false;
       switch (layer.type) {
         case 'pointcloud':
         case 'scan': {
-          const positions = decoded.positions ?? [];
-          empty = !positions.length;
-          child = (
-            <Cloud
-              positions={positions}
-              colors={decoded.colors}
-              size={size}
-              color={color}
-              opacity={opacity}
-            />
-          );
-          break;
+          const points = decoded.points!;
+          const auto = autoPointColors(points.fields, points.hasColors);
+          return {
+            node: (
+              <PointsLayer
+                key={`${fixedFrame}:${sync}`}
+                points={points}
+                matrix={matrix}
+                decayTime={layer.decayTime ?? 0}
+                style={{
+                  pointSize: layer.pointSize ?? 2,
+                  pointShape: layer.pointShape ?? 'circle',
+                  opacity,
+                  stixels: !!layer.stixels,
+                  colorMode: layer.colorMode ?? auto.colorMode,
+                  color,
+                  colorField: layer.colorField ?? auto.colorField,
+                  colorMap: layer.colorMap ?? 'turbo',
+                  gradient: layer.gradient ?? DEFAULT_GRADIENT,
+                  valueMin: layer.valueMin,
+                  valueMax: layer.valueMax,
+                }}
+              />
+            ),
+            error: '',
+            empty: !points.count,
+          };
         }
         case 'map': {
           const msg = data as {
@@ -267,63 +372,55 @@ export default function SceneLayer({
               resolution={resolution}
               matrix={poseMatrix(origin)}
               opacity={opacity}
+              drawBehind={!!layer.drawBehind}
             />
           );
           break;
         }
-        case 'path': {
-          const poses = (data as { poses: { header: Header; pose: Pose }[] }).poses;
-          if (!Array.isArray(poses)) throw new Error('Invalid Path');
-          if (poses.length > max) throw new Error(`Path exceeds ${max} poses`);
-          const points = poses.map((p) => {
-            const local = p.header?.frame_id
-              ? messageTransform(tree, fixedFrame, p.header, sync)
-              : matrix;
-            return new THREE.Vector3(...xyz(p.pose.position)).applyMatrix4(local);
-          });
-          empty = !points.length;
-          return {
-            node:
-              points.length > 1 ? (
-                <Line
-                  points={points}
-                  color={color}
-                  lineWidth={Math.max(1, size * 100)}
-                  transparent
-                  opacity={opacity}
-                />
-              ) : null,
-            error: '',
-            empty,
-          };
-        }
+        case 'path':
         case 'pose':
+        case 'posecov':
         case 'poses':
         case 'odometry': {
-          const poses =
-            layer.type === 'poses'
-              ? (data as { poses: Pose[] }).poses
-              : layer.type === 'odometry'
-                ? [(data as { pose: { pose: Pose } }).pose.pose]
-                : [(data as { pose: Pose }).pose];
-          if (!Array.isArray(poses)) throw new Error('Invalid poses');
-          if (poses.length > max) throw new Error(`Pose array exceeds ${max} poses`);
-          poses.forEach(poseMatrix);
-          empty = !poses.length;
-          child = (
-            <>
-              {poses.map((pose, i) => (
-                <PoseArrow
-                  key={i}
-                  pose={pose}
-                  size={layer.size ?? 0.5}
-                  color={color}
-                  opacity={opacity}
-                />
-              ))}
-            </>
-          );
-          break;
+          const msg = data as {
+            poses?: (Pose | { header: Header; pose: Pose })[];
+            pose?: Pose | { pose: Pose; covariance: ArrayLike<number> };
+          };
+          const withCovariance = layer.type === 'odometry' || layer.type === 'posecov';
+          const stamped = layer.type === 'path';
+          const list = stamped || layer.type === 'poses' ? msg.poses : null;
+          if (list !== null && !Array.isArray(list)) throw new Error('Invalid pose list');
+          if (list && list.length > max) throw new Error(`Message exceeds ${max} poses`);
+          const poses: Pose[] = list
+            ? list.map((p) => (stamped ? (p as { pose: Pose }).pose : (p as Pose)))
+            : [withCovariance ? (msg.pose as { pose: Pose }).pose : (msg.pose as Pose)];
+          // Path poses carry their own headers; each is placed in its own frame when set.
+          const matrices = poses.map((pose, i) => {
+            const own = stamped ? (list![i] as { header?: Header }).header : undefined;
+            const base = own?.frame_id ? messageTransform(tree, fixedFrame, own, sync) : matrix;
+            return base.clone().multiply(poseMatrix(pose));
+          });
+          const covariance = withCovariance
+            ? (msg.pose as { covariance: ArrayLike<number> }).covariance
+            : undefined;
+          return {
+            node: (
+              <>
+                <PoseList matrices={matrices} style={poseStyle(layer)} />
+                {covariance && (layer.showCovariance ?? true) && (
+                  <group matrix={matrix} matrixAutoUpdate={false}>
+                    <CovarianceEllipsoid
+                      position={new THREE.Vector3(...xyz(poses[0].position))}
+                      covariance={covariance}
+                      color={layer.covarianceColor ?? DEFAULT_COVARIANCE_COLOR}
+                    />
+                  </group>
+                )}
+              </>
+            ),
+            error: '',
+            empty: !poses.length,
+          };
         }
         case 'camera': {
           cameraCorners(data as CameraInfo, layer.size ?? 1);

@@ -181,3 +181,131 @@ function readField(
       return 0;
   }
 }
+
+/** Points of a cloud or scan in their message frame, with the fields that can color them. */
+export interface PointData {
+  count: number;
+  /** x, y, z per point. */
+  positions: Float32Array;
+  /** Numeric fields a color map or gradient can use. */
+  fields: string[];
+  /** Whether the message carries per-point colors. */
+  hasColors: boolean;
+  /** One value per point, or undefined when the message has no such field. */
+  values(field: string): Float32Array | undefined;
+  /**
+   * r, g, b, a (0–1) per point from packed `rgb`/`rgba` or separate r/g/b/a fields. Packed alpha
+   * is read as stored; RGB color mode ignores it, as many drivers leave it 0.
+   */
+  colors(): Float32Array | undefined;
+}
+
+const COLOR_FIELDS = ['rgb', 'rgba', 'r', 'g', 'b', 'a'];
+
+/**
+ * Reads a PointCloud2 without building an object per point: positions are read up front and
+ * other fields only when a color mode needs them. Points with non-finite coordinates are skipped.
+ */
+export function readPointCloud(msg: sensor_msgs.PointCloud2, maxPoints = 200000): PointData {
+  const empty: PointData = {
+    count: 0,
+    positions: new Float32Array(0),
+    fields: [],
+    hasColors: false,
+    values: () => undefined,
+    colors: () => undefined,
+  };
+  const pointStep = msg.point_step;
+  if (
+    !Number.isInteger(msg.width) ||
+    !Number.isInteger(msg.height) ||
+    msg.width < 0 ||
+    msg.height < 0 ||
+    !Number.isInteger(pointStep) ||
+    pointStep <= 0
+  )
+    throw new Error('Invalid point cloud dimensions');
+  const fields = new Map<string, { offset: number; datatype: number }>();
+  for (const field of msg.fields ?? []) {
+    const type = POINTFIELD_DATATYPES[field.datatype];
+    if (!type || field.offset < 0 || field.offset + type.size > pointStep)
+      throw new Error('Invalid point field');
+    fields.set(field.name, { offset: field.offset, datatype: field.datatype });
+  }
+  for (const axis of ['x', 'y', 'z'])
+    if (!fields.has(axis)) throw new Error(`Missing ${axis} field`);
+  const hasColors =
+    fields.has('rgb') || fields.has('rgba') || ['r', 'g', 'b'].every((c) => fields.has(c));
+  if (!msg.data || msg.data.length === 0)
+    return { ...empty, fields: numericFields(fields), hasColors };
+
+  const buffer = decodeBytes(msg.data);
+  const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+  const total = msg.width * msg.height;
+  const rowStep = msg.row_step || msg.width * pointStep;
+  if (rowStep < msg.width * pointStep || buffer.length < rowStep * msg.height)
+    throw new Error('Point cloud buffer is truncated');
+  const littleEndian = !msg.is_bigendian;
+  const read = (offset: number, datatype: number) =>
+    readField(view, offset, datatype, msg.is_bigendian);
+
+  const stride = Math.max(1, Math.ceil(total / Math.max(1, maxPoints)));
+  const capacity = Math.ceil(total / stride);
+  const positions = new Float32Array(capacity * 3);
+  const offsets = new Uint32Array(capacity);
+  const [fx, fy, fz] = ['x', 'y', 'z'].map((axis) => fields.get(axis)!);
+  let count = 0;
+  for (let i = 0; i < total; i += stride) {
+    const base = Math.floor(i / msg.width) * rowStep + (i % msg.width) * pointStep;
+    const x = read(base + fx.offset, fx.datatype);
+    const y = read(base + fy.offset, fy.datatype);
+    const z = read(base + fz.offset, fz.datatype);
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) continue;
+    positions[count * 3] = x;
+    positions[count * 3 + 1] = y;
+    positions[count * 3 + 2] = z;
+    offsets[count++] = base;
+  }
+
+  return {
+    count,
+    positions: positions.subarray(0, count * 3),
+    fields: numericFields(fields),
+    hasColors,
+    values(name) {
+      const field = fields.get(name);
+      if (!field) return undefined;
+      const out = new Float32Array(count);
+      for (let i = 0; i < count; i++) out[i] = read(offsets[i] + field.offset, field.datatype);
+      return out;
+    },
+    colors() {
+      const packed = fields.get('rgba') ?? fields.get('rgb');
+      const out = new Float32Array(count * 4);
+      if (packed) {
+        if (packed.offset + 4 > pointStep) throw new Error('Invalid packed color field');
+        for (let i = 0; i < count; i++) {
+          const v = view.getUint32(offsets[i] + packed.offset, littleEndian);
+          out[i * 4] = ((v >>> 16) & 0xff) / 255;
+          out[i * 4 + 1] = ((v >>> 8) & 0xff) / 255;
+          out[i * 4 + 2] = (v & 0xff) / 255;
+          out[i * 4 + 3] = ((v >>> 24) & 0xff) / 255;
+        }
+        return out;
+      }
+      const channels = ['r', 'g', 'b', 'a'].map((name) => fields.get(name));
+      if (!channels[0] || !channels[1] || !channels[2]) return undefined;
+      channels.forEach((field, c) => {
+        // 8-bit channels hold 0–255; float channels already hold 0–1.
+        const scale = field && field.datatype <= 2 ? 1 / 255 : 1;
+        for (let i = 0; i < count; i++)
+          out[i * 4 + c] = field ? read(offsets[i] + field.offset, field.datatype) * scale : 1;
+      });
+      return out;
+    },
+  };
+}
+
+function numericFields(fields: Map<string, unknown>) {
+  return Array.from(fields.keys()).filter((name) => !COLOR_FIELDS.includes(name));
+}

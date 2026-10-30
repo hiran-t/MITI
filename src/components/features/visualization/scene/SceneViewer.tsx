@@ -28,7 +28,7 @@ import {
 } from '@/types/scene-config';
 import { visualizationStyles } from '@/styles';
 import SceneCanvas, { type RenderStats } from './SceneCanvas';
-import SceneLayer from './SceneLayer';
+import SceneLayer, { type LayerInfo } from './SceneLayer';
 import RobotLayer from './RobotLayer';
 import GridLayer from './GridLayer';
 import PublishTool, { type PublishTarget } from './PublishTool';
@@ -95,6 +95,12 @@ export default function SceneViewer({
           ? previous
           : { ...previous, [id]: status }
       ),
+    []
+  );
+  const [layerInfo, setLayerInfo] = useState<Record<string, LayerInfo>>({});
+  const reportInfo = useCallback(
+    (id: string, info: LayerInfo) =>
+      setLayerInfo((previous) => ({ ...previous, [id]: { ...previous[id], ...info } })),
     []
   );
   const reportFrame = useCallback(
@@ -173,6 +179,8 @@ export default function SceneViewer({
       ? findTopicType(topics, row.settings.imageTopic)
       : undefined;
     return {
+      // Point and map display settings pass through unchanged.
+      ...row.settings,
       id: `topic:${row.topic}`,
       type: row.type as LayerType,
       topic: row.topic,
@@ -292,6 +300,7 @@ export default function SceneViewer({
                 tree={tfTree}
                 fixedFrame={fixedFrame}
                 onStatus={reportStatus}
+                onInfo={reportInfo}
                 reloadKey={meshEpoch}
               />
             )
@@ -309,6 +318,7 @@ export default function SceneViewer({
                 tree={tfTree}
                 fixedFrame={fixedFrame}
                 onStatus={reportStatus}
+                onInfo={reportInfo}
                 reloadKey={meshEpoch}
                 unlisted={!row.published && topics.length > 0}
               />
@@ -323,6 +333,7 @@ export default function SceneViewer({
                 onStatus={reportStatus}
                 topics={topics}
                 onFrame={reportFrame}
+                onInfo={reportInfo}
               />
             ) : null
           )}
@@ -382,6 +393,7 @@ export default function SceneViewer({
           fixedFrame={fixedFrame}
           displayFrame={displayFrame}
           statuses={statuses}
+          layerInfo={layerInfo}
           onReloadRobots={reloadRobots}
         />
       </WidgetSettingsPortal>

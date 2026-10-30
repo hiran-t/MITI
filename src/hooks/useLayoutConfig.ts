@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import type ReactGridLayout from 'react-grid-layout';
 import {
   LayoutConfig,
   WidgetConfig,
@@ -11,10 +10,20 @@ import {
 } from '@/types/widget';
 import { DEFAULT_URDF_CONFIG } from '@/types/urdf-config';
 import { CAMERA_TOPICS } from '@/constants/ros-topics';
+import {
+  addToMosaic,
+  mosaicFromGrid,
+  removeFromMosaic,
+  syncMosaic,
+  type MosaicTree,
+} from '@/lib/layout/mosaic';
 
 const STORAGE_KEY = 'miti_layout_config';
 
-/** Preserve widget settings while bringing legacy geometry into the 12-column grid. */
+/**
+ * Preserve widget settings, clamp legacy grid geometry, and make sure the split tree holds every
+ * panel exactly once. Layouts saved before the split tree are converted from their grid.
+ */
 export function normalizeLayout(value: unknown): LayoutConfig {
   if (!value || typeof value !== 'object' || !('widgets' in value) || !Array.isArray(value.widgets))
     return DEFAULT_LAYOUT;
@@ -48,7 +57,18 @@ export function normalizeLayout(value: unknown): LayoutConfig {
         minH: Math.max(1, Math.min(Math.max(1, finite(widget.h, 8)), finite(widget.minH, 1))),
       };
     });
-  return { widgets };
+  const stored = (value as { mosaic?: unknown }).mosaic;
+  const mosaic =
+    stored !== undefined
+      ? (stored as MosaicTree | null)
+      : mosaicFromGrid(widgets.map(({ i, x, y, w, h }) => ({ id: i, x, y, w, h })));
+  return {
+    widgets,
+    mosaic: syncMosaic(
+      mosaic,
+      widgets.map((widget) => widget.i)
+    ),
+  };
 }
 
 /**
@@ -73,6 +93,7 @@ export function useLayoutConfig() {
           /* Keep defaults when legacy settings cannot be read. */
         }
         setLayout({
+          mosaic: restored.mosaic,
           widgets: restored.widgets.map((widget) =>
             widget.type === 'urdf-viewer' && !widget.props
               ? { ...widget, props: { ...legacy } }
@@ -107,8 +128,9 @@ export function useLayoutConfig() {
     }));
   }, []);
 
+  /** Adds a panel beside `beside` (e.g. the selected panel), or beside the whole layout. */
   const addWidget = useCallback(
-    (type: WidgetType) => {
+    (type: WidgetType, beside?: string | null) => {
       const widgetInfo = WIDGET_TYPES.find((w) => w.type === type);
       if (!widgetInfo) return;
 
@@ -144,8 +166,8 @@ export function useLayoutConfig() {
             : { ...base, type };
 
       setLayout((prev) => ({
-        ...prev,
         widgets: [...prev.widgets, newWidget],
+        mosaic: addToMosaic(prev.mosaic ?? null, newId, beside),
       }));
     },
     [layout.widgets]
@@ -153,28 +175,14 @@ export function useLayoutConfig() {
 
   const removeWidget = useCallback((widgetId: string) => {
     setLayout((prev) => ({
-      ...prev,
       widgets: prev.widgets.filter((w) => w.i !== widgetId),
+      mosaic: removeFromMosaic(prev.mosaic ?? null, widgetId),
     }));
   }, []);
 
-  const updateLayout = useCallback((newLayout: readonly ReactGridLayout.Layout[]) => {
-    setLayout((prev) => ({
-      ...prev,
-      widgets: prev.widgets.map((widget) => {
-        const layoutItem = newLayout.find((l) => l.i === widget.i);
-        if (layoutItem) {
-          return {
-            ...widget,
-            x: layoutItem.x,
-            y: layoutItem.y,
-            w: layoutItem.w,
-            h: layoutItem.h,
-          };
-        }
-        return widget;
-      }),
-    }));
+  /** Moving or resizing panels changes only the split tree. */
+  const updateMosaic = useCallback((mosaic: MosaicTree | null) => {
+    setLayout((prev) => ({ ...prev, mosaic }));
   }, []);
 
   const toggleLock = useCallback((widgetId: string) => {
@@ -194,7 +202,7 @@ export function useLayoutConfig() {
     updateWidget,
     addWidget,
     removeWidget,
-    updateLayout,
+    updateMosaic,
     resetLayout,
     toggleLock,
   };

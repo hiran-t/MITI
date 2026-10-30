@@ -83,3 +83,22 @@ test('a robot whose root has no transform is drawn at the fixed frame origin', (
   });
   expectMatrix(worldOf(robot, 'base_link'), new THREE.Matrix4());
 });
+
+test('manual control poses links from URDF joints even where TF exists', () => {
+  const robot = new URDFLoader().parse(URDF);
+  robot.setJointValues({ arm_joint: Math.PI / 2 });
+  const t = tree([
+    frame('base_link', 'odom', 1, 0, 0),
+    // TF says the arm is unrotated; manual control must ignore it.
+    frame('arm_link', 'base_link', 0, 0, 0.1),
+    frame('tool_link', 'arm_link', 0.6, 0, 0),
+  ]);
+  expect(placeLinks(robot, t, 'odom', '', false)).toEqual({
+    rootMissing: false,
+    missingLinks: 0,
+  });
+  const tool = new THREE.Vector3().setFromMatrixPosition(worldOf(robot, 'tool_link'));
+  expect(tool.x).toBeCloseTo(1);
+  expect(tool.y).toBeCloseTo(0.6);
+  expect(tool.z).toBeCloseTo(0.1);
+});

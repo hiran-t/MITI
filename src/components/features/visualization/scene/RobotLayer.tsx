@@ -14,6 +14,7 @@ import type { LayerStatus } from '@/types/scene';
 import type { UrdfOptions, UrdfSource } from '@/types/scene-config';
 import type { sensor_msgs } from '@/types/ros-messages';
 import { useSceneDisplay } from './SceneContext';
+import type { JointInfo, LayerInfo } from './SceneLayer';
 
 export interface RobotSource {
   source: UrdfSource;
@@ -120,6 +121,7 @@ export default function RobotLayer({
   onStatus,
   unlisted = false,
   reloadKey = 0,
+  onInfo,
 }: {
   id: string;
   label: string;
@@ -134,11 +136,14 @@ export default function RobotLayer({
   unlisted?: boolean;
   /** Changing it reloads the model, e.g. after the mesh cache was cleared. */
   reloadKey?: number;
+  /** Reports the model's joints (with positions, twice a second) and links for the settings. */
+  onInfo?: (id: string, info: LayerInfo) => void;
 }) {
   const display = useSceneDisplay();
   const { urdf, error: sourceError } = useRobotDescription(source, client, visible);
+  const manual = options.controlMode === 'manual';
   const { data: jointStates } = useTopic<sensor_msgs.JointState>(
-    visible ? client : null,
+    visible && !manual ? client : null,
     options.jointStatesTopic,
     'sensor_msgs/msg/JointState'
   );
@@ -146,6 +151,8 @@ export default function RobotLayer({
   const [parseError, setParseError] = useState('');
   const [meshErrors, setMeshErrors] = useState<string[]>([]);
   const [placement, setPlacement] = useState({ rootMissing: false, missingLinks: 0 });
+  // Meshes arrive one by one; styling is applied again as each lands.
+  const [meshVersion, setMeshVersion] = useState(0);
   const treeRef = useRef(tree);
   treeRef.current = tree;
   const colorRef = useRef(options.color);
@@ -183,6 +190,7 @@ export default function RobotLayer({
           if (!live) return disposeObject(mesh);
           if (colorRef.current) applyColor(mesh, colorRef.current);
           done(mesh);
+          setMeshVersion((version) => version + 1);
         })
         .catch((error) => {
           if (live) setMeshErrors((errors) => [...errors, meshErrorMessage(path, error)]);
@@ -191,7 +199,6 @@ export default function RobotLayer({
     };
     try {
       model = loader.parse(urdf);
-      applyDisplayMode(model, displayMode);
       setRobot(model);
     } catch (error) {
       setParseError(`Invalid URDF: ${error instanceof Error ? error.message : 'parse failed'}`);
@@ -217,21 +224,64 @@ export default function RobotLayer({
     if (robot && options.color) applyColor(robot, options.color);
   }, [robot, options.color]);
 
+  const {
+    opacity = 1,
+    showOutlines = false,
+    showAxis = false,
+    axisScale = 1,
+    hiddenLinks = NO_LINKS,
+    manualJoints = NO_JOINTS,
+  } = options;
   useEffect(() => {
-    if (!robot || !jointStates?.name) return;
+    if (robot)
+      styleRobot(robot, { opacity, showOutlines, showAxis, axisScale, hiddenLinks, displayMode });
+  }, [
+    robot,
+    meshVersion,
+    options.color,
+    opacity,
+    showOutlines,
+    showAxis,
+    axisScale,
+    hiddenLinks,
+    displayMode,
+  ]);
+
+  useEffect(() => {
+    if (robot && manual) robot.setJointValues(manualJoints);
+  }, [robot, manual, manualJoints]);
+
+  // Joints and links for the settings; positions are refreshed at a readable rate.
+  useEffect(() => {
+    if (!robot || !onInfo) return;
+    onInfo(id, { joints: jointInfo(robot), links: Object.keys(robot.links).sort() });
+    let last = '';
+    const timer = setInterval(() => {
+      const joints = jointInfo(robot);
+      const key = joints.map((joint) => joint.value.toFixed(3)).join(',');
+      if (key !== last) {
+        last = key;
+        onInfo(id, { joints });
+      }
+    }, 500);
+    return () => clearInterval(timer);
+  }, [robot, id, onInfo]);
+
+  useEffect(() => {
+    if (!robot || manual || !jointStates?.name) return;
     const values: Record<string, number> = {};
     jointStates.name.forEach((name, index) => {
       const position = jointStates.position?.[index];
       if (Number.isFinite(position)) values[name] = position;
     });
     robot.setJointValues(values);
-  }, [robot, jointStates]);
+  }, [robot, manual, jointStates]);
 
   // Follow TF every frame; report placement problems at most when they change.
   const lastPlacement = useRef('');
   useFrame(() => {
     if (!robot) return;
-    const result = placeLinks(robot, treeRef.current, fixedFrame, options.framePrefix);
+    const result = placeLinks(robot, treeRef.current, fixedFrame, options.framePrefix, !manual);
     const key = `${result.rootMissing}:${result.missingLinks}`;
     if (key !== lastPlacement.current) {
       lastPlacement.current = key;
@@ -299,31 +349,118 @@ export default function RobotLayer({
   return robot && visible ? <primitive object={robot} /> : null;
 }
 
+const NO_LINKS: string[] = [];
+const NO_JOINTS: Record<string, number> = {};
+const HELPER = '__miti_helper';
+const OUTLINE_MATERIAL = new THREE.LineBasicMaterial({
+  color: 0x000000,
+  transparent: true,
+  opacity: 0.6,
+});
+const edgeCache = new WeakMap<THREE.BufferGeometry, THREE.EdgesGeometry>();
+
+type UrdfNode = THREE.Object3D & {
+  isURDFLink?: boolean;
+  isURDFVisual?: boolean;
+  isURDFCollider?: boolean;
+  urdfName?: string;
+};
+
+function jointInfo(robot: URDFRobot): JointInfo[] {
+  return Object.values(robot.joints)
+    .filter((joint) => joint.jointType !== 'fixed')
+    .map((joint) => {
+      const bounded = joint.jointType !== 'continuous' && joint.limit.lower < joint.limit.upper;
+      return {
+        name: joint.urdfName,
+        type: joint.jointType,
+        lower: bounded ? joint.limit.lower : -Math.PI,
+        upper: bounded ? joint.limit.upper : Math.PI,
+        value: Number(joint.angle) || 0,
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * Foxglove's robot display options: per-link visibility, opacity, mesh outlines and link axes.
+ * Idempotent, so it can run again whenever a mesh loads or an option changes.
+ */
+function styleRobot(
+  robot: URDFRobot,
+  options: {
+    opacity: number;
+    showOutlines: boolean;
+    showAxis: boolean;
+    axisScale: number;
+    hiddenLinks: string[];
+    displayMode: UrdfOptions['displayMode'];
+  }
+) {
+  const helpers: THREE.Object3D[] = [];
+  robot.traverse((child) => child.name === HELPER && helpers.push(child));
+  helpers.forEach((helper) => {
+    helper.removeFromParent();
+    if (helper instanceof THREE.AxesHelper) helper.dispose();
+  });
+
+  const hidden = new Set(options.hiddenLinks);
+  const meshes: THREE.Mesh[] = [];
+  robot.traverse((child) => {
+    const link = child as UrdfNode;
+    if (!link.isURDFLink) return;
+    const show = !hidden.has(link.urdfName ?? '');
+    const parts = link.children as UrdfNode[];
+    const hasVisual = parts.some((part) => part.isURDFVisual);
+    parts.forEach((part) => {
+      if (part.isURDFVisual) part.visible = show;
+      if (part.isURDFCollider) {
+        part.visible =
+          show &&
+          (options.displayMode === 'collision' || (options.displayMode === 'auto' && !hasVisual));
+        part.traverse((mesh) => {
+          if (mesh instanceof THREE.Mesh) mesh.material = COLLISION_MATERIAL;
+        });
+      }
+      if (part.isURDFVisual)
+        part.traverse((mesh) => mesh instanceof THREE.Mesh && meshes.push(mesh));
+    });
+    if (options.showAxis && show) {
+      const axes = new THREE.AxesHelper(0.15 * options.axisScale);
+      axes.name = HELPER;
+      link.add(axes);
+    }
+  });
+
+  for (const mesh of meshes) {
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const material of materials) {
+      material.userData.baseOpacity ??= material.opacity;
+      material.userData.baseTransparent ??= material.transparent;
+      const transparent = material.userData.baseTransparent || options.opacity < 1;
+      if (material.transparent !== transparent) material.needsUpdate = true;
+      material.transparent = transparent;
+      material.opacity = material.userData.baseOpacity * options.opacity;
+      material.depthWrite = options.opacity >= 1;
+    }
+    if (options.showOutlines) {
+      let edges = edgeCache.get(mesh.geometry);
+      if (!edges) {
+        edges = new THREE.EdgesGeometry(mesh.geometry, 40);
+        edgeCache.set(mesh.geometry, edges);
+      }
+      const outline = new THREE.LineSegments(edges, OUTLINE_MATERIAL);
+      outline.name = HELPER;
+      outline.raycast = () => {};
+      mesh.add(outline);
+    }
+  }
+}
+
 function applyColor(object: THREE.Object3D, color: string) {
   object.traverse((child) => {
     const collider = (child as THREE.Object3D & { isURDFCollider?: boolean }).isURDFCollider;
     if (child instanceof THREE.Mesh && !collider && child.material !== COLLISION_MATERIAL)
       child.material = new THREE.MeshStandardMaterial({ color });
-  });
-}
-
-/** Auto shows collision geometry only for links that have no visual geometry. */
-function applyDisplayMode(robot: URDFRobot, mode: UrdfOptions['displayMode']) {
-  robot.traverse((child) => {
-    const node = child as THREE.Object3D & { isURDFLink?: boolean; isURDFCollider?: boolean };
-    if (!node.isURDFLink) return;
-    const parts = node.children as (THREE.Object3D & {
-      isURDFVisual?: boolean;
-      isURDFCollider?: boolean;
-    })[];
-    const hasVisual = parts.some((part) => part.isURDFVisual);
-    parts
-      .filter((part) => part.isURDFCollider)
-      .forEach((collider) => {
-        collider.visible = mode === 'collision' || (mode === 'auto' && !hasVisual);
-        collider.traverse((mesh) => {
-          if (mesh instanceof THREE.Mesh) mesh.material = COLLISION_MATERIAL;
-        });
-      });
   });
 }

@@ -45,7 +45,7 @@ Built with Next.js 14, React 18, and Three.js.
 
 **Dashboard**
 
-- Draggable, resizable widget grid layout
+- Foxglove-style tiled panels: drag a panel onto another panel's edge to split it, drag dividers to resize, and resize the sidebar
 - Persistent configuration saved in localStorage
 - Add/remove widgets on the fly
 - Configurable ROS topics per widget
@@ -143,6 +143,7 @@ miti/
 │   │   ├── dashboard/           #   Main dashboard
 │   │   ├── layout/              #   Grid layout, widget container
 │   │   ├── topic-viewer/        #   Topic list, cards, data display
+│   │   ├── logs/                #   Log panel (/rosout)
 │   │   └── visualization/       #   Camera, point cloud, URDF, TF, state machine
 │   ├── hooks/                   # React hooks (useBridge, useTopic, useTF, etc.)
 │   ├── lib/                     # Core libraries (foxglove_bridge client, parsers)

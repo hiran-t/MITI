@@ -331,29 +331,125 @@ export function ColorField({
   value,
   onChange,
   emptyLabel,
+  error,
 }: {
   label: string;
+  /** `#rrggbb`, or `#rrggbbaa` with alpha. */
   value: string;
   onChange: (value: string) => void;
   /** When set, the color can be cleared, e.g. to keep a model's own materials. */
   emptyLabel?: string;
+  error?: string;
 }) {
+  const [draft, setDraft] = useDraft(value, String);
+  const commit = () => {
+    const next = draft.trim().toLowerCase();
+    if (next === value) return;
+    if (!next && emptyLabel) return onChange('');
+    if (/^#([0-9a-f]{6}|[0-9a-f]{8})$/.test(next)) return onChange(next);
+    setDraft(value);
+  };
+  // The native picker has no alpha, so picking a color keeps the current alpha.
+  const alpha = value.length === 9 ? value.slice(7) : '';
   return (
-    <TreeField label={label}>
+    <TreeField label={label} error={error}>
       <span className="tree-color">
         <input
           aria-label={label}
           type="color"
-          value={value || '#ffffff'}
-          onChange={(e) => onChange(e.target.value)}
+          value={value ? value.slice(0, 7) : '#ffffff'}
+          onChange={(e) => onChange(e.target.value + alpha)}
         />
-        <span className="font-mono">{value || emptyLabel}</span>
+        <input
+          aria-label={`${label} hex`}
+          className="font-mono"
+          value={draft}
+          placeholder={emptyLabel}
+          spellCheck={false}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={commitKeys(commit, () => setDraft(value))}
+        />
         {emptyLabel && value && (
           <button type="button" className="tree-link" onClick={() => onChange('')}>
             Clear
           </button>
         )}
       </span>
+    </TreeField>
+  );
+}
+
+/** A range slider; disabled, it shows a value that is driven elsewhere (e.g. joint states). */
+export function SliderField({
+  label,
+  value,
+  min,
+  max,
+  step = 0.01,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  onChange: (value: number) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <TreeField label={label}>
+      <span className="tree-slider">
+        <input
+          type="range"
+          aria-label={label}
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          disabled={disabled}
+          onChange={(e) => onChange(Number(e.target.value))}
+        />
+        <span className="font-mono">{formatNumber(Number(value.toFixed(3)))}</span>
+      </span>
+    </TreeField>
+  );
+}
+
+/** A number that may be left empty, e.g. a range bound taken from the data when unset. */
+export function OptionalNumberField({
+  label,
+  value,
+  onCommit,
+  placeholder = 'auto',
+  error,
+}: {
+  label: string;
+  value: number | undefined;
+  onCommit: (value: number | undefined) => void;
+  placeholder?: string;
+  error?: string;
+}) {
+  const format = (v: number | undefined) => (v === undefined ? '' : formatNumber(v));
+  const [draft, setDraft] = useDraft(value, format);
+  const commit = () => {
+    const text = draft.trim();
+    const next = text === '' ? undefined : Number(text);
+    if (next !== undefined && !Number.isFinite(next)) return setDraft(format(value));
+    if (next !== value) onCommit(next);
+  };
+  return (
+    <TreeField label={label} error={error}>
+      <input
+        aria-label={label}
+        inputMode="decimal"
+        value={draft}
+        placeholder={placeholder}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={commitKeys(commit, () => setDraft(format(value)))}
+      />
     </TreeField>
   );
 }

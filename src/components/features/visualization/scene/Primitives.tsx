@@ -67,6 +67,7 @@ export function MapPlane({
   resolution,
   matrix,
   opacity,
+  drawBehind = false,
 }: {
   pixels: Uint8Array;
   width: number;
@@ -74,25 +75,39 @@ export function MapPlane({
   resolution: number;
   matrix: THREE.Matrix4;
   opacity: number;
+  /** Draw first and without depth testing, so everything else appears on top. */
+  drawBehind?: boolean;
 }) {
   const texture = useMemo(() => {
     const t = new THREE.DataTexture(new Uint8Array(pixels), width, height, THREE.RGBAFormat);
     t.magFilter = THREE.NearestFilter;
     t.minFilter = THREE.NearestFilter;
+    // Palette colors are sRGB, as picked in the settings.
+    t.colorSpace = THREE.SRGBColorSpace;
     t.needsUpdate = true;
     return t;
   }, [pixels, width, height]);
   useEffect(() => () => texture.dispose(), [texture]);
   return (
     <group matrix={matrix} matrixAutoUpdate={false}>
-      <mesh position={[(width * resolution) / 2, (height * resolution) / 2, 0]}>
+      <mesh
+        position={[(width * resolution) / 2, (height * resolution) / 2, 0]}
+        renderOrder={drawBehind ? -1 : 0}
+      >
         <planeGeometry args={[width * resolution, height * resolution]} />
+        {/* Drawn behind, the map joins the opaque pass (which renders first) but still blends. */}
         <meshBasicMaterial
+          key={String(drawBehind)}
           map={texture}
-          transparent
+          transparent={!drawBehind}
+          blending={drawBehind ? THREE.CustomBlending : THREE.NormalBlending}
+          blendSrc={THREE.SrcAlphaFactor}
+          blendDst={THREE.OneMinusSrcAlphaFactor}
           opacity={opacity}
           side={THREE.DoubleSide}
           depthWrite={false}
+          depthTest={!drawBehind}
+          toneMapped={false}
         />
       </mesh>
     </group>

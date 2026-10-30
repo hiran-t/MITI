@@ -29,14 +29,17 @@ const config: Config = {
 };
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async.
-// urdf-loader and the three.js loaders it imports ship untranspiled ES modules, so Jest transforms them.
+// These packages ship untranspiled ES modules, so Jest transforms them: urdf-loader and the
+// three.js loaders it imports, and the drag-and-drop backends react-mosaic-component uses.
 const jestConfig = createJestConfig(config);
 export default async () => {
   const resolved = await jestConfig();
   return {
     ...resolved,
     transformIgnorePatterns: (resolved.transformIgnorePatterns ?? []).map((pattern) =>
-      pattern === '/node_modules/' ? '/node_modules/(?!(urdf-loader|three/examples/jsm)/)' : pattern
+      pattern === '/node_modules/'
+        ? '/node_modules/(?!(urdf-loader|three/examples/jsm|react-dnd[^/]*|dnd-core|dnd-multi-backend|rdndmb-html5-to-touch|@react-dnd)/)'
+        : pattern
     ),
   };
 };

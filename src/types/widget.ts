@@ -5,6 +5,7 @@
 import type { URDFConfig } from './urdf-config';
 import type { SceneConfig } from './scene-config';
 import { CAMERA_TOPICS } from '@/constants/ros-topics';
+import { mosaicFromGrid, type MosaicTree } from '@/lib/layout/mosaic';
 
 // ─── Base ────────────────────────────────────────────────────────────────────
 
@@ -71,6 +72,23 @@ export interface LegacyURDFWidgetProps extends URDFConfig {
   syncTransforms?: boolean;
 }
 
+export interface LogWidgetProps {
+  /** Default `/rosout`. */
+  topic?: string;
+  minLevel?: import('@/lib/logs/log-messages').LogLevel;
+  /** Filter chips: each matches a node name or message text. */
+  searchTerms?: string[];
+  /** Node names whose messages are hidden. */
+  hiddenNames?: string[];
+  fontSize?: number;
+  showLevel?: boolean;
+  showDate?: boolean;
+  showTime?: boolean;
+  showTimezone?: boolean;
+  showName?: boolean;
+  showSource?: boolean;
+}
+
 // ─── Discriminated union variants ────────────────────────────────────────────
 
 export type TopicsWidgetConfig = WidgetBase & { type: 'topics' };
@@ -90,7 +108,10 @@ export type ButtonSwitchWidgetConfig = WidgetBase & {
   props?: ButtonSwitchWidgetProps;
 };
 
+export type LogWidgetConfig = WidgetBase & { type: 'log'; props?: LogWidgetProps };
+
 export type WidgetConfig =
+  | LogWidgetConfig
   | TopicsWidgetConfig
   | URDFWidgetConfig
   | PointCloudWidgetConfig
@@ -105,6 +126,11 @@ export type WidgetType = WidgetConfig['type'];
 
 export interface LayoutConfig {
   widgets: WidgetConfig[];
+  /**
+   * How panels tile the workspace, as in Foxglove: a split tree of panel ids. Widget x/y/w/h
+   * are the MITI 2.x grid positions, kept only to convert older layouts.
+   */
+  mosaic?: MosaicTree | null;
 }
 
 // ─── Widget type metadata ────────────────────────────────────────────────────
@@ -160,41 +186,51 @@ export const WIDGET_TYPES: WidgetTypeInfo[] = [
     defaultSize: { w: 4, h: 9 },
     minSize: { minW: 1, minH: 1 },
   },
+  {
+    type: 'log',
+    label: 'Log',
+    icon: '📜',
+    defaultSize: { w: 6, h: 10 },
+    minSize: { minW: 2, minH: 3 },
+  },
+];
+
+const DEFAULT_WIDGETS: WidgetConfig[] = [
+  {
+    i: 'urdf-viewer-1',
+    type: 'urdf-viewer',
+    title: '3D Scene',
+    x: 0,
+    y: 0,
+    w: 6,
+    h: 18,
+    minW: 3,
+    minH: 6,
+  },
+  ...(
+    [
+      ['Color', CAMERA_TOPICS.COLOR],
+      ['Depth', CAMERA_TOPICS.DEPTH],
+      ['Detection', CAMERA_TOPICS.DETECTION],
+      ['Infrared', CAMERA_TOPICS.IR],
+    ] as const
+  ).map(
+    ([name, topic], index): CameraWidgetConfig => ({
+      i: `camera-viewer-${index + 1}`,
+      type: 'camera-viewer',
+      title: `Camera · ${name}`,
+      x: 6 + (index % 2) * 3,
+      y: Math.floor(index / 2) * 9,
+      w: 3,
+      h: 9,
+      minW: 2,
+      minH: 6,
+      props: { topic },
+    })
+  ),
 ];
 
 export const DEFAULT_LAYOUT: LayoutConfig = {
-  widgets: [
-    {
-      i: 'urdf-viewer-1',
-      type: 'urdf-viewer',
-      title: '3D Scene',
-      x: 0,
-      y: 0,
-      w: 6,
-      h: 18,
-      minW: 3,
-      minH: 6,
-    },
-    ...(
-      [
-        ['Color', CAMERA_TOPICS.COLOR],
-        ['Depth', CAMERA_TOPICS.DEPTH],
-        ['Detection', CAMERA_TOPICS.DETECTION],
-        ['Infrared', CAMERA_TOPICS.IR],
-      ] as const
-    ).map(
-      ([name, topic], index): CameraWidgetConfig => ({
-        i: `camera-viewer-${index + 1}`,
-        type: 'camera-viewer',
-        title: `Camera · ${name}`,
-        x: 6 + (index % 2) * 3,
-        y: Math.floor(index / 2) * 9,
-        w: 3,
-        h: 9,
-        minW: 2,
-        minH: 6,
-        props: { topic },
-      })
-    ),
-  ],
+  widgets: DEFAULT_WIDGETS,
+  mosaic: mosaicFromGrid(DEFAULT_WIDGETS.map(({ i, x, y, w, h }) => ({ id: i, x, y, w, h }))),
 };
