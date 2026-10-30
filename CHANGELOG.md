@@ -2,6 +2,23 @@
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-10-30
+
+### Added
+
+- Camera panel works like Foxglove's Image panel:
+  - Calibration topic (Auto = `<image dir>/camera_info`, None, or any CameraInfo topic) and a Topics section that draws point clouds, laser scans, occupancy grids and costmaps, poses, paths, markers and robot models over the image, projected through the camera intrinsics and placed with TF; Sync timestamps uses TF at the image stamp
+  - Color mode for mono and depth images: Gradient or color map (Turbo, Rainbow) with Value min/max
+  - Flip horizontal/vertical and rotation 0/90/180/270°, applied to the image and overlays alike
+  - Rectify undistorts plumb_bob and rational_polynomial lenses on the GPU
+  - Without calibration or TF the plain image stays visible with a message
+- Load harness for performance work: `scripts/heavy-bridge.js` (a robot-sized foxglove_bridge stand-in) and `scripts/perf-run.js` (measures frame rate, long tasks and main-thread time in Chrome); see `docs/PERFORMANCE.md`
+
+### Changed
+
+- The UI stays smooth under heavy robot data: images, point clouds and maps are decoded in Web Workers, frames a panel would throttle away are not decoded, point clouds reuse their geometry, TF and path lines no longer recompile a shader every frame, log rows are memoized, and panels hidden behind an expanded panel do no render work. On a CPU slowed 4×, long tasks went from 32–36 per 20 s to none and the worst frame from 67 ms to 17 ms
+- Camera panels default to a maximum of 15 fps (panels that set a value keep it)
+
 ## [3.0.1] - 2026-10-30
 
 ### Changed

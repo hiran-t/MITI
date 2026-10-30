@@ -39,7 +39,7 @@ Built with Next.js 14, React 18, and Three.js.
 
 - URDF 3D robot model viewer with live joint state animation
 - Point cloud rendering from depth cameras
-- Camera feed viewer (color, depth, IR, detection)
+- Camera feed viewer (color, depth, IR, detection) with Foxglove-style overlays of 3D topics, depth color maps, flip/rotation and rectify
 - TF frame visualization
 - State machine monitor (SMACC2 and BehaviorTree)
 
