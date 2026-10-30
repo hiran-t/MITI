@@ -62,7 +62,11 @@ export function useTopic<T = unknown>(
       if (held) callback(held.message);
       held = null;
     };
-    client.subscribe(topic, callback, messageType, { maxRate });
+    // The client drops frames this hook would throttle away before decoding them.
+    client.subscribe(topic, callback, messageType, {
+      maxRate,
+      throttleMs: throttleRate || undefined,
+    });
 
     return () => {
       if (timer) clearTimeout(timer);

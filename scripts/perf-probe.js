@@ -67,7 +67,10 @@
     location.reload();
   }
 
-  /** Frame times from requestAnimationFrame and main-thread long tasks (> 50 ms). */
+  /**
+   * Frame times from requestAnimationFrame, main-thread long tasks (> 50 ms), and how long a task
+   * posted every 50 ms waits before it runs: the delay a click or key press would see.
+   */
   function measure(seconds = 20) {
     return new Promise((resolve) => {
       const frames = [];
@@ -81,6 +84,14 @@
       } catch {
         /* Long tasks are a Chromium API. */
       }
+      const delays = [];
+      const channel = new MessageChannel();
+      let posted = 0;
+      channel.port1.onmessage = () => delays.push(performance.now() - posted);
+      const ping = setInterval(() => {
+        posted = performance.now();
+        channel.port2.postMessage(0);
+      }, 50);
       const start = performance.now();
       let last = start;
       const tick = (now) => {
@@ -92,6 +103,8 @@
       requestAnimationFrame(tick);
       function finish(now) {
         observer?.disconnect();
+        clearInterval(ping);
+        const waits = [...delays].sort((a, b) => a - b);
         const sorted = [...frames].sort((a, b) => a - b);
         const pct = (p) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))];
         const round = (v) => Math.round(v * 10) / 10;
@@ -105,6 +118,8 @@
           longTasks: longTasks.length,
           longTaskMs: Math.round(longTasks.reduce((a, b) => a + b, 0)),
           longestTask: Math.round(Math.max(0, ...longTasks)),
+          inputDelayP95: round(waits[Math.floor(waits.length * 0.95)] ?? 0),
+          inputDelayMax: round(waits[waits.length - 1] ?? 0),
         });
       }
     });

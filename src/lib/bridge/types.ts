@@ -15,4 +15,10 @@ export interface SubscribeOptions {
    * are dropped on arrival, which saves decoding and rendering but not network traffic.
    */
   maxRate?: number;
+  /**
+   * The subscriber shows at most one message per this many ms, the newest. Messages superseded
+   * within the window are dropped before they are decoded; the newest is delivered when the
+   * window closes.
+   */
+  throttleMs?: number;
 }

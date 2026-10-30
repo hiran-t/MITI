@@ -6,10 +6,12 @@
  *   node scripts/heavy-bridge.js [--port 8790] [--cams 3] [--cam-hz 15] [--width 1280]
  *     [--height 720] [--points 100000] [--cloud-hz 10] [--tf-hz 100] [--log-hz 50]
  *
- * Connect MITI to ws://localhost:<port>. Like foxglove_bridge, a message is dropped for a client
+ * Connect MITI to ws://localhost:<port>. http://localhost:<port + 1>/stats reports what was sent
+ * and dropped per topic since the start (scripts/perf-run.js reads it). Like foxglove_bridge, a message is dropped for a client
  * whose send buffer is over the limit, so a slow browser gets the newest data instead of an
  * ever-growing queue.
  */
+const http = require('http');
 const { WebSocketServer } = require('ws');
 const { FoxgloveServer } = require('@foxglove/ws-protocol');
 const { parse } = require('@foxglove/rosmsg');
@@ -112,6 +114,7 @@ function add(topic, schemaName) {
     active: false,
     sent: 0,
     dropped: 0,
+    total: { sent: 0, dropped: 0, bytes: 0 },
   };
 }
 server.on('subscribe', (id) => {
@@ -129,9 +132,12 @@ function sendBytes(topic, bytes) {
   if (!channel.active) return;
   if (congested()) {
     channel.dropped += 1;
+    channel.total.dropped += 1;
     return;
   }
   channel.sent += 1;
+  channel.total.sent += 1;
+  channel.total.bytes += bytes.byteLength;
   server.sendMessage(channel.id, BigInt(Date.now()) * 1000000n, bytes);
 }
 const send = (topic, message) => sendBytes(topic, channels[topic].writer.writeMessage(message));
@@ -298,6 +304,17 @@ setInterval(() => {
   if (report) console.log(`sent/5s  ${report}`);
   Object.values(channels).forEach((c) => (c.sent = c.dropped = 0));
 }, 5000);
+
+http
+  .createServer((_req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.end(
+      JSON.stringify(
+        Object.fromEntries(Object.entries(channels).map(([topic, c]) => [topic, c.total]))
+      )
+    );
+  })
+  .listen(PORT + 1);
 
 console.log(
   `heavy bridge on ws://localhost:${PORT}: ${CAMS}× ${WIDTH}×${HEIGHT} rgb8 @ ${CAM_HZ} Hz, ` +

@@ -5,6 +5,7 @@
 
 import type { sensor_msgs } from '@/types/ros-messages';
 import { decodeBytes } from './bytes';
+import { getPrepared } from './prepared';
 
 /**
  * Apply RViz-style rainbow colormap (Axis color)
@@ -129,9 +130,12 @@ function writeRainbowDepth(values: Float32Array, out: Uint8ClampedArray): void {
 
 /**
  * Decode a ROS sensor_msgs/Image into RGBA pixels, honouring row padding (`step`) and
- * `is_bigendian`.
+ * `is_bigendian`. Images decoded by the bridge's worker come with their pixels already converted;
+ * those are returned as they are, so treat the result as read-only.
  */
 export function decodeImagePixels(imageMsg: sensor_msgs.Image): Uint8ClampedArray<ArrayBuffer> {
+  const prepared = getPrepared(imageMsg)?.pixels;
+  if (prepared) return prepared;
   const { width, height } = imageMsg;
   const encoding = imageMsg.encoding.toLowerCase();
   const bpp = BYTES_PER_PIXEL[encoding];

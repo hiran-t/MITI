@@ -22,6 +22,11 @@ const opt = (name, fallback) => {
 };
 const APP = opt('app', 'http://localhost:3000');
 const BRIDGE = opt('bridge', 'ws://localhost:8790');
+/** heavy-bridge.js's counters, on the port after the bridge's. */
+const STATS = opt(
+  'stats',
+  BRIDGE.replace(/^ws/, 'http').replace(/:(\d+)/, (_, p) => `:${+p + 1}`) + '/stats'
+);
 const CAMS = Number(opt('cams', 3));
 const SECONDS = Number(opt('seconds', 20));
 const WARMUP = Number(opt('warmup', 8));
@@ -78,8 +83,16 @@ async function main() {
     await new Promise((resolve, reject) => ws.once('open', resolve).once('error', reject));
     let nextId = 1;
     const pending = new Map();
+    const consoleErrors = [];
     ws.on('message', (raw) => {
       const msg = JSON.parse(raw.toString());
+      if (msg.method === 'Runtime.exceptionThrown')
+        consoleErrors.push(msg.params.exceptionDetails.exception?.description ?? 'exception');
+      if (
+        msg.method === 'Runtime.consoleAPICalled' &&
+        ['error', 'warning'].includes(msg.params.type)
+      )
+        consoleErrors.push(msg.params.args.map((a) => a.value ?? a.description).join(' '));
       const waiter = msg.id && pending.get(msg.id);
       if (!waiter) return;
       pending.delete(msg.id);
@@ -144,9 +157,15 @@ async function main() {
       await send('Profiler.setSamplingInterval', { interval: 200 });
       await send('Profiler.start');
     }
+    const stats = () =>
+      fetch(STATS)
+        .then((r) => r.json())
+        .catch(() => null);
+    const sentBefore = await stats();
     const before = await metrics();
     const result = await evaluate(`mitiPerf.measure(${SECONDS})`);
     const after = await metrics();
+    const sentAfter = await stats();
     if (PROFILE) {
       const { profile } = await send('Profiler.stop');
       if (process.env.PROFILE_OUT)
@@ -159,21 +178,40 @@ async function main() {
     console.log(
       JSON.stringify({
         ...result,
+        ...delivered(sentBefore, sentAfter, SECONDS),
         mainThreadBusyPct: busy('TaskDuration'),
         scriptPct: busy('ScriptDuration'),
         layoutPct: busy('LayoutDuration'),
         heapMB: Math.round(after.JSHeapUsedSize / 1e6),
+        consoleErrors: consoleErrors.length,
         cpuThrottle: CPU_THROTTLE,
         renderer,
         panels: status,
       })
     );
+    consoleErrors.slice(0, 5).forEach((error) => console.error('console:', error.slice(0, 300)));
     ws.close();
   } finally {
     chrome.kill();
     await sleep(500);
     fs.rmSync(profile, { recursive: true, force: true });
   }
+}
+
+/** What the bridge got through to the page during the run, per second. */
+function delivered(before, after, seconds) {
+  if (!before || !after) return {};
+  const rate = (pick) =>
+    Object.keys(after).reduce((sum, topic) => sum + pick(after[topic]) - pick(before[topic]), 0) /
+    seconds;
+  const cameras = Object.keys(after).filter((topic) => topic.includes('image'));
+  return {
+    receivedMBps: Math.round(rate((t) => t.bytes) / 1e5) / 10,
+    cameraFramesPerS: Math.round(
+      cameras.reduce((sum, t) => sum + after[t].sent - before[t].sent, 0) / seconds
+    ),
+    droppedByBridgePerS: Math.round(rate((t) => t.dropped)),
+  };
 }
 
 /** Self time per function, top 25, as a share of the profiled wall time. */
