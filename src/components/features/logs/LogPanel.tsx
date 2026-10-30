@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { ArrowDown, Copy, Trash2, X } from 'lucide-react';
 import WidgetSettingsPortal from '../layout/WidgetSettingsPortal';
@@ -19,6 +19,7 @@ import {
 } from '@/lib/logs/log-messages';
 import type { LogWidgetProps } from '@/types/widget';
 import { LOG_NAME_COLORS } from '@/lib/theme';
+import { usePanelVisibleRef } from '@/hooks/usePanelVisible';
 
 /** Messages kept in memory; older ones are dropped. */
 const MAX_LOGS = 10000;
@@ -62,7 +63,8 @@ function formatLine(entry: LogEntry, display: DisplayOptions): string {
     .join(' ');
 }
 
-function LogRow({
+/** Rows only re-render when their entry or the display options change, not on every flush. */
+const LogRow = memo(function LogRow({
   entry,
   display,
   nameColor,
@@ -92,7 +94,7 @@ function LogRow({
       )}
     </div>
   );
-}
+});
 
 export default function LogPanel({
   client,
@@ -118,7 +120,10 @@ export default function LogPanel({
     showName = true,
     showSource = false,
   } = props;
-  const display = { showLevel, showDate, showTime, showTimezone, showName, showSource };
+  const display = useMemo(
+    () => ({ showLevel, showDate, showTime, showTimezone, showName, showSource }),
+    [showLevel, showDate, showTime, showTimezone, showName, showSource]
+  );
   const buffer = useRef<LogEntry[]>([]);
   const nextId = useRef(0);
   // Each node keeps the color it got when it first logged, so its lines are easy to follow.
@@ -129,6 +134,8 @@ export default function LogPanel({
   const listRef = useRef<HTMLDivElement>(null);
   const [following, setFollowing] = useState(true);
   const namesListId = useId();
+  // Hidden behind an expanded panel, messages are kept but the list is not rendered.
+  const visible = usePanelVisibleRef();
 
   useEffect(() => {
     buffer.current = [];
@@ -152,7 +159,7 @@ export default function LogPanel({
       dirty = true;
     };
     const timer = setInterval(() => {
-      if (!dirty) return;
+      if (!dirty || !visible.current) return;
       dirty = false;
       setLogs(buffer.current.slice(-MAX_LOGS));
     }, FLUSH_MS);
@@ -161,7 +168,7 @@ export default function LogPanel({
       clearInterval(timer);
       client.unsubscribe(topic, callback);
     };
-  }, [client, topic]);
+  }, [client, topic, visible]);
 
   // A term being typed filters live, like a committed chip.
   const terms = useMemo(

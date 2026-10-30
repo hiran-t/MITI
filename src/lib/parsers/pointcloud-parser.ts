@@ -1,5 +1,6 @@
 import type { sensor_msgs } from '@/types/ros-messages';
 import { decodeBytes } from './bytes';
+import { getPrepared, type PointScan } from './prepared';
 
 export interface ParsedPoint {
   x: number;
@@ -202,19 +203,8 @@ export interface PointData {
 
 const COLOR_FIELDS = ['rgb', 'rgba', 'r', 'g', 'b', 'a'];
 
-/**
- * Reads a PointCloud2 without building an object per point: positions are read up front and
- * other fields only when a color mode needs them. Points with non-finite coordinates are skipped.
- */
-export function readPointCloud(msg: sensor_msgs.PointCloud2, maxPoints = 200000): PointData {
-  const empty: PointData = {
-    count: 0,
-    positions: new Float32Array(0),
-    fields: [],
-    hasColors: false,
-    values: () => undefined,
-    colors: () => undefined,
-  };
+/** Validated fields of a cloud; throws on dimensions or fields that cannot be read. */
+function cloudFields(msg: sensor_msgs.PointCloud2) {
   const pointStep = msg.point_step;
   if (
     !Number.isInteger(msg.width) ||
@@ -234,22 +224,31 @@ export function readPointCloud(msg: sensor_msgs.PointCloud2, maxPoints = 200000)
   }
   for (const axis of ['x', 'y', 'z'])
     if (!fields.has(axis)) throw new Error(`Missing ${axis} field`);
-  const hasColors =
-    fields.has('rgb') || fields.has('rgba') || ['r', 'g', 'b'].every((c) => fields.has(c));
-  if (!msg.data || msg.data.length === 0)
-    return { ...empty, fields: numericFields(fields), hasColors };
+  return fields;
+}
 
+const strideFor = (msg: sensor_msgs.PointCloud2, maxPoints: number) =>
+  Math.max(1, Math.ceil((msg.width * msg.height) / Math.max(1, maxPoints)));
+
+/**
+ * The positions of every `stride`-th point and where each is in the message's data, skipping
+ * points with non-finite coordinates. This is the costly part of reading a cloud; a decode worker
+ * runs it ahead of time (see `PreparedMessage`).
+ */
+export function scanPointCloud(msg: sensor_msgs.PointCloud2, maxPoints = 200000): PointScan {
+  const fields = cloudFields(msg);
+  const stride = strideFor(msg, maxPoints);
+  if (!msg.data || msg.data.length === 0)
+    return { stride, count: 0, positions: new Float32Array(0), offsets: new Uint32Array(0) };
   const buffer = decodeBytes(msg.data);
   const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
   const total = msg.width * msg.height;
+  const pointStep = msg.point_step;
   const rowStep = msg.row_step || msg.width * pointStep;
   if (rowStep < msg.width * pointStep || buffer.length < rowStep * msg.height)
     throw new Error('Point cloud buffer is truncated');
-  const littleEndian = !msg.is_bigendian;
   const read = (offset: number, datatype: number) =>
     readField(view, offset, datatype, msg.is_bigendian);
-
-  const stride = Math.max(1, Math.ceil(total / Math.max(1, maxPoints)));
   const capacity = Math.ceil(total / stride);
   const positions = new Float32Array(capacity * 3);
   const offsets = new Uint32Array(capacity);
@@ -266,10 +265,41 @@ export function readPointCloud(msg: sensor_msgs.PointCloud2, maxPoints = 200000)
     positions[count * 3 + 2] = z;
     offsets[count++] = base;
   }
+  return { stride, count, positions: positions.subarray(0, count * 3), offsets };
+}
+
+/**
+ * Reads a PointCloud2 without building an object per point: positions are read up front and
+ * other fields only when a color mode needs them. Points with non-finite coordinates are skipped.
+ * A scan prepared by the decode worker for this message is used when it read the same points.
+ */
+export function readPointCloud(msg: sensor_msgs.PointCloud2, maxPoints = 200000): PointData {
+  const fields = cloudFields(msg);
+  const hasColors =
+    fields.has('rgb') || fields.has('rgba') || ['r', 'g', 'b'].every((c) => fields.has(c));
+  if (!msg.data || msg.data.length === 0)
+    return {
+      count: 0,
+      positions: new Float32Array(0),
+      fields: numericFields(fields),
+      hasColors,
+      values: () => undefined,
+      colors: () => undefined,
+    };
+  const prepared = getPrepared(msg)?.cloud;
+  const { count, positions, offsets } =
+    prepared?.stride === strideFor(msg, maxPoints) ? prepared : scanPointCloud(msg, maxPoints);
+
+  const buffer = decodeBytes(msg.data);
+  const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+  const pointStep = msg.point_step;
+  const littleEndian = !msg.is_bigendian;
+  const read = (offset: number, datatype: number) =>
+    readField(view, offset, datatype, msg.is_bigendian);
 
   return {
     count,
-    positions: positions.subarray(0, count * 3),
+    positions,
     fields: numericFields(fields),
     hasColors,
     values(name) {

@@ -1,10 +1,11 @@
 'use client';
 import { useMemo } from 'react';
-import { Line, Html } from '@react-three/drei';
+import { Html } from '@react-three/drei';
 import { Vector3 } from 'three';
 import type { TFTree } from '@/types/tf-messages';
 import type { TransformSettings } from '@/types/scene-config';
 import { lookupTransform } from '@/lib/scene/transforms';
+import FatLine from '../scene/FatLine';
 
 const AXIS_LENGTH = 0.15;
 
@@ -44,6 +45,11 @@ export default function TFVisualizer({
       }
     });
   }, [tfTree, fixedFrame, settings.frames]);
+  // Every parent link in one line object: TF changes up to every frame.
+  const links = useMemo(
+    () => frames.flatMap((frame) => (frame.parent ? [frame.position, frame.parent] : [])),
+    [frames]
+  );
   const axisLength = AXIS_LENGTH * settings.axisScale;
   return (
     <>
@@ -65,15 +71,16 @@ export default function TFVisualizer({
               </Html>
             )}
           </group>
-          {frame.parent && (
-            <Line
-              points={[frame.position, frame.parent]}
-              color={settings.lineColor}
-              lineWidth={settings.lineWidth}
-            />
-          )}
         </group>
       ))}
+      {links.length > 0 && (
+        <FatLine
+          points={links}
+          segments
+          color={settings.lineColor}
+          lineWidth={settings.lineWidth}
+        />
+      )}
     </>
   );
 }

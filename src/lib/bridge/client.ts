@@ -12,6 +12,7 @@ import {
 } from '@foxglove/ws-protocol';
 import { clearCachedAssets, readCachedAsset, writeCachedAsset } from './asset-cache';
 import { createDecoder, createEncoder, ros2TypeName, type Decoder } from './codec';
+import { DecodePool, DecodePoolFailure } from './decode-pool';
 import { normalizeMessageType } from './topics';
 import type {
   ConnectionCallback,
@@ -234,13 +235,31 @@ class Lane {
 }
 
 interface TopicSubscription {
-  /** Each subscriber's maximum rate in Hz; undefined means every message. */
-  callbacks: Map<MessageCallback, number | undefined>;
+  /** Each subscriber's maximum rate (Hz) and throttle window (ms); undefined means none. */
+  callbacks: Map<MessageCallback, { maxRate?: number; throttleMs?: number }>;
   /** Type requested by the first subscriber; channels of another type are not subscribed. */
   type?: string;
   binding?: { lane: Lane; channelId: number; subscriptionId: number };
   /** When a rate-limited topic last delivered a message. */
   lastDelivered?: number;
+  /** A message of this topic is being decoded in a worker. */
+  decoding?: boolean;
+  /** When the last message started decoding, for the subscribers' throttle window. */
+  lastStarted?: number;
+  /**
+   * The newest message that arrived while one was decoding or within the throttle window; it
+   * replaced any older one, which was never decoded.
+   */
+  queued?: MessageJob;
+  /** Decodes the queued message when the throttle window closes. */
+  timer?: ReturnType<typeof setTimeout>;
+}
+
+interface MessageJob {
+  lane: Lane;
+  subscriptionId: number;
+  channel: Channel;
+  data: ArrayBufferView;
 }
 
 interface Pending<T> {
@@ -266,6 +285,12 @@ interface Pending<T> {
  * (`maxRate`); messages arriving sooner are dropped before decoding. The protocol has no
  * server-side throttling, and the subscription is never paused to emulate one: measured against a
  * robot, resubscribing between frames lost more frames than it saved bandwidth.
+ *
+ * Heavy messages (images, point clouds, maps) are decoded in Web Workers where the platform has
+ * them, together with the per-pixel and per-point work their panels need (see `DecodePool`), so a
+ * stream of camera frames does not take the main thread from rendering and input. One message per
+ * topic is decoded at a time; while it is, a newer message replaces any waiting one, so a topic
+ * that arrives faster than it can be decoded shows its newest frames instead of falling behind.
  */
 export class BridgeClient {
   private control: Lane;
@@ -297,12 +322,23 @@ export class BridgeClient {
   private topicCallbacks = new Set<(topics: TopicInfo[]) => void>();
 
   private separateHeavyTopics: boolean;
+  /** Created on the first heavy message; null where workers are unavailable or switched off. */
+  private decodePool: DecodePool | null | undefined;
+  private createWorker?: () => Worker;
 
   constructor(
     private url: string,
-    options: { streamMode?: StreamMode } = {}
+    options: {
+      streamMode?: StreamMode;
+      /** Decode heavy messages in Web Workers when the platform has them (default true). */
+      decodeInWorkers?: boolean;
+      /** Worker factory, for tests; defaults to the bundled decode worker. */
+      createWorker?: () => Worker;
+    } = {}
   ) {
     this.separateHeavyTopics = options.streamMode === 'separate';
+    if (options.decodeInWorkers === false) this.decodePool = null;
+    this.createWorker = options.createWorker;
     const events: LaneEvents = {
       ready: (lane) => this.handleReady(lane),
       closed: (lane, wasReady) => this.handleClosed(lane, wasReady),
@@ -347,6 +383,8 @@ export class BridgeClient {
   }
 
   disconnect(): void {
+    this.decodePool?.dispose();
+    if (this.decodePool) this.decodePool = undefined;
     this.control.close();
     this.lanes.forEach((lane) => lane.close());
     this.lanes.clear();
@@ -395,10 +433,10 @@ export class BridgeClient {
       subscription = { callbacks: new Map(), type };
       this.subscriptions.set(topic, subscription);
     }
-    subscription.callbacks.set(
-      callback,
-      options?.maxRate && options.maxRate > 0 ? options.maxRate : undefined
-    );
+    subscription.callbacks.set(callback, {
+      maxRate: options?.maxRate && options.maxRate > 0 ? options.maxRate : undefined,
+      throttleMs: options?.throttleMs && options.throttleMs > 0 ? options.throttleMs : undefined,
+    });
     this.bind(topic);
     const cached = this.staticTransformCache.get(topic);
     if (cached?.size) callback({ transforms: Array.from(cached.values()) });
@@ -517,11 +555,19 @@ export class BridgeClient {
 
   private maxRate(subscription: TopicSubscription): number | undefined {
     let rate = 0;
-    for (const value of Array.from(subscription.callbacks.values())) {
-      if (value === undefined) return undefined;
-      rate = Math.max(rate, value);
+    for (const { maxRate } of Array.from(subscription.callbacks.values())) {
+      if (maxRate === undefined) return undefined;
+      rate = Math.max(rate, maxRate);
     }
     return rate || undefined;
+  }
+
+  /** The shortest throttle window of the subscribers, in ms; 0 when one wants every message. */
+  private throttleMs(subscription: TopicSubscription): number {
+    let window = Infinity;
+    for (const { throttleMs } of Array.from(subscription.callbacks.values()))
+      window = Math.min(window, throttleMs ?? 0);
+    return Number.isFinite(window) ? window : 0;
   }
 
   /** The lane for `key` (a heavy topic, or asset downloads), opened on first use. */
@@ -583,6 +629,9 @@ export class BridgeClient {
   }
 
   private unbind(subscription: TopicSubscription): void {
+    if (subscription.timer) clearTimeout(subscription.timer);
+    subscription.timer = undefined;
+    subscription.queued = undefined;
     if (!subscription.binding) return;
     subscription.binding.lane.unsubscribe(subscription.binding.subscriptionId);
     subscription.binding = undefined;
@@ -659,16 +708,87 @@ export class BridgeClient {
     const last = subscription.lastDelivered;
     // Sooner than every subscriber's cap: skip it, including the cost of decoding.
     if (rate && last !== undefined && now - last < 1000 / rate) return;
-    let message: unknown;
-    try {
-      message = lane.decode(binding.channelId, data);
-    } catch (error) {
-      console.error(`Cannot decode ${topic}:`, error);
+    if (rate) subscription.lastDelivered = now;
+    const channel = lane.channels.get(binding.channelId);
+    if (channel) this.process(topic, subscription, { lane, subscriptionId, channel, data });
+  }
+
+  /**
+   * Decode a message now, or keep it as the topic's newest while another is decoding or the
+   * subscribers' throttle window is open; a message replaced that way is never decoded.
+   */
+  private process(topic: string, subscription: TopicSubscription, job: MessageJob): void {
+    const wait =
+      (subscription.lastStarted ?? -Infinity) + this.throttleMs(subscription) - Date.now();
+    if (subscription.decoding || wait > 0) {
+      subscription.queued = job;
+      if (!subscription.decoding && !subscription.timer)
+        subscription.timer = setTimeout(() => {
+          subscription.timer = undefined;
+          this.processQueued(topic, subscription);
+        }, wait);
       return;
     }
+    subscription.lastStarted = Date.now();
+    const pool = isHeavyType(job.channel.schemaName) ? this.workers() : null;
+    if (!pool) {
+      let message: unknown;
+      try {
+        message = job.lane.decode(job.channel.id, job.data);
+      } catch (error) {
+        console.error(`Cannot decode ${topic}:`, error);
+        return;
+      }
+      this.deliver(topic, subscription, message);
+      return;
+    }
+    subscription.decoding = true;
+    pool
+      .decode(job.channel, job.data)
+      .then(
+        (message) => {
+          if (this.isCurrent(topic, subscription, job)) this.deliver(topic, subscription, message);
+        },
+        (error) => {
+          if (!(error instanceof DecodePoolFailure))
+            console.error(`Cannot decode ${topic}:`, error);
+        }
+      )
+      .finally(() => {
+        subscription.decoding = false;
+        this.processQueued(topic, subscription);
+      });
+  }
+
+  private processQueued(topic: string, subscription: TopicSubscription): void {
+    const job = subscription.queued;
+    subscription.queued = undefined;
+    if (job && this.isCurrent(topic, subscription, job)) this.process(topic, subscription, job);
+  }
+
+  private deliver(topic: string, subscription: TopicSubscription, message: unknown): void {
     this.retainTransforms(topic, message);
-    if (rate) subscription.lastDelivered = now;
-    subscription.callbacks.forEach((_rate, cb) => cb(message));
+    subscription.callbacks.forEach((_options, cb) => cb(message));
+  }
+
+  /** The decode workers, started on first use; null where they are unavailable. */
+  private workers(): DecodePool | null {
+    if (this.decodePool === undefined)
+      this.decodePool = DecodePool.create((error) => {
+        console.warn('Decode workers stopped; decoding on the main thread:', error.message);
+        this.decodePool = null;
+      }, this.createWorker);
+    return this.decodePool?.available ? this.decodePool : null;
+  }
+
+  /** Whether a message still belongs to the topic's current subscription. */
+  private isCurrent(topic: string, subscription: TopicSubscription, job: MessageJob): boolean {
+    const binding = subscription.binding;
+    return (
+      this.subscriptions.get(topic) === subscription &&
+      binding?.lane === job.lane &&
+      binding.subscriptionId === job.subscriptionId
+    );
   }
 
   /** Static transforms are latched: later scenes must still receive those already received. */

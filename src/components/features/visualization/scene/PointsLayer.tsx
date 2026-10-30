@@ -4,6 +4,7 @@ import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { PointData } from '@/lib/parsers/pointcloud-parser';
 import { pointColors, type PointColorSettings } from '@/lib/scene/colors';
+import { updatePointGeometry } from '@/lib/scene/point-geometry';
 
 export interface PointStyle extends PointColorSettings {
   pointSize: number;
@@ -84,12 +85,19 @@ function Points({ points, style }: { points: PointData; style: PointStyle }) {
     return false;
   }, [colors]);
 
-  const geometry = useMemo(() => {
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(points.positions, 3));
-    g.setAttribute('rgba', new THREE.BufferAttribute(colors, 4));
-    return g;
-  }, [points, colors]);
+  // One geometry for the stream: each message is written into its buffers, which grow only when a
+  // message has more points than they hold.
+  const latest = useRef<THREE.BufferGeometry | null>(null);
+  const geometry = useMemo(
+    () =>
+      (latest.current = updatePointGeometry(
+        latest.current,
+        points.positions,
+        colors,
+        points.count
+      )),
+    [points, colors]
+  );
   const stixels = useMemo(() => {
     if (!style.stixels) return null;
     const { count, positions } = points;

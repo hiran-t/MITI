@@ -1,6 +1,12 @@
 import { readPointCloud } from '@/lib/parsers/pointcloud-parser';
 import type { sensor_msgs } from '@/types/ros-messages';
-import { autoPointColors, parseHex, pointColors, type PointColorSettings } from '../colors';
+import {
+  autoPointColors,
+  COLOR_MAPS,
+  parseHex,
+  pointColors,
+  type PointColorSettings,
+} from '../colors';
 
 /** Three points with x, y, z, intensity and packed rgb. */
 function cloud(withRgb = true): sensor_msgs.PointCloud2 {
@@ -95,4 +101,27 @@ test('parses short, long and alpha hex colors', () => {
   expect(parseHex('#f00')).toEqual([1, 0, 0, 1]);
   expect(parseHex('#00ff0080')[3]).toBeCloseTo(128 / 255);
   expect(parseHex('nonsense')).toEqual([1, 1, 1, 1]);
+});
+
+test('color map colors match the map within an 8-bit step at any value', () => {
+  const count = 1000;
+  const view = new Float32Array(count);
+  for (let i = 0; i < count; i++) view[i] = i / (count - 1);
+  const points = {
+    count,
+    positions: new Float32Array(count * 3),
+    fields: ['intensity'],
+    hasColors: false,
+    values: () => view,
+    colors: () => undefined,
+  };
+  for (const colorMap of ['turbo', 'rainbow'] as const) {
+    const { colors } = pointColors(points, settings({ colorMode: 'colormap', colorMap }), 0.5);
+    for (let i = 0; i < count; i++) {
+      const expected = COLOR_MAPS[colorMap](view[i]);
+      for (let c = 0; c < 3; c++)
+        expect(Math.abs(colors[i * 4 + c] - expected[c])).toBeLessThan(1 / 255);
+      expect(colors[i * 4 + 3]).toBe(0.5);
+    }
+  }
 });

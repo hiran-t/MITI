@@ -1,6 +1,7 @@
 import { parse } from '@foxglove/rosmsg';
 import { MessageWriter } from '@foxglove/rosmsg2-serialization';
 import { BridgeClient } from '../client';
+import { createDecodeHandler, type DecodeReply, type DecodeRequest } from '../decode-core';
 
 /** A WebSocket stand-in that records what the client sends and replays server frames. */
 class Socket {
@@ -426,6 +427,127 @@ test('an asset whose reply never arrives is requested again', async () => {
     expect(retries).toHaveLength(2);
     bulk.binary(frame(4, [retries[1].requestId], new Uint8Array([0, 0, 0, 0, 0, 9])));
     await expect(asset).resolves.toEqual(new Uint8Array([9]));
+  } finally {
+    jest.useRealTimers();
+    client.disconnect();
+  }
+});
+
+/** A decode worker that answers only when told to, so tests can hold a decode in flight. */
+class FakeWorker {
+  static instances: FakeWorker[] = [];
+  onmessage: ((event: { data: DecodeReply }) => void) | null = null;
+  onerror: ((event: { message: string }) => void) | null = null;
+  onmessageerror: (() => void) | null = null;
+  requests: DecodeRequest[] = [];
+  private handle = createDecodeHandler();
+  constructor() {
+    FakeWorker.instances.push(this);
+  }
+  postMessage(request: DecodeRequest) {
+    this.requests.push(request);
+  }
+  replyNext() {
+    const request = this.requests.shift();
+    if (request) this.onmessage?.({ data: this.handle(request).reply });
+  }
+  terminate() {}
+}
+
+async function connectWithWorkers() {
+  Socket.instances = [];
+  FakeWorker.instances = [];
+  const client = new BridgeClient('ws://robot:8765', {
+    createWorker: () => new FakeWorker() as unknown as Worker,
+  });
+  const connected = client.connect();
+  const [control] = Socket.instances;
+  control.json(serverInfo([]));
+  await connected;
+  control.json({
+    op: 'advertise',
+    channels: [
+      jsonChannel(1, '/camera/image_raw', 'sensor_msgs/msg/Image'),
+      jsonChannel(2, '/status', 'std_msgs/msg/String'),
+    ],
+  });
+  return { client, control };
+}
+
+test('heavy messages are decoded in a worker; the newest waits while one is decoding', async () => {
+  const { client, control } = await connectWithWorkers();
+  const onImage = jest.fn();
+  const onStatus = jest.fn();
+  client.subscribe('/camera/image_raw', onImage);
+  const image = control.lastSubscriptionId();
+  client.subscribe('/status', onStatus);
+  control.binary(jsonFrame(control.lastSubscriptionId(), { data: 'light' }));
+  // Light topics stay on the main thread and arrive at once.
+  expect(onStatus).toHaveBeenCalledWith({ data: 'light' });
+
+  [1, 2, 3].forEach((seq) => control.binary(jsonFrame(image, { seq })));
+  const worker = FakeWorker.instances.find((w) => w.requests.length)!;
+  // One frame is decoding; 2 was replaced by 3 before it was ever sent to a worker.
+  expect(worker.requests).toHaveLength(1);
+  expect(onImage).not.toHaveBeenCalled();
+  worker.replyNext();
+  await settle();
+  expect(onImage.mock.calls.map(([m]) => m.seq)).toEqual([1]);
+  expect(worker.requests).toHaveLength(1);
+  worker.replyNext();
+  await settle();
+  expect(onImage.mock.calls.map(([m]) => m.seq)).toEqual([1, 3]);
+
+  // Frames decoded for a subscriber that has left are dropped.
+  control.binary(jsonFrame(image, { seq: 4 }));
+  client.unsubscribe('/camera/image_raw', onImage);
+  worker.replyNext();
+  await settle();
+  expect(onImage).toHaveBeenCalledTimes(2);
+  client.disconnect();
+});
+
+test('if the workers fail, heavy topics are decoded on the main thread again', async () => {
+  const { client, control } = await connectWithWorkers();
+  const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+  const onImage = jest.fn();
+  client.subscribe('/camera/image_raw', onImage);
+  const image = control.lastSubscriptionId();
+  control.binary(jsonFrame(image, { seq: 1 }));
+  control.binary(jsonFrame(image, { seq: 2 }));
+  FakeWorker.instances[0].onerror?.({ message: 'chunk failed to load' });
+  await settle();
+  // The frame in the worker is lost; the one still waiting is decoded here.
+  expect(onImage.mock.calls.map(([m]) => m.seq)).toEqual([2]);
+  control.binary(jsonFrame(image, { seq: 3 }));
+  expect(onImage.mock.calls.map(([m]) => m.seq)).toEqual([2, 3]);
+  expect(warn).toHaveBeenCalled();
+  warn.mockRestore();
+  client.disconnect();
+});
+
+test('a throttle window drops superseded messages before decoding and delivers the newest', async () => {
+  const { client, control } = await connect([], 'synchronized');
+  jest.useFakeTimers();
+  try {
+    control.json({ op: 'advertise', channels: [jsonChannel(1, '/status', 'std_msgs/msg/String')] });
+    const throttled = jest.fn();
+    client.subscribe('/status', throttled, undefined, { throttleMs: 100 });
+    const id = control.lastSubscriptionId();
+    const send = (seq: number) => control.binary(jsonFrame(id, { seq }));
+    send(1);
+    send(2);
+    send(3);
+    expect(throttled.mock.calls.map(([m]) => m.seq)).toEqual([1]);
+    jest.advanceTimersByTime(100);
+    expect(throttled.mock.calls.map(([m]) => m.seq)).toEqual([1, 3]);
+    // A subscriber without a window gets every message again.
+    const everything = jest.fn();
+    client.subscribe('/status', everything);
+    jest.advanceTimersByTime(10);
+    send(4);
+    send(5);
+    expect(everything.mock.calls.map(([m]) => m.seq)).toEqual([4, 5]);
   } finally {
     jest.useRealTimers();
     client.disconnect();

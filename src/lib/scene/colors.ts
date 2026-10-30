@@ -93,6 +93,22 @@ function rainbow(t: number): Rgb {
 
 export const COLOR_MAPS: Record<ColorMapName, (t: number) => Rgb> = { turbo, rainbow };
 
+/** Entries in a sampled color map; neighbours differ by less than one 8-bit step. */
+const COLOR_TABLE_SIZE = 4096;
+const colorTables: Partial<Record<ColorMapName, Float32Array>> = {};
+/** r, g, b of the color map sampled evenly over 0–1. */
+function colorMapTable(name: ColorMapName): Float32Array {
+  const key = COLOR_MAPS[name] ? name : 'turbo';
+  let table = colorTables[key];
+  if (!table) {
+    table = new Float32Array(COLOR_TABLE_SIZE * 3);
+    for (let i = 0; i < COLOR_TABLE_SIZE; i++)
+      table.set(COLOR_MAPS[key](i / (COLOR_TABLE_SIZE - 1)), i * 3);
+    colorTables[key] = table;
+  }
+  return table;
+}
+
 /** The color settings Foxglove starts with: the message's own colors, else intensity, else flat. */
 export function autoPointColors(fields: string[], hasColors: boolean) {
   if (hasColors) return { colorMode: 'rgb' as const, colorField: 'intensity' };
@@ -120,7 +136,12 @@ export function pointColors(
   const out = new Float32Array(count * 4);
   const flat = (error?: string) => {
     const [r, g, b, a] = parseHex(settings.color);
-    for (let i = 0; i < count; i++) out.set([r, g, b, a * opacity], i * 4);
+    for (let i = 0; i < count * 4; i += 4) {
+      out[i] = r;
+      out[i + 1] = g;
+      out[i + 2] = b;
+      out[i + 3] = a * opacity;
+    }
     return { colors: out, error };
   };
   const mode = settings.colorMode;
@@ -162,10 +183,16 @@ export function pointColors(
       out[i * 4 + 3] *= opacity;
     }
   } else {
-    const map = COLOR_MAPS[settings.colorMap] ?? turbo;
+    // A table of the map: computing it per point allocates and costs ~2 ms per 100k points.
+    const table = colorMapTable(settings.colorMap);
+    const last = COLOR_TABLE_SIZE - 1;
     for (let i = 0; i < count; i++) {
-      const [r, g, b] = map((values[i] - min) / span || 0);
-      out.set([r, g, b, opacity], i * 4);
+      const t = (values[i] - min) / span || 0;
+      const k = 3 * Math.round(Math.min(1, Math.max(0, t)) * last);
+      out[i * 4] = table[k];
+      out[i * 4 + 1] = table[k + 1];
+      out[i * 4 + 2] = table[k + 2];
+      out[i * 4 + 3] = opacity;
     }
   }
   return { colors: out, range: [min, max] };
