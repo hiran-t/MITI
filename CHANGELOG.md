@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-10-30
+
+### Added
+
+- Windows (x86-64) for pixi: `pixi run miti`, and `pixi run -e <distro> miti-bridge` / `bridge` / `build-msgs` through PowerShell versions of the scripts in `ros/`; the deployment guide covers installing pixi, the firewall, the Visual Studio Build Tools for message packages, starting at login, Docker Desktop and WSL 2
+
 ## [3.2.1] - 2026-10-30
 
 ### Added

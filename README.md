@@ -47,7 +47,7 @@ MITI shows a robot's 3D scene, cameras, logs and state machines in tiled panels,
 | MITI from source | Node.js 22 and npm (or [Bun](https://bun.sh))                                |
 | The robot        | ROS 2 Humble or Jazzy, and foxglove_bridge on the robot or beside MITI       |
 
-Linux (x86-64, ARM64) and macOS (Apple silicon) are supported. Browsers: current Chrome, Edge, Firefox or Safari.
+Linux (x86-64, ARM64), macOS (Apple silicon) and Windows (x86-64) are supported; on Windows see [Windows](docs/DEPLOYMENT.md#windows). Browsers: current Chrome, Edge, Firefox or Safari.
 
 ## Install and run
 
@@ -61,8 +61,14 @@ cd MITI
 Install pixi once:
 
 ```bash
+# Linux and macOS
 curl -fsSL https://pixi.sh/install.sh | sh
 # then open a new terminal, or: source ~/.bashrc (zsh: source ~/.zshrc)
+```
+
+```powershell
+# Windows (PowerShell); then open a new terminal
+powershell -ExecutionPolicy ByPass -c "irm -useb https://pixi.sh/install.ps1 | iex"
 ```
 
 Run MITI:

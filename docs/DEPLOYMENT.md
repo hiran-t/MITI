@@ -11,6 +11,7 @@ How to run MITI on a machine and how to give it a foxglove_bridge to talk to.
 - [From source](#from-source)
 - [foxglove_bridge on the robot](#foxglove_bridge-on-the-robot)
 - [foxglove_bridge Beside MITI](#foxglove_bridge-beside-miti)
+- [Windows](#windows)
 - [Kiosk and offline installs](#kiosk-and-offline-installs)
 - [Reverse proxy and HTTPS](#reverse-proxy-and-https)
 - [Environment Variables](#environment-variables)
@@ -34,6 +35,13 @@ Any of them serves MITI on port 3000 to every browser on the network. MITI then 
 ```bash
 curl -fsSL https://pixi.sh/install.sh | sh
 # open a new terminal, or: source ~/.bashrc (zsh: source ~/.zshrc)
+pixi --version
+```
+
+**pixi** (Windows, in PowerShell; then open a new terminal):
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm -useb https://pixi.sh/install.ps1 | iex"
 pixi --version
 ```
 
@@ -68,7 +76,7 @@ pixi run miti 8080     # on another port
 pixi run dev           # development server with hot reload
 ```
 
-The first run installs Node.js 22 and the npm packages and builds MITI. Later runs skip both unless `package-lock.json` or the source changed, and start in about a second. Supported: Linux x86-64 and ARM64, macOS on Apple silicon.
+The first run installs Node.js 22 and the npm packages and builds MITI. Later runs skip both unless `package-lock.json` or the source changed, and start in about a second. Supported: Linux x86-64 and ARM64, macOS on Apple silicon, Windows x86-64 ([notes](#windows)).
 
 | Task                                      | What it does                                                                    |
 | ----------------------------------------- | ------------------------------------------------------------------------------- |
@@ -236,6 +244,47 @@ DDS carries every message the bridge subscribes to from the robot to this machin
 - The first subscription can take a few seconds while DDS discovery settles; later ones are immediate.
 - `sequence size exceeds remaining buffer` or `invalid data size` in the bridge log means the robot runs another ROS 2 distro: Humble cannot read Iron/Jazzy discovery data. Use the matching environment (`-e jazzy`) or `ROS_DISTRO` in Docker.
 - `Port 8765 is already in use`: another foxglove_bridge (or a test bridge) is running on this machine. Stop it, or set `BRIDGE_PORT` and enter `ws://<this machine>:<port>` in MITI's connection settings.
+
+## Windows
+
+pixi runs MITI and foxglove_bridge on Windows 10 and 11 (x86-64) with the same commands as on Linux; the bridge tasks run the PowerShell versions of the scripts in `ros/` (`*.ps1`). Windows support is new; please report problems.
+
+```powershell
+pixi run miti                       # MITI on http://<this machine>:3000
+pixi run -e humble miti-bridge      # MITI and foxglove_bridge beside it (-e jazzy for Jazzy)
+pixi run -e humble bridge           # foxglove_bridge only
+```
+
+Settings are environment variables, set before `pixi run`:
+
+```powershell
+$env:ROS_DOMAIN_ID = "5"
+$env:ROS_STATIC_PEERS = "192.168.10.27"   # Jazzy: find the robot by IP
+pixi run -e jazzy miti-bridge
+```
+
+**Firewall.** The first start asks whether to allow Node.js, Python and foxglove_bridge on the network; allow them on private networks. Or open the ports once, in PowerShell as administrator:
+
+```powershell
+New-NetFirewallRule -DisplayName "MITI web and bridge" -Direction Inbound -Protocol TCP -LocalPort 3000,8765 -Action Allow -Profile Private
+New-NetFirewallRule -DisplayName "ROS 2 DDS" -Direction Inbound -Protocol UDP -LocalPort 7400-7700 -Action Allow -Profile Private
+```
+
+Set the network the robot is on to _Private_ (Settings > Network > Properties); public networks block discovery.
+
+**The robot's own messages.** `build-msgs` compiles C++ and needs the Visual Studio 2022 Build Tools with the C++ workload, installed once:
+
+```powershell
+winget install Microsoft.VisualStudio.2022.BuildTools --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+```
+
+**Start at login.** Use Task Scheduler, for example (adjust the folder):
+
+```powershell
+schtasks /Create /TN MITI /SC ONLOGON /TR "cmd /c cd /d C:\MITI && pixi run miti"
+```
+
+**Docker Desktop** can run MITI (`docker compose up -d`) but not the `bridge` profile, which needs Linux host networking. **WSL 2** works like Linux for MITI itself; for the bridge, turn on mirrored networking (`networkingMode=mirrored` in `%UserProfile%\.wslconfig`, Windows 11) so DDS can reach the robot.
 
 ## Kiosk and offline installs
 

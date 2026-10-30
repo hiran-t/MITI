@@ -6,8 +6,8 @@ Security fixes go into the latest release.
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 3.2.x   | :white_check_mark: |
-| < 3.2   | :x:                |
+| 3.3.x   | :white_check_mark: |
+| < 3.3   | :x:                |
 
 ## Reporting a vulnerability
 
