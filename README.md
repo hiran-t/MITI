@@ -15,6 +15,8 @@
 
 MITI shows a robot's 3D scene, cameras, logs and state machines in tiled panels, in the browser. It connects to [foxglove_bridge](https://github.com/foxglove/foxglove-sdk) over the Foxglove WebSocket protocol and works the way Foxglove's panels do, so teams that know Foxglove feel at home. foxglove_bridge can run on the robot, or on the MITI machine, where it reads the robot's topics over DDS and keeps the work off the robot.
 
+![MITI with a robot's topics, a 3D scene with the robot model, point clouds and costmaps, a camera with the point cloud drawn over it, and the log](docs/images/miti-dashboard.webp)
+
 ## Contents
 
 - [Features](#features)
