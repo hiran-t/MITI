@@ -156,34 +156,43 @@ docker run -d --restart unless-stopped -p 3000:3000 --name miti miti:latest
 
 ## apt package (Ubuntu)
 
-The `miti` package carries MITI and its own Node.js, and runs it as the `miti` systemd service. Packages are built for every release after v3.3.4 (amd64 and arm64) and attached to the release on GitHub.
+The `miti` package carries MITI and its own Node.js and adds the `miti` command. Installing starts nothing. Packages are built for every release after v3.3.4 (amd64 and arm64) and attached to the release on GitHub.
 
 ```bash
 curl -fsSL https://hiran-t.github.io/MITI/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/miti.gpg
 echo "deb [signed-by=/usr/share/keyrings/miti.gpg] https://hiran-t.github.io/MITI stable main" | sudo tee /etc/apt/sources.list.d/miti.list
 sudo apt-get update
-sudo apt-get install miti         # http://<this machine>:3000, starts at boot
+sudo apt-get install miti
 ```
 
 Or install a downloaded package without the repository (no automatic updates): `sudo apt install ./miti_<version>_arm64.deb`.
 
-| What                  | Where / how                                                                                       |
-| --------------------- | ------------------------------------------------------------------------------------------------- |
-| Status and logs       | `systemctl status miti`, `journalctl -u miti -f`                                                  |
-| Settings              | `/etc/miti/miti.env` (port, bridge port, `MITI_PACKAGE_PATH`), then `sudo systemctl restart miti` |
-| Run in the foreground | `sudo systemctl stop miti`, then `miti`                                                           |
-| Update                | `sudo apt-get update && sudo apt-get upgrade`; your settings are kept                             |
-| Remove                | `sudo apt-get remove miti`; `purge` also deletes the settings and the `miti` user                 |
-
-**foxglove_bridge beside MITI.** The package also installs a `miti-bridge` service that runs foxglove_bridge from the ROS 2 in `/opt/ros`. It is off until you enable it:
+**Run it in a terminal.** `miti run` works like `pixi run miti` and stops with Ctrl+C:
 
 ```bash
-sudo apt install ros-humble-foxglove-bridge    # or ros-jazzy-...; apt suggests it when ROS's repository is set up
-sudoedit /etc/miti/bridge.env                  # ROS_DOMAIN_ID, the robot's IP (ROS_STATIC_PEERS), ...
-sudo systemctl enable --now miti-bridge
+miti run                  # http://<this machine>:3000
+miti run --port 8080      # another port; a taken port moves to the next free one
+miti run --bridge         # also foxglove_bridge beside MITI, from the ROS 2 in /opt/ros
+miti --help
 ```
 
-`bridge.env` takes the [bridge settings](#settings). Keep `BRIDGE_PORT` equal to `MITI_BRIDGE_PORT` in `miti.env`. Robot message packages that are not in apt (see [the robot's own message types](#the-robots-own-message-types)) must be installed in `/opt/ros` or sourced another way. The ROS network section in MITI's connection settings works only with `pixi run miti-bridge`; with the package, edit `bridge.env`.
+`--bridge` needs foxglove_bridge from ROS's apt repository (`sudo apt install ros-humble-foxglove-bridge`, or `ros-jazzy-...`; apt suggests it when that repository is set up). As with `pixi run miti-bridge`, the ROS network section in MITI's connection settings changes the bridge's `ROS_DOMAIN_ID` and robot address; the values are kept in `~/.config/miti/bridge.json`.
+
+**Settings** are in `/etc/miti/miti.env` (`MITI_PORT`, `BRIDGE_PORT`, `MITI_PACKAGE_PATH`) and `/etc/miti/bridge.env` (the [bridge settings](#settings): `ROS_DOMAIN_ID`, `ROS_STATIC_PEERS`, ...). Variables set in the shell win, e.g. `ROS_DOMAIN_ID=5 miti run --bridge`. Robot message packages that are not in apt (see [the robot's own message types](#the-robots-own-message-types)) must be installed in `/opt/ros` or sourced another way.
+
+**Start at boot instead** (machines that serve MITI all the time). The package installs two services, both off until enabled; they run as the `miti` user with the same settings:
+
+```bash
+sudo systemctl enable --now miti           # MITI
+sudo systemctl enable --now miti-bridge    # foxglove_bridge beside it, if wanted
+systemctl status miti                      # state; logs: journalctl -u miti -f
+sudo systemctl disable --now miti          # back to miti run
+```
+
+| What   | How                                                                                        |
+| ------ | ------------------------------------------------------------------------------------------ |
+| Update | `sudo apt-get update && sudo apt-get upgrade`; settings are kept, running services restart |
+| Remove | `sudo apt-get remove miti`; `purge` also deletes the settings and the `miti` user          |
 
 ## From source
 

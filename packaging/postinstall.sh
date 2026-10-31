@@ -12,13 +12,11 @@ fi
 
 if [ -d /run/systemd/system ]; then
   systemctl daemon-reload
-  if [ -z "$2" ]; then
-    # First install: start MITI now and at every boot.
-    systemctl enable --now miti.service || echo "Could not start the miti service; see: journalctl -u miti"
-    echo "MITI runs on http://<this machine>:3000 (settings: /etc/miti/miti.env)."
-  else
-    systemctl try-restart miti.service miti-bridge.service || true
-  fi
-else
-  echo "systemd is not running; start MITI with: miti"
+  # Only services already running are restarted; nothing starts on its own.
+  [ -n "$2" ] && systemctl try-restart miti.service miti-bridge.service || true
+fi
+
+if [ -z "$2" ]; then
+  echo "Start MITI with: miti run   (Ctrl+C stops it; miti --help for options)"
+  echo "To start it at boot instead: sudo systemctl enable --now miti"
 fi

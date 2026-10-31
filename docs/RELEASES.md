@@ -51,7 +51,7 @@ Pushing the tag (step 5) runs **Docker Build** again and publishes the image to 
 
 ## Debian packages and the apt repository
 
-Publishing the release (step 6) runs **Packages** (`.github/workflows/packages.yml`): it builds `miti_<version>_amd64.deb` and `_arm64.deb` (`packaging/build-deb.sh`, with nfpm and the official Node.js 22 build), checks that they install and start on Ubuntu 22.04 and 24.04, attaches them to the release, and publishes the apt repository at `https://hiran-t.github.io/MITI` (`packaging/build-apt-repo.sh`, the `gh-pages` branch, with the packages of the last three releases).
+**Packages** (`.github/workflows/packages.yml`) builds `miti_<version>_amd64.deb` and `_arm64.deb` (`packaging/build-deb.sh`, with nfpm and the official Node.js 22 build), each on a GitHub runner of its own architecture, and tests each in clean Ubuntu 22.04 and 24.04 containers with `packaging/test-deb.sh` (install, `miti run`, Ctrl+C, ports, `--bridge`, purge). It runs on every push and pull request that touches MITI or the packaging. Publishing the release (step 6) runs it again and then attaches the packages to the release and publishes the apt repository at `https://hiran-t.github.io/MITI` (`packaging/build-apt-repo.sh`, the `gh-pages` branch, with the packages of the last three releases).
 
 One-time setup:
 

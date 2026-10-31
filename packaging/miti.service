@@ -1,3 +1,6 @@
+# MITI at boot, for machines that serve it all the time. Not started by default:
+#   sudo systemctl enable --now miti
+# In a terminal, `miti run` does the same until Ctrl+C. Settings: /etc/miti/miti.env
 [Unit]
 Description=MITI web dashboard for ROS 2
 Documentation=https://github.com/hiran-t/MITI
@@ -9,11 +12,14 @@ Type=simple
 User=miti
 Group=miti
 EnvironmentFile=/etc/miti/miti.env
+Environment=MITI_STATE_DIR=/var/lib/miti
+Environment=MITI_BRIDGE_HINT="sudo systemctl enable --now miti-bridge"
 WorkingDirectory=/usr/lib/miti
-ExecStart=/usr/lib/miti/node/bin/node /usr/lib/miti/server.js
+ExecStart=/usr/lib/miti/node/bin/node /usr/lib/miti/scripts/start-miti.mjs
 Restart=on-failure
 RestartSec=3
 CacheDirectory=miti
+StateDirectory=miti
 NoNewPrivileges=true
 ProtectSystem=full
 ProtectHome=read-only

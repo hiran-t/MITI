@@ -15,7 +15,9 @@ async function forward(init?: RequestInit) {
     return NextResponse.json({
       available: false,
       reason:
-        'MITI did not start this foxglove_bridge: set ROS_DOMAIN_ID and ROS_STATIC_PEERS where it runs, or start both with pixi run -e <distro> miti-bridge.',
+        'MITI did not start this foxglove_bridge: set ROS_DOMAIN_ID and ROS_STATIC_PEERS where it runs, or start both with ' +
+        (process.env.MITI_BRIDGE_HINT || 'pixi run -e <distro> miti-bridge') +
+        '.',
     });
   try {
     const response = await fetch(`${control}/settings`, {

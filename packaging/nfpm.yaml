@@ -13,8 +13,9 @@ description: |
   Web dashboard for ROS 2 robots
   MITI shows a robot's topics in the browser: a 3D scene with the robot model,
   TF, point clouds and maps, camera images, logs and plots. It connects to
-  foxglove_bridge on the robot, or to one beside it (the miti-bridge service).
-  Node.js is included; the miti service serves MITI on port 3000.
+  foxglove_bridge on the robot, or to one beside it (miti run --bridge).
+  Node.js is included. Start it with `miti run` (Ctrl+C stops it), or at boot
+  with the miti service.
 
 depends:
   - libc6 (>= 2.28)

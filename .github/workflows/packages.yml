@@ -1,35 +1,63 @@
 name: Packages
 
-# For each published release: builds the Debian packages (amd64 and arm64), checks that they
-# install and start on Ubuntu 22.04 and 24.04, attaches them to the release, and publishes the
-# apt repository on GitHub Pages (gh-pages branch) with the packages of the last three releases.
+# Builds the Debian packages for amd64 and arm64, each on a runner of its own architecture, and
+# tests them in clean Ubuntu 22.04 and 24.04 containers (packaging/test-deb.sh). This runs for
+# every change that can affect them, so a broken amd64 or arm64 package shows up before a release.
 #
-# The apt repository needs the secret APT_GPG_PRIVATE_KEY: an ASCII-armored private key without
-# a passphrase (see docs/RELEASES.md). Without it the packages are only attached to the release.
+# For a published release (or a run of this workflow with a tag) it then attaches the packages to
+# the release and publishes the apt repository on GitHub Pages (gh-pages branch) with the packages
+# of the last three releases. The apt repository needs the secret APT_GPG_PRIVATE_KEY: an
+# ASCII-armored private key without a passphrase (see docs/RELEASES.md).
 
 on:
+  push:
+    branches: [ main ]
+    paths: &package-paths
+      - 'packaging/**'
+      - 'scripts/start-miti.mjs'
+      - 'scripts/bridge-settings.mjs'
+      - 'ros/foxglove-bridge.sh'
+      - 'ros/cyclonedds.xml'
+      - 'src/**'
+      - 'public/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'next.config.js'
+      - '.github/workflows/packages.yml'
+  pull_request:
+    branches: [ main ]
+    paths: *package-paths
   release:
     types: [published]
   workflow_dispatch:
     inputs:
       tag:
-        description: Release tag to package (one that contains packaging/)
-        required: true
+        description: Release tag to package and publish (empty to only build and test this branch)
+        required: false
+        default: ''
 
 permissions:
   contents: write
 
 concurrency:
-  group: packages
+  group: packages-${{ github.ref }}
   cancel-in-progress: false
 
 env:
   TAG: ${{ github.event.release.tag_name || inputs.tag }}
 
 jobs:
-  deb:
-    name: Debian packages
-    runs-on: ubuntu-latest
+  build:
+    name: Package (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
 
     steps:
       - name: Checkout code
@@ -57,27 +85,41 @@ jobs:
           packaging/install-nfpm.sh "$RUNNER_TEMP/bin"
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
 
-      - name: Build packages
-        run: |
-          packaging/build-deb.sh amd64
-          packaging/build-deb.sh arm64
+      - name: Build the package
+        run: packaging/build-deb.sh ${{ matrix.arch }}
 
-      - name: Install and start on Ubuntu 22.04 and 24.04
+      - name: Test on Ubuntu 22.04 and 24.04
         run: |
+          deb="$(ls dist/miti_*_${{ matrix.arch }}.deb)"
           for version in 22.04 24.04; do
-            echo "Ubuntu $version"
-            docker run --rm -v "$PWD/dist:/dist:ro" "ubuntu:$version" bash -c '
-              set -e
-              apt-get update -qq
-              DEBIAN_FRONTEND=noninteractive apt-get install -y -qq curl /dist/miti_*_amd64.deb >/dev/null
-              su -s /bin/sh miti -c miti >/tmp/miti.log 2>&1 &
-              for i in $(seq 1 30); do
-                curl -sf -o /dev/null localhost:3000 && exit 0
-                sleep 1
-              done
-              cat /tmp/miti.log
-              exit 1'
+            docker run --rm -v "$PWD:/src:ro" "ubuntu:$version" bash /src/packaging/test-deb.sh "/src/$deb"
           done
+
+      - name: Keep the package
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-${{ matrix.arch }}
+          path: dist/*.deb
+          retention-days: 14
+
+  publish:
+    name: Attach and publish
+    needs: build
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.tag != '')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - name: Get the packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: deb-*
+          merge-multiple: true
+          path: dist
 
       - name: Attach to the release
         env:

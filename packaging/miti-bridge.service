@@ -1,7 +1,7 @@
 # foxglove_bridge beside MITI, from the ROS 2 installed in /opt/ros. Not started by default:
 #   sudo apt install ros-<distro>-foxglove-bridge
 #   sudo systemctl enable --now miti-bridge
-# Settings: /etc/miti/bridge.env
+# Settings: /etc/miti/bridge.env (and BRIDGE_PORT in /etc/miti/miti.env)
 [Unit]
 Description=foxglove_bridge for MITI
 Documentation=https://github.com/hiran-t/MITI/blob/main/docs/DEPLOYMENT.md
@@ -15,6 +15,7 @@ Group=miti
 Environment=HOME=/var/lib/miti
 # Fail rather than move to another port: MITI tells browsers MITI_BRIDGE_PORT.
 Environment=BRIDGE_PORT_FIXED=1
+EnvironmentFile=/etc/miti/miti.env
 EnvironmentFile=/etc/miti/bridge.env
 ExecStart=/bin/bash /usr/lib/miti/ros/foxglove-bridge.sh
 # Exit 3: a foxglove_bridge already runs on the port, so there is nothing to do.

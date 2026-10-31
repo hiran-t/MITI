@@ -15,7 +15,10 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const runtime = { bridgePort: Number(process.env.MITI_BRIDGE_PORT) || null };
+  const runtime = {
+    bridgePort: Number(process.env.MITI_BRIDGE_PORT) || null,
+    bridgeHint: process.env.MITI_BRIDGE_HINT || null,
+  };
   return (
     <html lang="en">
       <head>

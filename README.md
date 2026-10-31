@@ -51,12 +51,54 @@ Linux (x86-64, ARM64), macOS (Apple silicon) and Windows (x86-64) are supported;
 
 ## Install and run
 
+### Option 1: apt package (Ubuntu 22.04 and 24.04, amd64 and arm64)
+
+Add MITI's apt repository once, then install; `sudo apt upgrade` keeps it current:
+
+```bash
+curl -fsSL https://hiran-t.github.io/MITI/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/miti.gpg
+echo "deb [signed-by=/usr/share/keyrings/miti.gpg] https://hiran-t.github.io/MITI stable main" | sudo tee /etc/apt/sources.list.d/miti.list
+sudo apt-get update
+sudo apt-get install miti
+```
+
+Run MITI; Ctrl+C stops it:
+
+```bash
+miti run                  # http://<this machine>:3000
+miti run --port 8080      # on another port (a taken port moves to the next free one)
+miti run --bridge         # with foxglove_bridge beside it, from the ROS 2 in /opt/ros
+```
+
+Settings are in `/etc/miti/`; to start MITI at boot instead, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#apt-package-ubuntu).
+
+The other options run from a clone of the repository:
+
 ```bash
 git clone https://github.com/hiran-t/MITI.git
 cd MITI
 ```
 
-### Option 1: pixi (recommended)
+### Option 2: Docker Compose (as a service)
+
+Install Docker once on Ubuntu, if it is not there yet:
+
+```bash
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER   # log out and in again
+sudo systemctl enable --now docker
+```
+
+Run MITI; it restarts with the machine:
+
+```bash
+docker compose up -d           # http://<this machine>:3000
+docker compose logs -f         # logs
+docker compose up -d --build   # rebuild after updating MITI
+docker compose down            # stop
+```
+
+### Option 3: pixi
 
 Install pixi once:
 
@@ -80,38 +122,6 @@ pixi run remove        # delete everything pixi and the build generated; pixi ru
 ```
 
 The first run installs Node.js and the npm packages and builds MITI; later runs start in about a second unless the source changed.
-
-### Option 2: Docker Compose (as a service)
-
-Install Docker once on Ubuntu, if it is not there yet:
-
-```bash
-curl -fsSL https://get.docker.com | sh
-sudo usermod -aG docker $USER   # log out and in again
-sudo systemctl enable --now docker
-```
-
-Run MITI; it restarts with the machine:
-
-```bash
-docker compose up -d           # http://<this machine>:3000
-docker compose logs -f         # logs
-docker compose up -d --build   # rebuild after updating MITI
-docker compose down            # stop
-```
-
-### Option 3: apt package (Ubuntu 22.04 and 24.04, amd64 and arm64)
-
-No clone needed. Add MITI's apt repository once, then install; `sudo apt upgrade` keeps it current:
-
-```bash
-curl -fsSL https://hiran-t.github.io/MITI/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/miti.gpg
-echo "deb [signed-by=/usr/share/keyrings/miti.gpg] https://hiran-t.github.io/MITI stable main" | sudo tee /etc/apt/sources.list.d/miti.list
-sudo apt-get update
-sudo apt-get install miti         # http://<this machine>:3000, starts at boot
-```
-
-Settings are in `/etc/miti/miti.env`; see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#apt-package-ubuntu).
 
 ### Option 4: from source
 

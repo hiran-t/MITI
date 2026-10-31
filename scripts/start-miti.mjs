@@ -1,5 +1,6 @@
-// Starts MITI (`pixi run miti`) and, with --bridge, foxglove_bridge beside it
-// (`pixi run -e <distro> miti-bridge`). Runs the same on Linux, macOS and Windows.
+// Starts MITI (`pixi run miti`, or `miti run` from the apt package) and, with --bridge,
+// foxglove_bridge beside it (`pixi run -e <distro> miti-bridge`, `miti run --bridge`). Runs the
+// same on Linux, macOS and Windows; Ctrl+C stops both.
 //
 // Ports move out of each other's way: if the web port is taken, MITI uses the next free one; if
 // the bridge port is taken by a foxglove_bridge, MITI uses that bridge, and if it is taken by
@@ -14,6 +15,7 @@
 //   env: BRIDGE_PORT (default 8765), MITI_HOST (default 0.0.0.0)
 import { spawn, spawnSync } from 'node:child_process';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
 import http from 'node:http';
 import net from 'node:net';
 import os from 'node:os';
@@ -38,7 +40,12 @@ const isWindows = process.platform === 'win32';
 /** How many ports above the preferred one to try. */
 const SEARCH = 20;
 /** ROS settings changed in MITI's connection settings. */
-const settingsFile = path.join(root, '.miti', 'bridge.json');
+const settingsFile = path.join(
+  process.env.MITI_STATE_DIR || path.join(root, '.miti'),
+  'bridge.json'
+);
+/** How to start a bridge beside MITI, for messages (the apt package says `miti run --bridge`). */
+const bridgeHint = process.env.MITI_BRIDGE_HINT || 'pixi run -e <distro> miti-bridge';
 /** Bridge output lines kept for the connection settings, to show why it stopped. */
 const LOG_LINES = 12;
 
@@ -160,7 +167,7 @@ const bridge = await chooseBridge();
 
 const ros = loadSettings(settingsFile);
 if (bridge.start && ros.saved)
-  console.log(`ROS settings saved in MITI (.miti/bridge.json): ${describeSettings(ros)}`);
+  console.log(`ROS settings saved in MITI (${settingsFile}): ${describeSettings(ros)}`);
 
 /** The bridge this launcher started; it is replaced when the ROS settings change. */
 const bridgeRun = { child: null, state: 'stopped', exitCode: null, log: [], fromWeb: false };
@@ -316,13 +323,20 @@ if (bridge.start) {
   control = await startControl();
 }
 
-const next = path.join(root, 'node_modules', 'next', 'dist', 'bin', 'next');
-web = spawn(process.execPath, [next, 'start', '--hostname', host, '--port', String(webPort)], {
+// The apt package carries Next.js's standalone server (server.js); a clone runs `next start`.
+const standalone = path.join(root, 'server.js');
+const server = fs.existsSync(standalone)
+  ? [standalone]
+  : [path.join(root, 'node_modules', 'next', 'dist', 'bin', 'next'), 'start'];
+web = spawn(process.execPath, [...server, '--hostname', host, '--port', String(webPort)], {
   cwd: root,
   stdio: 'inherit',
   detached: !isWindows,
   env: {
     ...process.env,
+    // The standalone server reads these instead of --hostname and --port.
+    HOSTNAME: host,
+    PORT: String(webPort),
     MITI_BRIDGE_PORT: String(bridge.port),
     ...(control && { MITI_BRIDGE_CONTROL: control.url, MITI_BRIDGE_TOKEN: control.token }),
   },
@@ -336,7 +350,7 @@ console.log(
       ? ` (${describeSettings(ros)}; change it in MITI's connection settings)`
       : bridge.found
         ? ' (already running)'
-        : ' (none running here: start one on the robot, or use pixi run -e <distro> miti-bridge)') +
+        : ` (none running here: start one on the robot, or use ${bridgeHint})`) +
     '\n'
 );
 

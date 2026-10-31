@@ -1,8 +1,44 @@
 #!/bin/sh
-# Runs MITI in the foreground with the settings in /etc/miti/miti.env, like the miti service.
-# Usually the service is enough: sudo systemctl status miti
-set -a
-# shellcheck disable=SC1091
-[ -r /etc/miti/miti.env ] && . /etc/miti/miti.env
-set +a
-exec /usr/lib/miti/node/bin/node /usr/lib/miti/server.js "$@"
+# The miti command of the apt package. `miti run` serves MITI in this terminal until Ctrl+C,
+# with the same launcher as `pixi run miti` (scripts/start-miti.mjs).
+set -e
+lib=/usr/lib/miti
+
+usage() {
+  cat <<'USAGE'
+Usage: miti run [--port <port>] [--bridge]
+
+  run             Serve MITI in this terminal; Ctrl+C stops it.
+    --port <port> Port to serve on (default 3000; a taken port moves to the next free one).
+    --bridge      Also run foxglove_bridge beside MITI, from the ROS 2 in /opt/ros
+                  (sudo apt install ros-<distro>-foxglove-bridge).
+  version         Show the installed version.
+
+Settings: /etc/miti/miti.env and /etc/miti/bridge.env; variables set in the shell win,
+e.g. ROS_DOMAIN_ID=5 miti run --bridge.
+To run MITI at boot instead: sudo systemctl enable --now miti
+USAGE
+}
+
+case "${1:-}" in
+  run)
+    shift
+    # ROS settings changed in MITI's connection settings are kept here.
+    export MITI_STATE_DIR="${MITI_STATE_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/miti}"
+    export MITI_BRIDGE_HINT="${MITI_BRIDGE_HINT:-miti run --bridge}"
+    exec "$lib/node/bin/node" \
+      --env-file-if-exists=/etc/miti/miti.env --env-file-if-exists=/etc/miti/bridge.env \
+      "$lib/scripts/start-miti.mjs" "$@"
+    ;;
+  version | --version | -v)
+    "$lib/node/bin/node" -p "'miti ' + require('$lib/package.json').version"
+    ;;
+  help | --help | -h | "")
+    usage
+    ;;
+  *)
+    echo "Unknown command: $1" >&2
+    usage >&2
+    exit 1
+    ;;
+esac

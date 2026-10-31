@@ -169,8 +169,14 @@ export default function Dashboard() {
             <span>
               No foxglove_bridge at <code>{bridgeUrl}</code>. Start it on the robot and enter the
               robot&apos;s address with the gear in the status bar, or run{' '}
-              <code>pixi run -e humble miti-bridge</code> (or <code>-e jazzy</code>) to run one
-              beside MITI.
+              {window.__MITI__?.bridgeHint ? (
+                <code>{window.__MITI__.bridgeHint}</code>
+              ) : (
+                <>
+                  <code>pixi run -e humble miti-bridge</code> (or <code>-e jazzy</code>)
+                </>
+              )}{' '}
+              to run one beside MITI.
             </span>
           </div>
         )}

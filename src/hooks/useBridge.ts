@@ -8,7 +8,11 @@ export const BRIDGE_PORT = 8765;
 declare global {
   interface Window {
     /** Set by the server on each request (see src/app/layout.tsx). */
-    __MITI__?: { bridgePort?: number | null };
+    __MITI__?: {
+      bridgePort?: number | null;
+      /** How to start foxglove_bridge beside MITI, e.g. `miti run --bridge` (apt package). */
+      bridgeHint?: string | null;
+    };
   }
 }
 
