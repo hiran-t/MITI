@@ -17,6 +17,7 @@
 
 ### Fixed
 
+- The tests run in CI again: on Node 22 Jest loads `jest.config.ts` as an ES module, which needs `next/jest.js`; the failure had been hidden by `continue-on-error`
 - The 3D Scene reference and the manual describe the odometry covariance ellipsoid the scene draws
 - `miti run --bridge` and the `miti-bridge` service work with only `ros-<distro>-foxglove-bridge` installed: without the `ros2` command, `ros/foxglove-bridge.sh` starts the foxglove_bridge node directly instead of exiting with `ros2: not found`
 
