@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [3.3.6] - 2026-10-31
+
 ### Added
 
 - A user manual for Read the Docs (`docs/index.md`, `docs/manual/`, `.readthedocs.yaml`): installing, connecting to a robot, the workspace, cameras and overlays, the 3D Scene, the other panels and troubleshooting, with screenshots of MITI connected to a robot
