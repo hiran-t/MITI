@@ -336,7 +336,7 @@ interface ConnectionStatusProps {
 ### ConnectionSettings
 
 `connection/ConnectionSettings.tsx`. A button that opens a dialog for the bridge URL and the stream
-mode (**Synchronized (like Foxglove)** or **Prioritize robot motion**).
+mode (**Synchronized** or **Prioritize robot motion**).
 
 ```typescript
 interface ConnectionSettingsProps {

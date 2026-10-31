@@ -19,7 +19,7 @@ interface ConnectionSettingsProps {
 const STREAM_MODES: { value: StreamMode; label: string; hint: string }[] = [
   {
     value: 'synchronized',
-    label: 'Synchronized (like Foxglove)',
+    label: 'Synchronized',
     hint: 'One connection: cameras, TF and the 3D scene show the same moment.',
   },
   {

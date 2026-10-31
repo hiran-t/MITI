@@ -2,7 +2,6 @@ export const CAMERA_TOPICS = {
   COLOR: '/camera/color/image_raw',
   DEPTH: '/camera/depth/image_raw',
   IR: '/camera/ir/image_raw',
-  DETECTION: '/pacen_decon_vision/detection_image',
   DEPTH_POINTS: '/camera/depth/points',
 } as const;
 

@@ -53,7 +53,7 @@ Robot and marker mesh URLs must be browser-accessible with appropriate CORS. STL
 
 Camera layer images must be rectified and use the same optical frame as CameraInfo; the 3D Scene does not correct distortion (the Camera panel's **Rectify** does). Raw image encodings use MITI's image decoder; compressed images use the browser's JPEG/PNG decoder. A zero focal length reports an uncalibrated camera. CameraInfo defines the image plane transform; the viewer is not a stereo reconstruction or image synchronization pipeline. The Foxglove protocol has no server-side throttling: foxglove_bridge sends every message and heavy topics are throttled for rendering in the browser, so prefer `CompressedImage` camera topics over slow links.
 
-Odometry displays pose, not covariance ellipsoids or a stored trajectory. Use Path for trajectories. Custom ROS messages, volumetric maps and other message families need additional renderers; this is not complete RViz feature parity.
+Odometry displays the latest pose and, with **Covariance** on, the 1-sigma position covariance ellipsoid from the message's 6×6 covariance; it does not store a trajectory. Use Path for trajectories. Custom ROS messages, volumetric maps and other message families need additional renderers; this is not complete RViz feature parity.
 
 ## Compatibility and validation
 

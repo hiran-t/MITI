@@ -8,16 +8,21 @@
 
 ### Changed
 
+- GitHub Actions use their Node 24 versions (checkout 7, setup-node 7, upload-artifact 7, download-artifact 8, Docker actions 4–7), and failing tests now fail CI
+- The connection settings call the default stream mode **Synchronized**, and Sources names the protocol foxglove_bridge (WebSocket)
+- The default layout is the 3D Scene, color and depth cameras and the log. Camera panels still on a default topic that the robot does not publish switch to the robot's own topic of that kind, e.g. `/camera/camera/color/image_raw` from a RealSense driver; topics you chose are kept
 - All documentation is one Read the Docs site in `docs/`: the user manual and deployment guide (`manual/`), the 3D Scene and state machine reference (`reference/`) and the developer guides (`develop/`). The README is now a short introduction with install commands and a link to the manual
 - The manual's screenshots live on the `docs-images` branch, with the scripts that take them, and are fetched when the manual is built (`docs/fetch-images.sh`), so the source tree holds no images
 - The pre-commit hook runs `npx lint-staged`, so Bun is no longer needed
 
 ### Fixed
 
+- The 3D Scene reference and the manual describe the odometry covariance ellipsoid the scene draws
 - `miti run --bridge` and the `miti-bridge` service work with only `ros-<distro>-foxglove-bridge` installed: without the `ros2` command, `ros/foxglove-bridge.sh` starts the foxglove_bridge node directly instead of exiting with `ros2: not found`
 
 ### Removed
 
+- The Detection camera and its `/pacen_decon_vision/detection_image` topic from the default layout
 - `scripts/deploy.sh`, `scripts/ubuntu-setup.sh`, `scripts/auto-startapp.service` and the kiosk autostart scripts, replaced by the apt package and Docker image (the deployment guide shows how to set up a kiosk screen)
 - `bun.lock` and `bunfig.toml`; npm is the package manager
 - `docs/releases/`: release notes are kept on GitHub Releases

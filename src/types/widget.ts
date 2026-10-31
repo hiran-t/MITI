@@ -215,16 +215,14 @@ const DEFAULT_WIDGETS: WidgetConfig[] = [
     [
       ['Color', CAMERA_TOPICS.COLOR],
       ['Depth', CAMERA_TOPICS.DEPTH],
-      ['Detection', CAMERA_TOPICS.DETECTION],
-      ['Infrared', CAMERA_TOPICS.IR],
     ] as const
   ).map(
     ([name, topic], index): CameraWidgetConfig => ({
       i: `camera-viewer-${index + 1}`,
       type: 'camera-viewer',
       title: `Camera · ${name}`,
-      x: 6 + (index % 2) * 3,
-      y: Math.floor(index / 2) * 9,
+      x: 6 + index * 3,
+      y: 0,
       w: 3,
       h: 9,
       minW: 2,
@@ -232,6 +230,17 @@ const DEFAULT_WIDGETS: WidgetConfig[] = [
       props: { topic },
     })
   ),
+  {
+    i: 'log-1',
+    type: 'log',
+    title: 'Log',
+    x: 6,
+    y: 9,
+    w: 6,
+    h: 9,
+    minW: 2,
+    minH: 3,
+  },
 ];
 
 export const DEFAULT_LAYOUT: LayoutConfig = {

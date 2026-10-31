@@ -27,6 +27,7 @@ import type { TFTree } from '@/types/tf-messages';
 import { UI_TOKENS } from '@/lib/theme';
 import { visualizationStyles } from '@/styles';
 import { CAMERA_TOPICS as CAMERA_TOPIC_VALUES } from '@/constants/ros-topics';
+import { publishedCameraTopic } from '@/lib/camera/default-topic';
 import SceneLayers, {
   useLayerReports,
   useTFFrames,
@@ -115,6 +116,12 @@ export default function CameraViewer({
 }: CameraViewerProps) {
   const config = useMemo(() => normalizeImageConfig(props, CAMERA_TOPIC_VALUES.COLOR), [props]);
   const selectedTopic = config.topic;
+
+  // A default topic the robot does not publish: show the robot's own camera topic instead.
+  useEffect(() => {
+    const published = publishedCameraTopic(config.topic, topics);
+    if (published) onPropsChange({ ...config, topic: published });
+  }, [config, topics, onPropsChange]);
   /** How far the shown frame trails the robot's clock, in seconds. */
   const [lag, setLag] = useState<number | null>(null);
   const [meshEpoch, setMeshEpoch] = useState(0);

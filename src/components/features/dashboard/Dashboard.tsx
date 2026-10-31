@@ -336,7 +336,7 @@ export default function Dashboard() {
                 </summary>
                 <dl>
                   <dt>Protocol</dt>
-                  <dd>ROS bridge / WebSocket</dd>
+                  <dd>foxglove_bridge (WebSocket)</dd>
                   <dt>Status</dt>
                   <dd>{connected ? 'Connected' : 'Disconnected'}</dd>
                   <dt>Topics</dt>

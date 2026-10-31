@@ -8,25 +8,35 @@ import {
 } from '../mosaic';
 import { DEFAULT_LAYOUT } from '@/types/widget';
 
-test('converts the grid layout into splits that keep its arrangement', () => {
+test('converts the default layout into splits that keep its arrangement', () => {
   const tree = DEFAULT_LAYOUT.mosaic as MosaicSplit;
-  // Scene on the left half; cameras in a 2×2 block on the right.
+  // Scene on the left half; two cameras above the log on the right.
   expect(tree).toMatchObject({ direction: 'row', first: 'urdf-viewer-1', splitPercentage: 50 });
-  // A 2×2 block has cuts both ways; vertical cuts are taken first.
   expect(tree.second).toEqual({
-    direction: 'row',
+    direction: 'column',
     first: {
-      direction: 'column',
+      direction: 'row',
       first: 'camera-viewer-1',
-      second: 'camera-viewer-3',
+      second: 'camera-viewer-2',
       splitPercentage: 50,
     },
-    second: {
-      direction: 'column',
-      first: 'camera-viewer-2',
-      second: 'camera-viewer-4',
-      splitPercentage: 50,
-    },
+    second: 'log-1',
+    splitPercentage: 50,
+  });
+});
+
+test('a 2×2 block has cuts both ways; vertical cuts are taken first', () => {
+  expect(
+    mosaicFromGrid([
+      { id: 'a', x: 0, y: 0, w: 3, h: 9 },
+      { id: 'b', x: 3, y: 0, w: 3, h: 9 },
+      { id: 'c', x: 0, y: 9, w: 3, h: 9 },
+      { id: 'd', x: 3, y: 9, w: 3, h: 9 },
+    ])
+  ).toEqual({
+    direction: 'row',
+    first: { direction: 'column', first: 'a', second: 'c', splitPercentage: 50 },
+    second: { direction: 'column', first: 'b', second: 'd', splitPercentage: 50 },
     splitPercentage: 50,
   });
 });

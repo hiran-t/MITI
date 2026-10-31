@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Check out the traffic branch
         run: |
@@ -49,6 +49,8 @@ jobs:
           python3 -I scripts/traffic-archive.py "$GITHUB_REPOSITORY" data | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Commit
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           cd data
           git add -A
@@ -59,4 +61,4 @@ jobs:
           git -c user.name="github-actions[bot]" \
             -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
             commit --quiet -m "chore: traffic for $(date -u +%F)"
-          git push origin HEAD:refs/heads/traffic
+          git push --quiet "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:refs/heads/traffic

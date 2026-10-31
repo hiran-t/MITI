@@ -87,7 +87,7 @@ Turn on `/plan`, `/path` or another `nav_msgs/msg/Path` topic, choose **Type** L
 
 ### Odometry and poses
 
-An odometry topic such as `/odom` is drawn as an **Arrow** or **Axis**, with its color, shaft and head sizes and opacity. It shows the latest pose only; to see the route the robot has driven, show a Path topic.
+An odometry topic such as `/odom` is drawn as an **Arrow** or **Axis**, with its color, shaft and head sizes and opacity. With **Covariance** on, it also draws the position uncertainty from the message's covariance as an ellipsoid (one standard deviation). It shows the latest pose only; to see the route the robot has driven, show a Path topic.
 
 ```{figure} images/scene-odom.webp
 :alt: An odometry arrow at the robot in the 3D Scene, with the arrow settings in the sidebar

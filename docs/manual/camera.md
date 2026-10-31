@@ -8,7 +8,7 @@ The Camera panel shows one image topic: color, depth or infrared, raw (`sensor_m
 2. In **General → Topic**, choose the image topic exactly as it appears in **Topics**.
 3. Wait for the first frame. Being connected does not mean the topic is sending; until a frame arrives the panel shows **Waiting for image data...**.
 
-The default camera panels use common topic names such as `/camera/color/image_raw`. Robots often publish under other names; for example, an Intel RealSense driver publishes `/camera/camera/color/image_raw`. Pick the name from the robot's own topic list.
+The default camera panels start on common topic names such as `/camera/color/image_raw`. When the robot does not publish that name, the panel switches by itself to the robot's own topic of the same kind, for example `/camera/camera/color/image_raw` from an Intel RealSense driver. A topic you chose is never changed.
 
 ```{figure} images/camera.webp
 :alt: A camera panel showing a live color image from /camera/camera/color/image_raw, with its General settings in the sidebar
