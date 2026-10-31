@@ -13,7 +13,7 @@
 
 </div>
 
-MITI shows a robot's 3D scene, cameras, logs and state machines in tiled panels, in the browser. It connects to [foxglove_bridge](https://github.com/foxglove/foxglove-sdk) over the Foxglove WebSocket protocol and works the way Foxglove's panels do, so teams that know Foxglove feel at home. foxglove_bridge can run on the robot, or on the MITI machine, where it reads the robot's topics over DDS and keeps the work off the robot.
+MITI shows a robot's 3D scene, cameras, logs and state machines in tiled panels, in any browser on the network, with nothing to install on the computers that view it. It reads the robot's topics through [foxglove_bridge](https://github.com/foxglove/foxglove-sdk), which can run on the robot, or on the MITI machine, where it subscribes over DDS and keeps the work off the robot.
 
 ![MITI with a robot's topics, a 3D scene with the robot model, point clouds and costmaps, a camera with the point cloud drawn over it, and the log](docs/images/miti-dashboard.webp)
 
@@ -33,8 +33,8 @@ MITI shows a robot's 3D scene, cameras, logs and state machines in tiled panels,
 
 ## Features
 
-- **3D Scene** like Foxglove's 3D panel: robot model from `/robot_description` with live joints, TF, point clouds and laser scans, occupancy grids and costmaps, poses, paths, markers, and publishing goal poses. See [docs/3d-scene.md](docs/3d-scene.md).
-- **Camera** like Foxglove's Image panel: raw and compressed images, 3D topics drawn over the image through `camera_info` and TF, color maps for depth images, flip, rotation and rectify.
+- **3D Scene**: robot model from `/robot_description` with live joints, TF, point clouds and laser scans, occupancy grids and costmaps, poses, paths, markers, and publishing goal poses. See [docs/3d-scene.md](docs/3d-scene.md).
+- **Camera**: raw and compressed images, 3D topics drawn over the image through `camera_info` and TF, color maps for depth images, flip, rotation and rectify.
 - **Log** for `/rosout`, with level, text and node filters and a color per node.
 - **Topics**, **Point Cloud**, **State Machine** (SMACC2 and BehaviorTree) and **Button Switch** panels.
 - **Workspace**: tiled panels you drag, split and resize; an activity bar for panel settings, topics, problems and sources; layouts saved in the browser.
@@ -191,7 +191,7 @@ The address in the connection settings always wins and is remembered per browser
 - **Connect**: the status bar (bottom left) shows the bridge address and state; the gear opens the connection settings.
 - **Add panels** with **+** in the title bar. Drag a panel's tab onto another panel's edge to split it, drag dividers to resize, and use the expand and lock buttons on each tab.
 - **Configure a panel**: click its tab; its settings open in the sidebar. The activity bar on the left switches between Panel settings, Topics, Problems and Sources.
-- **3D Scene**: set _Display frame_ to a robot frame (for example `base_link`) to follow the robot, and turn topics on with the eye icons, as in Foxglove.
+- **3D Scene**: set _Display frame_ to a robot frame (for example `base_link`) to follow the robot, and turn topics on with the eye icons.
 - **Camera**: pick the image topic in its settings; turn on _Calibration_ and topics to draw them over the image.
 
 ## Development
