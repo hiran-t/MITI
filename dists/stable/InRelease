@@ -1,0 +1,51 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Architectures: amd64 arm64
+Codename: stable
+Components: main
+Date: Sat, 31 Oct 2026 15:14:11 +0000
+Description: MITI web dashboard for ROS 2
+Label: MITI
+Origin: MITI
+Suite: stable
+MD5Sum:
+ 32dd2a07c636e6478b126ca375c7909a              180 Release
+ 86731a0f16455886cf9bda14e6cae2f0             2112 main/binary-amd64/Packages
+ 4c8b505f8dbb666c3bed798b1e0504c9              927 main/binary-amd64/Packages.gz
+ 608ab143b877bb6946c612b4950b96aa             2112 main/binary-arm64/Packages
+ fb9ad1588fd72499aed55c6afb16ab14              927 main/binary-arm64/Packages.gz
+SHA1:
+ cced8505314c6fcd4b9ec5cb74e6883abadb1a1c              180 Release
+ b1e3b75da939cef4e277a5addd46b2ed95d3a0e8             2112 main/binary-amd64/Packages
+ 4936f222f1315cc95275a71d3a446e829bc41b72              927 main/binary-amd64/Packages.gz
+ d1172b9f376aa975cd7a9d451593dd49562f080e             2112 main/binary-arm64/Packages
+ 3255429b2a7a5eac53f4505b8dfb4bdfb4cd9baf              927 main/binary-arm64/Packages.gz
+SHA256:
+ c53b6d90fc5897450555c9923f1f03caf5d0b2b3019cb6bcf4a18be47aa8a593              180 Release
+ 60c16e5b051fc91175ba968a54a9e0e836620f17022e24e9bc83e1ec01a8c9f3             2112 main/binary-amd64/Packages
+ 9fd3e3c6389bad605fbf8147e6a5f64d5aa45f7dc0f5bb8763cac1faf73e3a9e              927 main/binary-amd64/Packages.gz
+ ef4ce3317abaf05c0403415b2ed59bf27bda36b259d678505a96280753f17618             2112 main/binary-arm64/Packages
+ 85cc5f5ae34b6793cf7d2d2883f2f11f6482c0e04cdeddbcd2cc3f8876b87697              927 main/binary-arm64/Packages.gz
+SHA512:
+ 92859c32b98b835a14ec7703356b7ae2c2fcf35acb49cd935d0ed35c31676a97ea8e7443e2a98896570c5bf03ec107f39a9865dd5c7085e33aee268571a402ae              180 Release
+ 82491a19f34192b93899eb116d38b0b546e33c593d0e04d9ec85f753575b2d017cb3b90cdfe8ee29276b3d3e2fc7988a6210ad006678bf62176aa161c8c957e9             2112 main/binary-amd64/Packages
+ 083dd836c5db9a0ec9c35c345a2fed9838dd91e241d1482bc10fce03600774e65044287a58da4e9e542739203a72758fccae23d1a377585a90ee8b574fd1a896              927 main/binary-amd64/Packages.gz
+ 4997cdec654212b7e42b03bd58046452953ed32056b2456b2220a60ce0a8ab6450d0957eaef0777b3f36338d498a360fc25bfe93e23d65c47ea0cf6bd4722a0e             2112 main/binary-arm64/Packages
+ 7c54564fb19a98c3b3b1fbb53942138e18ce046492fa667acde6f2674b9952c9ebc24df5a284c1e58e92b5c31fbfd635d63544062f58a7fe7869d36772f1b06e              927 main/binary-arm64/Packages.gz
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCgAdFiEEg3eb1/BfkKghiU6BKFC0cZ32YwMFAmrmBcMACgkQKFC0cZ32
+YwPmWRAAvNjYpS/COA//5YDiQMhxDBg6l5PW8YWHYUaVCk1eby3hR0bwyC2bJkuR
+RCI0Qtp7RcDEBKG2zGgaDsS4P/2yj/Svf9kai8Y3KEsg5zXLOzgxMnAfZDTsfMpb
+UIY4/ugRh5dQlridoOVdU0BT+ScPzp4OQiMREvYao3cmU2iYV9VdJyWYk2m6LaTR
+T8bg8+RgreN+bV9yolQ472c5DZycFT0FO12rJ/6w42sDmivwjNH+encIQ2F7Jj7K
+srKxG4D5Ay2SdAZSJ8CgNFxbhX8YjpBON1oYZL2PDISLeuk82yHHG29ZcTau26jq
+0/KNFKhLMufAFJj8YpOMV1OgUZ5iLnu/4cS8yd57x2ZdBkaEbFnYbvar2+PJSmrl
+owfZOdeAACdMOaledQQu5gmNkoZp8rq4nh5a3RiG+8aAis9+EHS1/VD/HWSnmoeu
+wiRxoUULkziUL+3hokqERyhcHZ4iSwcrothdJddNIdoShnFSuSwEFVgdL9eAHvD2
+a3hIgn9JQ1axzaUJkwC+6bkB7n2dWFye/AJgzpXatbKVVKXKBTOiz1HAB0DBwCvX
+SifPvHG9JWmc7TTHa+gDSwCOhQVyNj35H/z2e1cIlbzCKkflXzLG598Y0zRRbCIJ
+p+ikpvIuJgIC5EuHaY2QniZf+tTfERPdtFKeN3S88wHJxfwRJZY=
+=pTsg
+-----END PGP SIGNATURE-----

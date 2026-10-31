@@ -1,0 +1,46 @@
+Package: miti
+Architecture: amd64
+Version: 3.3.5
+Priority: optional
+Section: misc
+Maintainer: MITI Contributors <78252832+hiran-t@users.noreply.github.com>
+Installed-Size: 141896
+Depends: libc6 (>= 2.28), libstdc++6
+Recommends: ros-humble-foxglove-bridge | ros-jazzy-foxglove-bridge
+Filename: pool/main/m/miti/miti_3.3.5_amd64.deb
+Size: 50026340
+MD5sum: 4c3f26578dc7da2f1ebb4d92ce13bc73
+SHA1: 8fa0b523b732e2980c99da893bf753e422b6ae32
+SHA256: fca5621e029dbfb7f35692dc34c4a57c500dad70f07de032ef6df73bbab4d008
+SHA512: af136e9ba86e1d2e5ff8d033ed083c96b409be8c33469d4c569217136fd696f8be0fc903c26286d859533ad75b255b7d376fd47c08e901e8e7b68e00c2151d77
+Homepage: https://github.com/hiran-t/MITI
+Description: Web dashboard for ROS 2 robots
+ MITI shows a robot's topics in the browser: a 3D scene with the robot model,
+ TF, point clouds and maps, camera images, logs and plots. It connects to
+ foxglove_bridge on the robot, or to one beside it (miti run --bridge).
+ Node.js is included. Start it with `miti run` (Ctrl+C stops it), or at boot
+ with the miti service.
+
+Package: miti
+Architecture: amd64
+Version: 3.3.6
+Priority: optional
+Section: misc
+Maintainer: MITI Contributors <78252832+hiran-t@users.noreply.github.com>
+Installed-Size: 141897
+Depends: libc6 (>= 2.28), libstdc++6
+Recommends: ros-humble-foxglove-bridge | ros-jazzy-foxglove-bridge
+Filename: pool/main/m/miti/miti_3.3.6_amd64.deb
+Size: 50024160
+MD5sum: 7a7576e41158194a2657b296e3e7a257
+SHA1: 1aac0e04cd2e6b0f74da964408a12ce3a9490ef8
+SHA256: 69b996bff7d9fc2567d16433d7e025f7d4488663d4466c85470d67fa8ebc68d4
+SHA512: b87bf56e041ff83d59509f038016d1112f2377dc2be587ac2863c5bb57dd5541724a7e9cdf95626ddc94a79e96e8ec51763698dec61e129e260d7f7148976895
+Homepage: https://github.com/hiran-t/MITI
+Description: Web dashboard for ROS 2 robots
+ MITI shows a robot's topics in the browser: a 3D scene with the robot model,
+ TF, point clouds and maps, camera images, logs and plots. It connects to
+ foxglove_bridge on the robot, or to one beside it (miti run --bridge).
+ Node.js is included. Start it with `miti run` (Ctrl+C stops it), or at boot
+ with the miti service.
+
