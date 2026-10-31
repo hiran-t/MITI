@@ -19,7 +19,11 @@ here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Docker images and system installs need ROS sourced; a pixi environment already has it.
 if ! command -v ros2 >/dev/null 2>&1; then
+  # ROS_DISTRO, else the ROS 2 installed in /opt/ros (Humble when there are several).
   setup="/opt/ros/${ROS_DISTRO:-humble}/setup.bash"
+  if [ -z "${ROS_DISTRO:-}" ] && [ ! -f "$setup" ]; then
+    for candidate in /opt/ros/*/setup.bash; do setup="$candidate"; done
+  fi
   [ -f "$setup" ] || { echo "ros2 not found: run through pixi (pixi run bridge) or source ROS 2" >&2; exit 1; }
   # shellcheck disable=SC1090
   source "$setup"

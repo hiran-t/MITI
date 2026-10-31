@@ -1,0 +1,23 @@
+[Unit]
+Description=MITI web dashboard for ROS 2
+Documentation=https://github.com/hiran-t/MITI
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=miti
+Group=miti
+EnvironmentFile=/etc/miti/miti.env
+WorkingDirectory=/usr/lib/miti
+ExecStart=/usr/lib/miti/node/bin/node /usr/lib/miti/server.js
+Restart=on-failure
+RestartSec=3
+CacheDirectory=miti
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=read-only
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

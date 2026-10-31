@@ -49,11 +49,34 @@ Pushing to `main` runs two GitHub Actions workflows:
 
 Pushing the tag (step 5) runs **Docker Build** again and publishes the image to `ghcr.io/hiran-t/miti` for linux/amd64 and linux/arm64, tagged `3.3.0`, `3.3` and `latest`. The first published image is private: on its package page (GitHub profile → Packages → miti → Package settings), set the visibility to public once. No workflow creates the release; step 6 does that.
 
+## Debian packages and the apt repository
+
+Publishing the release (step 6) runs **Packages** (`.github/workflows/packages.yml`): it builds `miti_<version>_amd64.deb` and `_arm64.deb` (`packaging/build-deb.sh`, with nfpm and the official Node.js 22 build), checks that they install and start on Ubuntu 22.04 and 24.04, attaches them to the release, and publishes the apt repository at `https://hiran-t.github.io/MITI` (`packaging/build-apt-repo.sh`, the `gh-pages` branch, with the packages of the last three releases).
+
+One-time setup:
+
+1. Create a signing key without a passphrase and store it as the secret `APT_GPG_PRIVATE_KEY`, on a trusted machine:
+
+   ```bash
+   export GNUPGHOME="$(mktemp -d)"
+   gpg --batch --passphrase '' --quick-gen-key "MITI apt repository" rsa4096 sign never
+   gpg --armor --export-secret-keys "MITI apt repository" | gh secret set APT_GPG_PRIVATE_KEY --repo hiran-t/MITI
+   gpg --armor --export-secret-keys "MITI apt repository" > miti-apt-key.asc   # back it up offline
+   rm -rf "$GNUPGHOME"
+   ```
+
+   Users trust this key once; changing it later means every user adds the new `key.gpg` again. Without the secret, the workflow only attaches the packages to the release.
+
+2. After the first run, turn on GitHub Pages for the `gh-pages` branch (Settings → Pages → Deploy from a branch → `gh-pages`, `/ (root)`).
+
+To rebuild the packages of a release, run **Packages** from the Actions tab with its tag.
+
 ## Who uses MITI
 
 GitHub keeps a repository's traffic for 14 days. **Traffic archive** (`.github/workflows/traffic.yml`) runs daily and adds it to CSV files on the `traffic` branch (`views.csv`, `clones.csv`, `referrers.csv`, `paths.csv`, `repo.csv`; see `scripts/traffic-archive.py`). It needs the repository secret `TRAFFIC_TOKEN`, a fine-grained personal access token with **Administration: Read-only** on this repository; until the secret exists the workflow only warns. Other signals:
 
 - **Image pulls**: the `miti` package page shows how often the published image is pulled.
+- **Package downloads**: `gh release view <tag> --json assets --jq '.assets[] | "\(.name) \(.downloadCount)"'` counts `.deb` downloads from the release; downloads through the apt repository (GitHub Pages) are not counted.
 - **Discussions** (Q&A, Show and tell) and issues from people outside the team are the clearest sign that MITI is in use.
 - Clones include CI checkouts, so unique visitors and referrers say more than the clone count.
 

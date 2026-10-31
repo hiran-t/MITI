@@ -1,0 +1,51 @@
+# Debian package of MITI, built by packaging/build-deb.sh (nfpm reads ${...} from its environment).
+name: miti
+arch: ${DEB_ARCH}
+platform: linux
+version: ${MITI_VERSION}
+section: misc
+priority: optional
+maintainer: MITI Contributors <78252832+hiran-t@users.noreply.github.com>
+vendor: MITI
+homepage: https://github.com/hiran-t/MITI
+license: MIT
+description: |
+  Web dashboard for ROS 2 robots
+  MITI shows a robot's topics in the browser: a 3D scene with the robot model,
+  TF, point clouds and maps, camera images, logs and plots. It connects to
+  foxglove_bridge on the robot, or to one beside it (the miti-bridge service).
+  Node.js is included; the miti service serves MITI on port 3000.
+
+depends:
+  - libc6 (>= 2.28)
+  - libstdc++6
+recommends:
+  - ros-humble-foxglove-bridge | ros-jazzy-foxglove-bridge
+
+contents:
+  - src: ./build/deb/miti/
+    dst: /usr/lib/miti
+    type: tree
+  - src: ./packaging/miti
+    dst: /usr/bin/miti
+    file_info:
+      mode: 0755
+  - src: ./packaging/miti.service
+    dst: /usr/lib/systemd/system/miti.service
+  - src: ./packaging/miti-bridge.service
+    dst: /usr/lib/systemd/system/miti-bridge.service
+  - src: ./packaging/miti.env
+    dst: /etc/miti/miti.env
+    type: config|noreplace
+  - src: ./packaging/bridge.env
+    dst: /etc/miti/bridge.env
+    type: config|noreplace
+  # Next.js writes its cache here; /usr/lib/miti stays read-only.
+  - src: /var/cache/miti
+    dst: /usr/lib/miti/.next/cache
+    type: symlink
+
+scripts:
+  postinstall: ./packaging/postinstall.sh
+  preremove: ./packaging/preremove.sh
+  postremove: ./packaging/postremove.sh

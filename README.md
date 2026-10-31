@@ -100,7 +100,20 @@ docker compose up -d --build   # rebuild after updating MITI
 docker compose down            # stop
 ```
 
-### Option 3: from source
+### Option 3: apt package (Ubuntu 22.04 and 24.04, amd64 and arm64)
+
+No clone needed. Add MITI's apt repository once, then install; `sudo apt upgrade` keeps it current:
+
+```bash
+curl -fsSL https://hiran-t.github.io/MITI/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/miti.gpg
+echo "deb [signed-by=/usr/share/keyrings/miti.gpg] https://hiran-t.github.io/MITI stable main" | sudo tee /etc/apt/sources.list.d/miti.list
+sudo apt-get update
+sudo apt-get install miti         # http://<this machine>:3000, starts at boot
+```
+
+Settings are in `/etc/miti/miti.env`; see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#apt-package-ubuntu).
+
+### Option 4: from source
 
 ```bash
 npm ci

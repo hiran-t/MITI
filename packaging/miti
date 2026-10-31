@@ -1,0 +1,8 @@
+#!/bin/sh
+# Runs MITI in the foreground with the settings in /etc/miti/miti.env, like the miti service.
+# Usually the service is enough: sudo systemctl status miti
+set -a
+# shellcheck disable=SC1091
+[ -r /etc/miti/miti.env ] && . /etc/miti/miti.env
+set +a
+exec /usr/lib/miti/node/bin/node /usr/lib/miti/server.js "$@"

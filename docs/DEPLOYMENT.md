@@ -8,6 +8,7 @@ How to run MITI on a machine and how to give it a foxglove_bridge to talk to.
 - [Install the tools](#install-the-tools)
 - [pixi](#pixi)
 - [Docker Compose](#docker-compose)
+- [apt package (Ubuntu)](#apt-package-ubuntu)
 - [From source](#from-source)
 - [foxglove_bridge on the robot](#foxglove_bridge-on-the-robot)
 - [foxglove_bridge Beside MITI](#foxglove_bridge-beside-miti)
@@ -20,11 +21,12 @@ How to run MITI on a machine and how to give it a foxglove_bridge to talk to.
 
 ## Choose a way to run MITI
 
-| Way                               | Good for                                    | Needs                                                     |
-| --------------------------------- | ------------------------------------------- | --------------------------------------------------------- |
-| [pixi](#pixi)                     | Laptops, robots' companion PCs, trying MITI | pixi only; it installs Node.js and, for the bridge, ROS 2 |
-| [Docker Compose](#docker-compose) | A machine that serves MITI all the time     | Docker with Compose v2                                    |
-| [From source](#from-source)       | Developing MITI                             | Node.js 22 and npm (or Bun)                               |
+| Way                                | Good for                                    | Needs                                                     |
+| ---------------------------------- | ------------------------------------------- | --------------------------------------------------------- |
+| [pixi](#pixi)                      | Laptops, robots' companion PCs, trying MITI | pixi only; it installs Node.js and, for the bridge, ROS 2 |
+| [Docker Compose](#docker-compose)  | A machine that serves MITI all the time     | Docker with Compose v2                                    |
+| [apt package](#apt-package-ubuntu) | Ubuntu robots and servers, managed with apt | Ubuntu 22.04 or 24.04, amd64 or arm64                     |
+| [From source](#from-source)        | Developing MITI                             | Node.js 22 and npm (or Bun)                               |
 
 Any of them serves MITI on port 3000 to every browser on the network. MITI then needs a foxglove_bridge: [on the robot](#foxglove_bridge-on-the-robot), or [beside MITI](#foxglove_bridge-beside-miti) on the same machine.
 
@@ -151,6 +153,37 @@ docker run -d --restart unless-stopped -p 3000:3000 --name miti miti:latest
 ```
 
 `NEXT_PUBLIC_BRIDGE_URL` is built into the app, so pass it as a build argument: `docker build --build-arg NEXT_PUBLIC_BRIDGE_URL=ws://robot:8765 -t miti:latest .`. Setting it with `docker run -e` has no effect.
+
+## apt package (Ubuntu)
+
+The `miti` package carries MITI and its own Node.js, and runs it as the `miti` systemd service. Packages are built for every release after v3.3.4 (amd64 and arm64) and attached to the release on GitHub.
+
+```bash
+curl -fsSL https://hiran-t.github.io/MITI/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/miti.gpg
+echo "deb [signed-by=/usr/share/keyrings/miti.gpg] https://hiran-t.github.io/MITI stable main" | sudo tee /etc/apt/sources.list.d/miti.list
+sudo apt-get update
+sudo apt-get install miti         # http://<this machine>:3000, starts at boot
+```
+
+Or install a downloaded package without the repository (no automatic updates): `sudo apt install ./miti_<version>_arm64.deb`.
+
+| What                  | Where / how                                                                                       |
+| --------------------- | ------------------------------------------------------------------------------------------------- |
+| Status and logs       | `systemctl status miti`, `journalctl -u miti -f`                                                  |
+| Settings              | `/etc/miti/miti.env` (port, bridge port, `MITI_PACKAGE_PATH`), then `sudo systemctl restart miti` |
+| Run in the foreground | `sudo systemctl stop miti`, then `miti`                                                           |
+| Update                | `sudo apt-get update && sudo apt-get upgrade`; your settings are kept                             |
+| Remove                | `sudo apt-get remove miti`; `purge` also deletes the settings and the `miti` user                 |
+
+**foxglove_bridge beside MITI.** The package also installs a `miti-bridge` service that runs foxglove_bridge from the ROS 2 in `/opt/ros`. It is off until you enable it:
+
+```bash
+sudo apt install ros-humble-foxglove-bridge    # or ros-jazzy-...; apt suggests it when ROS's repository is set up
+sudoedit /etc/miti/bridge.env                  # ROS_DOMAIN_ID, the robot's IP (ROS_STATIC_PEERS), ...
+sudo systemctl enable --now miti-bridge
+```
+
+`bridge.env` takes the [bridge settings](#settings). Keep `BRIDGE_PORT` equal to `MITI_BRIDGE_PORT` in `miti.env`. Robot message packages that are not in apt (see [the robot's own message types](#the-robots-own-message-types)) must be installed in `/opt/ros` or sourced another way. The ROS network section in MITI's connection settings works only with `pixi run miti-bridge`; with the package, edit `bridge.env`.
 
 ## From source
 

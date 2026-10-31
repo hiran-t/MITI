@@ -4,6 +4,9 @@
 
 ### Added
 
+- Debian packages for Ubuntu 22.04 and 24.04 (amd64 and arm64) and an apt repository at `https://hiran-t.github.io/MITI`, so MITI installs with `sudo apt-get install miti`. The package includes Node.js, runs MITI as the `miti` systemd service (settings in `/etc/miti/miti.env`) and adds a `miti-bridge` service for foxglove_bridge from `/opt/ros` (off by default). Built and published for each release by `.github/workflows/packages.yml`
+- `ros/foxglove-bridge.sh` uses the ROS 2 installed in `/opt/ros` when `ROS_DISTRO` is not set and Humble is not there
+
 - Release tags publish the MITI image to `ghcr.io/hiran-t/miti` (linux/amd64 and linux/arm64, tagged with the version and `latest`)
 - A daily workflow keeps the repository's traffic (views, clones, referrers, stars) beyond GitHub's 14 days, on the `traffic` branch; it needs a `TRAFFIC_TOKEN` secret
 
