@@ -9,6 +9,7 @@
 [![CI](https://github.com/hiran-t/MITI/actions/workflows/ci.yml/badge.svg)](https://github.com/hiran-t/MITI/actions/workflows/ci.yml)
 [![ROS 2](https://img.shields.io/badge/ROS%202-Humble%20%7C%20Jazzy-blue)](https://docs.ros.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/hiran-t/badge.svg)](https://hub.xerj.org/contributors/hiran-t)
 
 </div>
 

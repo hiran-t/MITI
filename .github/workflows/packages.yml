@@ -140,12 +140,15 @@ jobs:
           echo "$APT_GPG_PRIVATE_KEY" | gpg --batch --import
           key="$(gpg --list-secret-keys --with-colons | awk -F: '/^fpr/ { print $10; exit }')"
 
-          # The packages of the last three releases that have them, newest first.
+          # The packages of the last three releases that have them, newest first. Only releases
+          # from v3.3.5 on: older ones (v1.0.0's desktop app) attached other .deb files.
           debs="$RUNNER_TEMP/debs"
           mkdir -p "$debs"
           found=0
           for tag in $(gh release list --limit 30 --exclude-drafts --json tagName --jq '.[].tagName'); do
-            if gh release download "$tag" --pattern 'miti_*.deb' --dir "$debs" 2>/dev/null; then
+            version="${tag#v}"
+            [ "$(printf '%s\n' 3.3.5 "$version" | sort -V | head -n 1)" = 3.3.5 ] || continue
+            if gh release download "$tag" --pattern "miti_${version}_*.deb" --dir "$debs" 2>/dev/null; then
               found=$((found + 1))
               [ "$found" -ge 3 ] && break
             fi
