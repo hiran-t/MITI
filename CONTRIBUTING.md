@@ -28,33 +28,33 @@ Open an issue with the **Feature request** template. Check first whether it has 
 1. Fork the repository and create a branch from `main`.
 2. Keep the change focused on one fix or feature.
 3. Run the checks below and make sure they pass.
-4. Update the documentation (README.md, files in `docs/`) when behavior changes, and add a line under `## [Unreleased]` in CHANGELOG.md.
+4. Update the manual in `docs/` when behavior changes (it is the Read the Docs site; see [docs/develop/releases.md](docs/develop/releases.md#user-manual-read-the-docs)), and add a line under `## [Unreleased]` in CHANGELOG.md.
 5. Open the pull request with the template filled in, including how you tested it.
 
 CI (`.github/workflows/ci.yml`) runs lint, type check, build and tests on every pull request to `main`, and `.github/workflows/docker.yml` builds the Docker image.
 
 ## Development setup
 
-You need Node.js 22 and npm. [Bun](https://bun.sh) also works, and [pixi](https://pixi.sh) can provide Node.js for you.
+You need Node.js 22 and npm, or [pixi](https://pixi.sh), which provides Node.js for you.
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/MITI.git
 cd MITI
-npm ci                 # or: bun install
+npm ci
 npm run dev            # http://localhost:3000, with hot reload
 ```
 
 With pixi instead of a system Node.js, run `pixi run dev`.
 
-npm is the primary package manager: CI and the Docker image install with `npm ci` from `package-lock.json`. If you change dependencies, update `package-lock.json` with npm and keep `bun.lock` in sync with `bun install`.
+CI and the Docker image install with `npm ci` from `package-lock.json`; update it with npm when you change dependencies.
 
 ### A robot or test data to connect to
 
 MITI talks to [foxglove_bridge](https://github.com/foxglove/foxglove-sdk) over the Foxglove WebSocket protocol (default port 8765). Enter the bridge address in the connection box in the status bar, or set `NEXT_PUBLIC_BRIDGE_URL` (see `.env.example`). Without it, MITI connects to `ws://<host MITI was served from>:8765`.
 
 - On a robot: `ros2 launch foxglove_bridge foxglove_bridge_launch.xml`
-- Beside MITI, joined to the robot over DDS: `pixi run -e humble bridge` (or `-e jazzy`); see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
-- Without a robot: `node scripts/heavy-bridge.js` streams robot-sized test data on `ws://localhost:8790`; see [docs/PERFORMANCE.md](docs/PERFORMANCE.md)
+- Beside MITI, joined to the robot over DDS: `pixi run -e humble bridge` (or `-e jazzy`); see [docs/manual/deployment.md](docs/manual/deployment.md)
+- Without a robot: `node scripts/heavy-bridge.js` streams robot-sized test data on `ws://localhost:8790`; see [docs/develop/performance.md](docs/develop/performance.md)
 
 ### Checks
 
@@ -68,7 +68,7 @@ npm run format        # Prettier on src/
 
 Stop `npm run dev` before running `npm run build` in the same folder: both write to `.next`, and a build breaks the running dev server.
 
-A Husky pre-commit hook runs lint-staged (ESLint with `--fix` and Prettier on staged files). The hook calls `bun run lint-staged`, so it needs Bun installed.
+A Husky pre-commit hook runs lint-staged (ESLint with `--fix` and Prettier on staged files).
 
 ## Coding style
 

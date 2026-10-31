@@ -458,7 +458,7 @@ export function SettingsSection(props: {
 ### SceneViewer
 
 `visualization/scene/SceneViewer.tsx`. The 3D Scene panel (widget type `urdf-viewer`). Settings are
-grouped like Foxglove's 3D panel; see [3D Scene](3d-scene.md).
+grouped like Foxglove's 3D panel; see [3D Scene](../reference/3d-scene.md).
 
 ```typescript
 export default function SceneViewer(props: {
@@ -582,7 +582,7 @@ interface ButtonSwitchWidgetComponentProps {
 }
 ```
 
-See [STATE_MACHINE_MONITORING.md](STATE_MACHINE_MONITORING.md) for the state machine panel.
+See [State machine monitoring](../reference/state-machine.md) for the state machine panel.
 
 ## Types
 
@@ -688,7 +688,7 @@ export type MosaicTree = string | MosaicSplit;
 
 - **3D Scene:** `SceneConfig` in `types/scene-config.ts` (frame, scene, view, transforms, publish,
   per-topic settings and custom grid/URDF layers). Layer kinds and their message types are in
-  `LAYER_TYPES` in `types/scene.ts`. See [3D Scene](3d-scene.md).
+  `LAYER_TYPES` in `types/scene.ts`. See [3D Scene](../reference/3d-scene.md).
 - **Image:** `ImagePanelConfig` in `lib/camera/image-config.ts`:
 
 ```typescript
@@ -1268,7 +1268,7 @@ assets. Both serve only mesh, texture and URDF files found under the ROS package
 
 ### A custom panel
 
-```typescript
+```tsx
 'use client';
 import type { BridgeClient } from '@/lib/bridge/client';
 import { useTopic } from '@/hooks/useTopic';

@@ -1,7 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=MITI Browser
-Comment=Auto-launch browser for MITI dashboard
-Exec=__SCRIPT_PATH__
-Terminal=false
-X-GNOME-Autostart-enabled=true

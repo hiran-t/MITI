@@ -1,7 +1,7 @@
 # Architecture
 
 This document describes how MITI is built and why, as of v3.2.0. For hook and function
-signatures see [API.md](API.md); for running MITI see [DEPLOYMENT.md](DEPLOYMENT.md).
+signatures see [API](api.md); for running MITI see [Deployment](../manual/deployment.md).
 
 ## Table of contents
 
@@ -66,7 +66,7 @@ connection settings change it per browser.
 - **react-mosaic-component** for the tiled panel layout (the model Foxglove's layout uses).
 - **lucide-react** for icons.
 - **Node.js 22 with npm**: CI, pixi and the Docker image install with `npm ci` from
-  `package-lock.json`. A `bun.lock` is kept in sync for Bun users.
+  `package-lock.json`.
 - **Jest** with Testing Library for unit tests (`__tests__/` folders next to the code).
 
 ### 3D visualization
@@ -90,7 +90,8 @@ caches):
 
 ```
 MITI/
-├── docs/                     # This guide, API, 3D Scene, deployment, performance, releases
+├── docs/                     # The manual (Read the Docs): manual/, reference/, develop/, conf.py
+├── packaging/                # The apt package: nfpm.yaml, miti command, services, build and test scripts
 ├── public/                   # main_logo.svg, robot_logo.svg
 ├── ros/                      # foxglove_bridge beside MITI
 │   ├── overlay/src/          # The robot's own message packages, built by build-msgs.sh
@@ -99,15 +100,12 @@ MITI/
 │   ├── Dockerfile            # Image for the compose "bridge" profile
 │   └── foxglove-bridge.sh/.ps1 # pixi run bridge; reuses a bridge on the port or moves to a free one
 ├── scripts/
-│   ├── start-miti.mjs        # pixi run miti / miti-bridge: picks free ports, starts MITI and the bridge
+│   ├── start-miti.mjs        # pixi run miti / miti run: picks free ports, starts MITI and the bridge
+│   ├── bridge-settings.mjs   # ROS network settings of the bridge beside MITI
+│   ├── traffic-archive.py    # Keeps GitHub's traffic numbers (Traffic archive workflow)
 │   ├── heavy-bridge.js       # Load harness: a foxglove_bridge stand-in with robot-sized data
 │   ├── perf-run.js           # Load harness: measures MITI in Chrome
-│   ├── perf-probe.js         # Browser-side half of the harness
-│   ├── deploy.sh             # Builds a Docker image or standalone package for a target
-│   ├── ubuntu-setup.sh       # Installs that package on the target
-│   ├── auto-startapp.service # systemd unit for the standalone server
-│   ├── auto-launch-browser.sh
-│   └── miti-browser.desktop  # Kiosk browser autostart
+│   └── perf-probe.js         # Browser-side half of the harness
 ├── src/                      # The application (below)
 ├── Dockerfile                # MITI image (standalone Next.js server)
 ├── docker-compose.yml        # Service miti; profile bridge adds foxglove-bridge
@@ -297,7 +295,7 @@ converts raw images to RGBA and scans point clouds; results come back as transfe
 are attached to the message (`lib/parsers/prepared.ts`), so `decodeImagePixels` and
 `readPointCloud` reuse them. One message per topic decodes at a time and the newest waiting
 message wins. Where workers are unavailable (Jest, server rendering) or after they fail, decoding
-stays on the main thread. See [PERFORMANCE.md](PERFORMANCE.md) for the load harness and
+stays on the main thread. See [Performance](performance.md) for the load harness and
 measurements.
 
 ### 4. Transforms
@@ -381,7 +379,7 @@ Panel types (`types/widget.ts`): Topics, 3D Scene (`urdf-viewer`), Point Cloud, 
 
 #### 3D Scene
 
-`visualization/scene/`, modelled on Foxglove's 3D panel (see [3D Scene](3d-scene.md)):
+`visualization/scene/`, modelled on Foxglove's 3D panel (see [3D Scene](../reference/3d-scene.md)):
 
 - `SceneViewer` reads the panel's `SceneConfig`, runs `useTF`, picks the fixed and display frames
   and hosts the publish tools (point, pose, pose estimate).
@@ -416,7 +414,7 @@ Panel types (`types/widget.ts`): Topics, 3D Scene (`urdf-viewer`), Point Cloud, 
 - **Topics**: the topic list with a live preview per topic.
 - **Log**: `/rosout`-style logs with level, name and text filters.
 - **State Machine**: SMACC2 and behavior tree status (see
-  [STATE_MACHINE_MONITORING.md](STATE_MACHINE_MONITORING.md)).
+  [State machine monitoring](../reference/state-machine.md)).
 - **Button Switch**: publishes a JSON payload or calls a service when toggled.
 
 ## State management
@@ -486,7 +484,7 @@ Stored panel settings are migrated on read: `normalizeLayout`, `normalizeSceneCo
 - Point clouds are subsampled to a maximum number of points per message.
 - `FatLine` updates its geometry in place instead of compiling a new line material.
 
-[PERFORMANCE.md](PERFORMANCE.md) describes the load harness (`scripts/heavy-bridge.js`,
+[Performance](performance.md) describes the load harness (`scripts/heavy-bridge.js`,
 `scripts/perf-run.js`) and the measurements behind these choices.
 
 ## Design patterns
@@ -507,9 +505,9 @@ A panel renders its settings and status where the shell wants them, without unmo
 ```tsx
 <>
   <PanelStatusPortal>{fps} fps</PanelStatusPortal>
-  <ImageView … />
+  <ImageView {...imageProps} />
   <WidgetSettingsPortal>
-    <ImageSettings … />
+    <ImageSettings {...settingsProps} />
   </WidgetSettingsPortal>
 </>
 ```
@@ -591,7 +589,7 @@ on a trusted network.
 
 ## Deployment
 
-Details are in [DEPLOYMENT.md](DEPLOYMENT.md). In short:
+Details are in [Deployment](../manual/deployment.md). In short:
 
 - **pixi** (`pixi.toml`) provides Node.js 22 and, in the `humble` and `jazzy` environments,
   foxglove_bridge from RoboStack. Tasks: `miti` (build if needed and serve on port 3000),
@@ -601,7 +599,7 @@ Details are in [DEPLOYMENT.md](DEPLOYMENT.md). In short:
   `foxglove-bridge` service built from `ros/Dockerfile`, using the host network to reach the
   robot over DDS.
 - **Load testing**: `scripts/heavy-bridge.js` and `scripts/perf-run.js`, described in
-  [PERFORMANCE.md](PERFORMANCE.md).
+  [Performance](performance.md).
 
 ## Future improvements
 

@@ -4,7 +4,6 @@
 /node_modules
 /.pnp
 .pnp.js
-.bun-cache
 
 # testing
 /coverage
@@ -46,3 +45,8 @@ ros/overlay/log/
 
 # ROS settings changed in MITI (scripts/bridge-settings.mjs)
 .miti/
+
+# The manual built by Sphinx (docs/conf.py), and its screenshots from the docs-images branch
+docs/_build/
+.venv-docs/
+docs/manual/images/

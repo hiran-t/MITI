@@ -2,6 +2,26 @@
 
 ## [Unreleased]
 
+### Added
+
+- A user manual for Read the Docs (`docs/index.md`, `docs/manual/`, `.readthedocs.yaml`): installing, connecting to a robot, the workspace, cameras and overlays, the 3D Scene, the other panels and troubleshooting, with screenshots of MITI connected to a robot
+
+### Changed
+
+- All documentation is one Read the Docs site in `docs/`: the user manual and deployment guide (`manual/`), the 3D Scene and state machine reference (`reference/`) and the developer guides (`develop/`). The README is now a short introduction with install commands and a link to the manual
+- The manual's screenshots live on the `docs-images` branch, with the scripts that take them, and are fetched when the manual is built (`docs/fetch-images.sh`), so the source tree holds no images
+- The pre-commit hook runs `npx lint-staged`, so Bun is no longer needed
+
+### Fixed
+
+- `miti run --bridge` and the `miti-bridge` service work with only `ros-<distro>-foxglove-bridge` installed: without the `ros2` command, `ros/foxglove-bridge.sh` starts the foxglove_bridge node directly instead of exiting with `ros2: not found`
+
+### Removed
+
+- `scripts/deploy.sh`, `scripts/ubuntu-setup.sh`, `scripts/auto-startapp.service` and the kiosk autostart scripts, replaced by the apt package and Docker image (the deployment guide shows how to set up a kiosk screen)
+- `bun.lock` and `bunfig.toml`; npm is the package manager
+- `docs/releases/`: release notes are kept on GitHub Releases
+
 ## [3.3.5] - 2026-10-31
 
 ### Added

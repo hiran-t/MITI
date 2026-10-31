@@ -1,6 +1,6 @@
 # How to create a release
 
-This guide describes how MITI releases are made. A release is a version bump, a CHANGELOG entry, release notes in `docs/releases/`, a git tag and a GitHub release. No build artifacts are attached: users run a release from the tagged source with pixi, Docker Compose or npm (see [DEPLOYMENT.md](DEPLOYMENT.md)).
+This guide describes how MITI releases are made. A release is a version bump, a CHANGELOG entry, a git tag and a GitHub release with release notes. Publishing it builds the Debian packages and the Docker image; users install those or run the tagged source with pixi (see [Deployment](../manual/deployment.md)).
 
 ## Release checklist
 
@@ -11,10 +11,9 @@ Before tagging:
 - [ ] Tests pass (`npm test`)
 - [ ] Production build succeeds (`npm run build`; stop `npm run dev` first, since both use `.next`)
 - [ ] Version updated in `package.json` and `package-lock.json`
-- [ ] `bun.lock` in sync if dependencies changed (`bun install`)
 - [ ] CHANGELOG.md has a `## [x.y.z] - YYYY-MM-DD` section
-- [ ] Release notes written in `docs/releases/vX.Y.Z.md`
-- [ ] README.md and `docs/` updated for changed behavior, and breaking changes described
+- [ ] Release notes written (see [Release notes](#release-notes))
+- [ ] The manual in `docs/` updated for changed behavior, and breaking changes described
 
 ## Steps
 
@@ -26,11 +25,11 @@ npm version 3.3.0 --no-git-tag-version
 #      ## [3.3.0] - 2026-11-15
 #    with Added / Changed / Fixed / Removed subsections.
 
-# 3. Write the release notes: docs/releases/v3.3.0.md
+# 3. Write the release notes in a file outside the repository, e.g. /tmp/miti-v3.3.0.md
 #    First line: "# MITI v3.3.0 — <short summary>"
 
 # 4. Commit. Use feat: for a release with new features, chore: for maintenance.
-git add package.json package-lock.json CHANGELOG.md docs/releases/v3.3.0.md
+git add package.json package-lock.json CHANGELOG.md
 git commit -m "feat: release MITI v3.3.0 with <short summary>"
 
 # 5. Tag and push
@@ -39,7 +38,7 @@ git push origin main
 git push origin v3.3.0
 
 # 6. Create the GitHub release from the release notes
-gh release create v3.3.0 --title "MITI v3.3.0" --notes-file docs/releases/v3.3.0.md --latest
+gh release create v3.3.0 --title "MITI v3.3.0" --notes-file /tmp/miti-v3.3.0.md --latest
 ```
 
 Pushing to `main` runs two GitHub Actions workflows:
@@ -71,6 +70,19 @@ One-time setup:
 
 To rebuild the packages of a release, run **Packages** from the Actions tab with its tag.
 
+## User manual (Read the Docs)
+
+All documentation is in `docs/` and published as one site: the user manual (`manual/`), reference (`reference/`) and developer guides (`develop/`), built with Sphinx, MyST and the Furo theme (`docs/conf.py`, `docs/requirements.txt`, `.readthedocs.yaml`). Its screenshots are not in the source tree: they live on the `docs-images` branch (`images/`, WebP, 1920 × 1200, taken from MITI connected to a robot), together with the scripts that take them (`capture/`). `docs/conf.py` fetches them into `docs/manual/images/` (ignored by git) through `docs/fetch-images.sh`. To change a screenshot, commit the new image to that branch.
+
+Build it locally; `-W` fails on any warning, as Read the Docs does:
+
+```bash
+python3 -m venv .venv-docs && .venv-docs/bin/pip install -r docs/requirements.txt
+.venv-docs/bin/sphinx-build -W docs docs/_build/html    # open docs/_build/html/index.html
+```
+
+To publish it once: sign in to [readthedocs.org](https://readthedocs.org) with GitHub, choose **Import a project**, and pick `hiran-t/MITI`. Read the Docs then rebuilds the manual on every push to `main`; under **Admin → Versions** activate release tags to keep a manual per version.
+
 ## Who uses MITI
 
 GitHub keeps a repository's traffic for 14 days. **Traffic archive** (`.github/workflows/traffic.yml`) runs daily and adds it to CSV files on the `traffic` branch (`views.csv`, `clones.csv`, `referrers.csv`, `paths.csv`, `repo.csv`; see `scripts/traffic-archive.py`). It needs the repository secret `TRAFFIC_TOKEN`, a fine-grained personal access token with **Administration: Read-only** on this repository; until the secret exists the workflow only warns. Other signals:
@@ -97,18 +109,9 @@ Examples from MITI's history:
 ## Release notes
 
 - **CHANGELOG.md** follows [Keep a Changelog](https://keepachangelog.com/): one line per user-visible change under Added, Changed, Fixed or Removed.
-- **`docs/releases/vX.Y.Z.md`** is the GitHub release text: a title, a sentence on what the release is for, then sections that show how to use what is new. Look at earlier files in `docs/releases/` for the format.
+- **The GitHub release text** is written for the release and kept only on GitHub: a title, a sentence on what the release is for, then sections that show how to use what is new. Earlier [releases](https://github.com/hiran-t/MITI/releases) show the format.
 
 Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `perf:`, `docs:`, `chore:`), which makes the CHANGELOG easier to write.
-
-## Deployment helper scripts
-
-Two older scripts in `scripts/` package MITI by hand. They are not part of the release process, and they do not match each other:
-
-- **`scripts/deploy.sh`** asks for a method and builds either a Docker image saved as `miti-docker.tar`, or a standalone Next.js build packed as `miti-standalone.tar.gz` (a `deploy/` folder with `server.js`, run with `node server.js`).
-- **`scripts/ubuntu-setup.sh`** is meant to run on the target Ubuntu machine. Option 1 offers to install Docker, loads a `miti-docker*.tar.gz` image and starts it with `docker run`. Option 2 offers to install Bun, extracts a `miti-standalone*.tar.gz` that contains a `miti/` or `deploy/miti/` folder, installs a systemd service `miti` from `scripts/auto-startapp.service` that runs `server.js` with Bun, and adds an autostart entry that opens Chrome or Chromium in kiosk mode on `http://localhost:3000` (`scripts/auto-launch-browser.sh`).
-
-Because `deploy.sh` writes `miti-docker.tar` and a `deploy/` folder without `miti/`, `ubuntu-setup.sh` does not find its output without renaming or repacking. For new installs use pixi or Docker Compose as described in [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Troubleshooting
 

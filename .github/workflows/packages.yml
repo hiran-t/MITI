@@ -7,7 +7,7 @@ name: Packages
 # For a published release (or a run of this workflow with a tag) it then attaches the packages to
 # the release and publishes the apt repository on GitHub Pages (gh-pages branch) with the packages
 # of the last three releases. The apt repository needs the secret APT_GPG_PRIVATE_KEY: an
-# ASCII-armored private key without a passphrase (see docs/RELEASES.md).
+# ASCII-armored private key without a passphrase (see docs/develop/releases.md).
 
 on:
   push:
@@ -132,7 +132,7 @@ jobs:
           APT_GPG_PRIVATE_KEY: ${{ secrets.APT_GPG_PRIVATE_KEY }}
         run: |
           if [ -z "$APT_GPG_PRIVATE_KEY" ]; then
-            echo "::warning::Add the APT_GPG_PRIVATE_KEY secret to publish the apt repository (see docs/RELEASES.md)."
+            echo "::warning::Add the APT_GPG_PRIVATE_KEY secret to publish the apt repository (see docs/develop/releases.md)."
             exit 0
           fi
           export GNUPGHOME="$RUNNER_TEMP/gnupg"

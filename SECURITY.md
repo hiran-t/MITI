@@ -36,7 +36,7 @@ Email the maintainer at thongpanchang.h@gmail.com with "MITI security" in the su
 MITI has no login. Anyone who can open MITI and reach foxglove_bridge can see every topic the bridge offers, and can publish (Button Switch panel, 3D Scene **Publish**) and call services where the bridge allows it. foxglove_bridge itself has no authentication.
 
 1. Run MITI and foxglove_bridge only on a trusted network (the robot's network or a VPN); do not expose ports 3000 and 8765 to the internet.
-2. Limit what the bridge offers with its `topic_whitelist` (and, when it runs beside MITI, `BRIDGE_TOPIC_WHITELIST`; see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)). Use foxglove_bridge's `capabilities` and service whitelist parameters to turn off publishing or service calls you do not need.
+2. Limit what the bridge offers with its `topic_whitelist` (and, when it runs beside MITI, `BRIDGE_TOPIC_WHITELIST`; see [deployment](docs/manual/deployment.md#settings)). Use foxglove_bridge's `capabilities` and service whitelist parameters to turn off publishing or service calls you do not need.
 3. Use `wss://` (foxglove_bridge's TLS options, or a reverse proxy with TLS) when traffic crosses a network you do not control.
 4. Keep MITI, its npm dependencies and foxglove_bridge up to date.
 5. Run MITI as an unprivileged user; the Docker image already runs as a non-root user.

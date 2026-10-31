@@ -12,7 +12,6 @@ const config = [
       'out/**',
       'node_modules/**',
       '.pixi/**',
-      '.bun-cache/**',
       'coverage/**',
       'ros/overlay/**',
       'next-env.d.ts',

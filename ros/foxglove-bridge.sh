@@ -128,14 +128,32 @@ if [ ${#peers[@]} -gt 0 ] && [ "${ROS_DISTRO:-}" = "humble" ]; then
     export FASTRTPS_DEFAULT_PROFILES_FILE="$profile"
   fi
 fi
-export ROS_STATIC_PEERS="$(IFS=';'; echo "${peers[*]:-}")"
+ROS_STATIC_PEERS="$(IFS=';'; echo "${peers[*]:-}")"
+export ROS_STATIC_PEERS
 
 echo "foxglove_bridge: ws://${BRIDGE_ADDRESS:-0.0.0.0}:$port," \
   "ROS_DOMAIN_ID=$ROS_DOMAIN_ID, $RMW_IMPLEMENTATION${peers[0]:+, robot ${peers[*]}}"
 
-exec ros2 launch foxglove_bridge foxglove_bridge_launch.xml \
-  port:="$port" \
-  address:="${BRIDGE_ADDRESS:-0.0.0.0}" \
-  topic_whitelist:="${BRIDGE_TOPIC_WHITELIST:-['.*']}" \
-  send_buffer_limit:="${BRIDGE_SEND_BUFFER_LIMIT:-10000000}" \
+settings=(
+  port:="$port"
+  address:="${BRIDGE_ADDRESS:-0.0.0.0}"
+  topic_whitelist:="${BRIDGE_TOPIC_WHITELIST:-['.*']}"
+  send_buffer_limit:="${BRIDGE_SEND_BUFFER_LIMIT:-10000000}"
   max_qos_depth:="${BRIDGE_MAX_QOS_DEPTH:-10}"
+)
+if command -v ros2 >/dev/null 2>&1; then
+  exec ros2 launch foxglove_bridge foxglove_bridge_launch.xml "${settings[@]}"
+fi
+
+# ros-<distro>-foxglove-bridge on its own does not bring the ros2 command: start the node directly.
+params=()
+for setting in "${settings[@]}"; do params+=(-p "$setting"); done
+prefixes="${AMENT_PREFIX_PATH:-}"
+for prefix in ${prefixes//:/ }; do
+  node="$prefix/lib/foxglove_bridge/foxglove_bridge"
+  if [ -x "$node" ]; then
+    exec "$node" --ros-args "${params[@]}"
+  fi
+done
+echo "foxglove_bridge not found: sudo apt install ros-${ROS_DISTRO:-humble}-foxglove-bridge" >&2
+exit 1

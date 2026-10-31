@@ -20,7 +20,7 @@ Each tab subscribes to one topic through foxglove_bridge. MITI does not read SMA
 
 ## Message format
 
-MITI decodes messages with the definitions foxglove_bridge advertises, so the status topics need a ROS 2 message type that the bridge can load. When foxglove_bridge runs beside MITI (pixi or Docker), add the package to `ros/overlay/src`; see [DEPLOYMENT.md](DEPLOYMENT.md). MITI reads fields by name, so the package and type names are up to you.
+MITI decodes messages with the definitions foxglove_bridge advertises, so the status topics need a ROS 2 message type that the bridge can load. When foxglove_bridge runs beside MITI (pixi or Docker), add the package to `ros/overlay/src`; see [Deployment](../manual/deployment.md#the-robots-own-message-types). MITI reads fields by name, so the package and type names are up to you.
 
 Use `float64` for timestamps and 32-bit integers for counts: 64-bit integers (`int64`, `uint64`) arrive in the browser as `BigInt`, which the panel does not convert.
 
@@ -157,6 +157,6 @@ Check the browser console. A 64-bit integer field (for example `int64 timestamp`
 
 ## Related documentation
 
-- [README](../README.md)
-- [Architecture](ARCHITECTURE.md)
-- [Deployment](DEPLOYMENT.md)
+- [README](../index.md)
+- [Architecture](../develop/architecture.md)
+- [Deployment](../manual/deployment.md)

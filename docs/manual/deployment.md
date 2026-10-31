@@ -26,7 +26,7 @@ How to run MITI on a machine and how to give it a foxglove_bridge to talk to.
 | [pixi](#pixi)                      | Laptops, robots' companion PCs, trying MITI | pixi only; it installs Node.js and, for the bridge, ROS 2 |
 | [Docker Compose](#docker-compose)  | A machine that serves MITI all the time     | Docker with Compose v2                                    |
 | [apt package](#apt-package-ubuntu) | Ubuntu robots and servers, managed with apt | Ubuntu 22.04 or 24.04, amd64 or arm64                     |
-| [From source](#from-source)        | Developing MITI                             | Node.js 22 and npm (or Bun)                               |
+| [From source](#from-source)        | Developing MITI                             | Node.js 22 and npm                                        |
 
 Any of them serves MITI on port 3000 to every browser on the network. MITI then needs a foxglove_bridge: [on the robot](#foxglove_bridge-on-the-robot), or [beside MITI](#foxglove_bridge-beside-miti) on the same machine.
 
@@ -126,7 +126,7 @@ Use `pixi run -e humble miti-bridge` in `ExecStart` to run the bridge too.
 
 ## Docker Compose
 
-[docker-compose.yml](../docker-compose.yml) runs MITI as the `miti` service with `restart: unless-stopped`, so it comes back after a restart once Docker starts at boot.
+[docker-compose.yml](https://github.com/hiran-t/MITI/blob/main/docker-compose.yml) runs MITI as the `miti` service with `restart: unless-stopped`, so it comes back after a restart once Docker starts at boot.
 
 ```bash
 cp .env.example .env                    # optional settings
@@ -203,7 +203,7 @@ npm start                          # http://localhost:3000
 npm start -- --hostname 0.0.0.0    # reachable from other machines
 ```
 
-`STANDALONE_BUILD=true npm run build` produces a self-contained server in `.next/standalone` (used by the Docker image and `scripts/deploy.sh`). Bun works too: `bun install`, `bun run build`, `bun run start`.
+`STANDALONE_BUILD=true npm run build` produces a self-contained server in `.next/standalone`, which the Docker image and the apt package use.
 
 ## foxglove_bridge on the robot
 
@@ -254,22 +254,22 @@ Settings are environment variables, for example `ROS_DOMAIN_ID=5 pixi run -e hum
 docker compose --profile bridge up -d
 ```
 
-Set the distro and DDS settings in `.env` first (copy [.env.example](../.env.example)); put `COMPOSE_PROFILES=bridge` there to start the bridge on every `docker compose up`. The bridge image (`ros/Dockerfile`, based on `ros:<distro>-ros-base`) runs with host networking, which DDS discovery needs, so this runs on Linux; Docker Desktop on macOS and Windows cannot join the robot's DDS network.
+Set the distro and DDS settings in `.env` first (copy [.env.example](https://github.com/hiran-t/MITI/blob/main/.env.example)); put `COMPOSE_PROFILES=bridge` there to start the bridge on every `docker compose up`. The bridge image (`ros/Dockerfile`, based on `ros:<distro>-ros-base`) runs with host networking, which DDS discovery needs, so this runs on Linux; Docker Desktop on macOS and Windows cannot join the robot's DDS network.
 
 ### Settings
 
 Environment variables, read by `ros/foxglove-bridge.sh` (pixi and Docker alike):
 
-| Variable                   | Default            |                                                                                  |
-| -------------------------- | ------------------ | -------------------------------------------------------------------------------- |
-| `ROS_DOMAIN_ID`            | `0`                | Must match the robot                                                             |
-| `RMW_IMPLEMENTATION`       | `rmw_fastrtps_cpp` | Or `rmw_cyclonedds_cpp`, which reads [ros/cyclonedds.xml](../ros/cyclonedds.xml) |
-| `ROS_DISTRO`               | `humble`           | Docker only; with pixi choose `-e humble` / `-e jazzy`                           |
-| `BRIDGE_PORT`              | `8765`             | WebSocket port                                                                   |
-| `BRIDGE_TOPIC_WHITELIST`   | `['.*']`           | Regexes of topics to offer                                                       |
-| `BRIDGE_SEND_BUFFER_LIMIT` | `10000000`         | Bytes queued per browser before messages are dropped                             |
-| `BRIDGE_MAX_QOS_DEPTH`     | `10`               | Subscription queue depth                                                         |
-| `ROS_STATIC_PEERS`         | —                  | The robot's IPv4 addresses (`a;b`), to find it where multicast is dropped        |
+| Variable                   | Default            |                                                                                                                         |
+| -------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `ROS_DOMAIN_ID`            | `0`                | Must match the robot                                                                                                    |
+| `RMW_IMPLEMENTATION`       | `rmw_fastrtps_cpp` | Or `rmw_cyclonedds_cpp`, which reads [ros/cyclonedds.xml](https://github.com/hiran-t/MITI/blob/main/ros/cyclonedds.xml) |
+| `ROS_DISTRO`               | `humble`           | Docker only; with pixi choose `-e humble` / `-e jazzy`                                                                  |
+| `BRIDGE_PORT`              | `8765`             | WebSocket port                                                                                                          |
+| `BRIDGE_TOPIC_WHITELIST`   | `['.*']`           | Regexes of topics to offer                                                                                              |
+| `BRIDGE_SEND_BUFFER_LIMIT` | `10000000`         | Bytes queued per browser before messages are dropped                                                                    |
+| `BRIDGE_MAX_QOS_DEPTH`     | `10`               | Subscription queue depth                                                                                                |
+| `ROS_STATIC_PEERS`         | —                  | The robot's IPv4 addresses (`a;b`), to find it where multicast is dropped                                               |
 
 MITI opens `ws://<host it was opened from>:<bridge port>` by default, which is this bridge: `pixi run miti` / `miti-bridge` and Docker Compose tell it the port (`MITI_BRIDGE_PORT`). If `BRIDGE_PORT` is taken by another program, the bridge moves to the next free port and says so; if a foxglove_bridge already listens there, it is used.
 
@@ -295,7 +295,7 @@ DDS carries every message the bridge subscribes to from the robot to this machin
 
 - **Use compressed images.** A raw 1280×720 image is 2.7 MB; on a test network a raw camera reached this machine at about 2.5 frames per second, while joint states (40 Hz), TF and odometry arrived in full. Subscribe MITI to `/compressed` image topics, or offer only those with `BRIDGE_TOPIC_WHITELIST`.
 - **Discovery over Wi-Fi** relies on multicast, which Wi-Fi often drops; topics then come and go. List the robot directly: its IP in MITI's connection settings (**ROS network**), or `ROS_STATIC_PEERS=<robot-ip>` (in `.env` for Docker; exported before `pixi run` with pixi). Jazzy reads `ROS_STATIC_PEERS` itself; on Humble the bridge script adds the address to Fast DDS's initial peers (a generated profile, unless `FASTRTPS_DEFAULT_PROFILES_FILE` is already set) or to Cyclone DDS's peers. Multicast discovery keeps working alongside.
-- **Large messages over Wi-Fi** need big socket buffers. With Cyclone DDS, [ros/cyclonedds.xml](../ros/cyclonedds.xml) asks for up to 16 MB; raise the kernel limit once on Linux: `sudo sysctl -w net.core.rmem_max=16777216` (add it to `/etc/sysctl.conf` to keep it).
+- **Large messages over Wi-Fi** need big socket buffers. With Cyclone DDS, [ros/cyclonedds.xml](https://github.com/hiran-t/MITI/blob/main/ros/cyclonedds.xml) asks for up to 16 MB; raise the kernel limit once on Linux: `sudo sysctl -w net.core.rmem_max=16777216` (add it to `/etc/sysctl.conf` to keep it).
 - **Several networks** (Wi-Fi, Ethernet, Docker): pin the robot's network with `<NetworkInterface name="..."/>` in `ros/cyclonedds.xml` if discovery picks the wrong one.
 - The first subscription can take a few seconds while DDS discovery settles; later ones are immediate.
 - `sequence size exceeds remaining buffer` or `invalid data size` in the bridge log means the robot runs another ROS 2 distro: Humble cannot read Iron/Jazzy discovery data. Use the matching environment (`-e jazzy`) or `ROS_DISTRO` in Docker.
@@ -362,11 +362,20 @@ Then, depending on the machine:
 
 ## Kiosk and offline installs
 
-For a screen on the shop floor, or a machine without internet:
+Without internet
+: Download `miti_<version>_<arch>.deb` from the [GitHub release](https://github.com/hiran-t/MITI/releases/latest) on a connected machine, copy it over, and install it with `sudo apt install ./miti_<version>_<arch>.deb`. For Docker, save the image with `docker save ghcr.io/hiran-t/miti:latest | gzip > miti.tar.gz` and load it on the target with `docker load < miti.tar.gz`.
 
-- `scripts/deploy.sh` (on a build machine) packs MITI as a Docker image (`miti-docker.tar`) or a standalone build (`miti-standalone.tar.gz`).
-- `scripts/ubuntu-setup.sh` (on the target, next to the package) loads the image and starts it with `--restart unless-stopped`, or installs the standalone build as the systemd service `miti.service` from `scripts/auto-startapp.service`.
-- `scripts/auto-launch-browser.sh` with `scripts/miti-browser.desktop` opens Chrome or Chromium in kiosk mode on `http://localhost:3000` after login.
+A screen on the shop floor
+: Start MITI at boot (`sudo systemctl enable --now miti`), then open it full screen after login with an autostart entry, `~/.config/autostart/miti-kiosk.desktop`:
+
+```ini
+[Desktop Entry]
+Type=Application
+Name=MITI
+Exec=sh -c 'sleep 5; chromium --kiosk --noerrdialogs http://localhost:3000'
+```
+
+Use `google-chrome` instead of `chromium` if that is the browser installed.
 
 ## Reverse proxy and HTTPS
 
@@ -389,7 +398,7 @@ server {
 
 ## Environment Variables
 
-MITI reads these from `.env` / `.env.local` at build time and from the environment at run time. Copy [.env.example](../.env.example) to start.
+MITI reads these from `.env` / `.env.local` at build time and from the environment at run time. Copy [.env.example](https://github.com/hiran-t/MITI/blob/main/.env.example) to start.
 
 | Variable                 | Default                                 | Meaning                                                                                                                                                                                                                  |
 | ------------------------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
