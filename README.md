@@ -7,7 +7,7 @@
 
 [![Release](https://img.shields.io/github/v/release/hiran-t/MITI)](https://github.com/hiran-t/MITI/releases/latest)
 [![CI](https://github.com/hiran-t/MITI/actions/workflows/ci.yml/badge.svg)](https://github.com/hiran-t/MITI/actions/workflows/ci.yml)
-[![Docs](https://readthedocs.org/projects/miti/badge/?version=latest)](https://miti.readthedocs.io)
+[![Docs](https://readthedocs.org/projects/miti/badge/?version=latest)](https://miti.readthedocs.io/en/latest/)
 [![ROS 2](https://img.shields.io/badge/ROS%202-Humble%20%7C%20Jazzy-blue)](https://docs.ros.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/hiran-t/badge.svg)](https://hub.xerj.org/contributors/hiran-t)
@@ -40,7 +40,7 @@ On macOS and Windows, or to run foxglove_bridge beside MITI, see [Install and ru
 
 ## Documentation
 
-The manual is at **[miti.readthedocs.io](https://miti.readthedocs.io)**: installing, connecting to a robot, every panel, deployment and troubleshooting, plus reference and developer guides. Its source is in [`docs/`](docs/).
+The manual is at **[miti.readthedocs.io/en/latest](https://miti.readthedocs.io/en/latest/)**: installing, connecting to a robot, every panel, deployment and troubleshooting, plus reference and developer guides. Its source is in [`docs/`](docs/).
 
 ## Contributing
 
