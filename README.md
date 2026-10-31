@@ -224,7 +224,7 @@ To add a panel type, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). To measur
 
 ## Contributing
 
-Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md), and the [Code of Conduct](CODE_OF_CONDUCT.md). Report security issues as described in [SECURITY.md](SECURITY.md).
+Questions, ideas and setups using MITI are welcome in [Discussions](https://github.com/hiran-t/MITI/discussions). Contributions are welcome too. Read [CONTRIBUTING.md](CONTRIBUTING.md), and the [Code of Conduct](CODE_OF_CONDUCT.md). Report security issues as described in [SECURITY.md](SECURITY.md).
 
 ## License
 

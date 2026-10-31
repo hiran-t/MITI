@@ -45,9 +45,17 @@ gh release create v3.3.0 --title "MITI v3.3.0" --notes-file docs/releases/v3.3.0
 Pushing to `main` runs two GitHub Actions workflows:
 
 - **CI** (`.github/workflows/ci.yml`): ESLint, type check, production build and Jest tests on Node.js 22 with `npm ci`
-- **Docker Build** (`.github/workflows/docker.yml`): builds the Docker image to check it builds; it is not pushed to a registry
+- **Docker Build** (`.github/workflows/docker.yml`): builds the Docker image to check it builds
 
-Neither workflow runs on tags or creates the release; step 6 does that.
+Pushing the tag (step 5) runs **Docker Build** again and publishes the image to `ghcr.io/hiran-t/miti` for linux/amd64 and linux/arm64, tagged `3.3.0`, `3.3` and `latest`. The first published image is private: on its package page (GitHub profile → Packages → miti → Package settings), set the visibility to public once. No workflow creates the release; step 6 does that.
+
+## Who uses MITI
+
+GitHub keeps a repository's traffic for 14 days. **Traffic archive** (`.github/workflows/traffic.yml`) runs daily and adds it to CSV files on the `traffic` branch (`views.csv`, `clones.csv`, `referrers.csv`, `paths.csv`, `repo.csv`; see `scripts/traffic-archive.py`). It needs the repository secret `TRAFFIC_TOKEN`, a fine-grained personal access token with **Administration: Read-only** on this repository; until the secret exists the workflow only warns. Other signals:
+
+- **Image pulls**: the `miti` package page shows how often the published image is pulled.
+- **Discussions** (Q&A, Show and tell) and issues from people outside the team are the clearest sign that MITI is in use.
+- Clones include CI checkouts, so unique visitors and referrers say more than the clone count.
 
 ## Version numbering
 

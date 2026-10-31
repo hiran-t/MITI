@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- Release tags publish the MITI image to `ghcr.io/hiran-t/miti` (linux/amd64 and linux/arm64, tagged with the version and `latest`)
+- A daily workflow keeps the repository's traffic (views, clones, referrers, stars) beyond GitHub's 14 days, on the `traffic` branch; it needs a `TRAFFIC_TOKEN` secret
+
 ## [3.3.4] - 2026-10-30
 
 ### Added

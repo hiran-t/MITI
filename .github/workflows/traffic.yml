@@ -1,0 +1,62 @@
+name: Traffic archive
+
+# GitHub shows repository traffic for 14 days only. This keeps it: once a day it adds the
+# numbers to CSV files on the `traffic` branch (see scripts/traffic-archive.py).
+#
+# Needs the repository secret TRAFFIC_TOKEN: a fine-grained personal access token with
+# "Administration: Read-only" on this repository (the workflow's own token cannot read traffic).
+
+on:
+  schedule:
+    - cron: '17 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: traffic
+  cancel-in-progress: false
+
+jobs:
+  archive:
+    name: Archive traffic
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check out the traffic branch
+        run: |
+          if git ls-remote --exit-code --heads origin traffic >/dev/null; then
+            git fetch --depth 1 origin traffic
+            git worktree add data FETCH_HEAD
+          else
+            git worktree add --detach data
+            git -C data checkout --orphan traffic
+            git -C data rm -rf --quiet .
+          fi
+
+      - name: Collect traffic
+        env:
+          TRAFFIC_TOKEN: ${{ secrets.TRAFFIC_TOKEN }}
+        run: |
+          if [ -z "$TRAFFIC_TOKEN" ]; then
+            echo "::warning::Add the TRAFFIC_TOKEN secret to archive traffic (see .github/workflows/traffic.yml)."
+            exit 0
+          fi
+          python3 -I scripts/traffic-archive.py "$GITHUB_REPOSITORY" data | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit
+        run: |
+          cd data
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No new traffic data."
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit --quiet -m "chore: traffic for $(date -u +%F)"
+          git push origin HEAD:refs/heads/traffic

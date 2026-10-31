@@ -137,6 +137,14 @@ docker compose down                     # stop
 
 ### Without Compose
 
+Released versions are published as an image (linux/amd64 and linux/arm64), so no build is needed:
+
+```bash
+docker run -d --restart unless-stopped -p 3000:3000 --name miti ghcr.io/hiran-t/miti:latest
+```
+
+Or build it yourself:
+
 ```bash
 docker build -t miti:latest .
 docker run -d --restart unless-stopped -p 3000:3000 --name miti miti:latest
