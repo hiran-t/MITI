@@ -1,0 +1,86 @@
+/* MITI colors on the Read the Docs theme: the dark chrome and teal accent of MITI's own UI. */
+:root {
+  --miti-chrome: #191a1c;
+  --miti-chrome-line: #2b2d30;
+  --miti-teal: #13606b;
+  --miti-teal-bright: #2fb4c4;
+}
+
+/* Sidebar */
+.wy-nav-side,
+.wy-side-nav-search,
+.wy-nav-top {
+  background: var(--miti-chrome);
+}
+.wy-side-nav-search > a img.logo {
+  width: 210px;
+  height: auto;
+  max-width: 100%;
+  padding: 6px 0 2px;
+}
+.wy-side-nav-search input[type='text'] {
+  border-color: var(--miti-chrome-line);
+}
+.wy-menu-vertical p.caption,
+.wy-menu-vertical header {
+  color: var(--miti-teal-bright);
+}
+.wy-menu-vertical a:hover {
+  background: #26282b;
+}
+.wy-menu-vertical li.current > a,
+.wy-menu-vertical li.toctree-l1.current > a {
+  border-left: 3px solid var(--miti-teal-bright);
+}
+
+/* Content */
+.wy-nav-content {
+  max-width: 960px;
+}
+.wy-nav-content-wrap {
+  background: #f4f5f6;
+}
+a,
+a:visited {
+  color: var(--miti-teal);
+}
+a:hover {
+  color: var(--miti-teal-bright);
+}
+.rst-content .section > img,
+.rst-content figure img {
+  border: 1px solid #d5d8dc;
+  border-radius: 4px;
+}
+.rst-content figure figcaption {
+  color: #5b6168;
+  font-size: 90%;
+}
+.rst-content code.literal {
+  color: #0e4f58;
+}
+.rst-content .admonition-title {
+  background: var(--miti-teal) !important;
+}
+.rst-content .admonition {
+  background: #e8f4f6;
+}
+.rst-content .warning .admonition-title {
+  background: #c27c0e !important;
+}
+.rst-content .warning {
+  background: #fdf4e6;
+}
+.btn-neutral {
+  border-color: var(--miti-teal);
+}
+
+/* Let table cells wrap, so long descriptions stay inside the page. */
+.wy-table-responsive table td,
+.wy-table-responsive table th {
+  white-space: normal;
+  vertical-align: top;
+}
+.wy-table-responsive table td code.literal {
+  white-space: nowrap;
+}

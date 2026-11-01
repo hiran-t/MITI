@@ -8,7 +8,7 @@ from pathlib import Path
 root = Path(__file__).resolve().parent.parent
 
 # Screenshots come from the docs-images branch (docs/fetch-images.sh).
-if not any((root / 'docs' / 'manual' / 'images').glob('*.webp')):
+if not any((root / 'docs' / 'images').glob('*.webp')):
     subprocess.run(['bash', str(root / 'docs' / 'fetch-images.sh')], check=True)
 
 project = 'MITI'
@@ -19,29 +19,28 @@ version = release
 
 extensions = ['myst_parser', 'sphinx_copybutton']
 root_doc = 'index'
-include_patterns = ['index.md', 'manual/*.md', 'reference/*.md', 'develop/*.md']
-exclude_patterns = ['_build']
+include_patterns = ['index.md', '*/*.md']
+exclude_patterns = ['_build', 'images']
 
 myst_enable_extensions = ['colon_fence', 'deflist']
 myst_heading_anchors = 3
 
-html_theme = 'furo'
-html_title = f'MITI {release}'
+# Laid out like the MoveIt documentation: Read the Docs theme, dark sidebar, MITI's teal accent.
+html_theme = 'sphinx_rtd_theme'
+html_title = f'MITI {release} documentation'
+html_short_title = 'MITI'
 html_logo = '../public/main_logo.svg'
 html_favicon = '../public/robot_logo.svg'
+html_static_path = ['_static']
+templates_path = ['_templates']
+html_css_files = ['miti.css']
+html_show_sourcelink = False
 html_theme_options = {
-    'sidebar_hide_name': True,
-    'source_repository': 'https://github.com/hiran-t/MITI/',
-    'source_branch': 'main',
-    'source_directory': 'docs/',
-    'light_css_variables': {
-        'color-brand-primary': '#13606b',
-        'color-brand-content': '#13606b',
-    },
-    'dark_css_variables': {
-        'color-brand-primary': '#2fb4c4',
-        'color-brand-content': '#4cc4d2',
-    },
+    'logo_only': True,
+    'navigation_depth': 3,
+    'collapse_navigation': False,
+    'prev_next_buttons_location': 'bottom',
+    'style_nav_header_background': '#191a1c',
 }
 copybutton_prompt_text = r'^\$ '
 copybutton_prompt_is_regexp = True

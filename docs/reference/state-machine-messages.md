@@ -1,26 +1,12 @@
-# State machine monitoring
+# State Machine Messages
 
-This guide explains how to use MITI's **State Machine** panel to watch a SMACC2-style state machine or a BehaviorTree.CPP-style behavior tree while the robot runs.
+The messages the State Machine panel reads, and how to publish them from the robot. To set up the panel, see [Monitor a state machine](../how-to-guides/monitor-a-state-machine.md).
 
-## Overview
-
-The State Machine panel has two tabs:
-
-1. **SMACC2**: the current and previous state, all states, and the transition history
-2. **Behavior Tree**: the tree with each node's status, and the tick count
-
-Each tab subscribes to one topic through foxglove_bridge. MITI does not read SMACC2's or BehaviorTree.CPP's own topics directly: a node on the robot publishes a status message with the fields described below.
-
-## Adding the panel
-
-1. Click **Add panel** in the title bar and choose **State Machine**.
-2. Select the panel and open **Panel** in the activity bar.
-3. Under **General**, set **SMACC2 Status Topic** (default `/smacc2/status`) and **BehaviorTree Status Topic** (default `/behavior_tree/execution_status`). Topic suggestions come from the live topic list.
-4. Switch between **SMACC2** and **Behavior Tree** with the tabs at the top of the panel.
+Each tab of the panel subscribes to one topic through foxglove_bridge. MITI does not read SMACC2's or BehaviorTree.CPP's own topics directly: a node on the robot publishes a status message with the fields described below.
 
 ## Message format
 
-MITI decodes messages with the definitions foxglove_bridge advertises, so the status topics need a ROS 2 message type that the bridge can load. When foxglove_bridge runs beside MITI (pixi or Docker), add the package to `ros/overlay/src`; see [Deployment](../manual/deployment.md#the-robots-own-message-types). MITI reads fields by name, so the package and type names are up to you.
+MITI decodes messages with the definitions foxglove_bridge advertises, so the status topics need a ROS 2 message type that the bridge can load. When foxglove_bridge runs beside MITI (pixi or Docker), add the package to `ros/overlay/src`; see [Add the robot's message types](../how-to-guides/add-the-robots-message-types.md). MITI reads fields by name, so the package and type names are up to you.
 
 Use `float64` for timestamps and 32-bit integers for counts: 64-bit integers (`int64`, `uint64`) arrive in the browser as `BigInt`, which the panel does not convert.
 
@@ -154,9 +140,3 @@ Check the browser console. A 64-bit integer field (for example `int64 timestamp`
 - Export of the history as CSV or JSON
 - A drawn state diagram or nested states
 - Breakpoints and stepping
-
-## Related documentation
-
-- [README](../index.md)
-- [Architecture](../develop/architecture.md)
-- [Deployment](../manual/deployment.md)

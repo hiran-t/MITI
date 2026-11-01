@@ -1,10 +1,12 @@
 # Troubleshooting
 
+Find the symptom below. Each entry says what to check and links to the guide that fixes it.
+
 ## Problems and Sources
 
 When something goes wrong, the **Problems** icon in the activity bar shows a count. Open it to see what failed and what to check.
 
-```{figure} images/problems.webp
+```{figure} ../images/problems.webp
 :alt: The Problems view showing Connection failed, WebSocket error, with a hint to check that foxglove_bridge is reachable
 
 A connection problem.
@@ -26,13 +28,13 @@ The page does not open from another computer
 ## Topics are missing
 
 The bridge offers few or no topics
-: The bridge and the robot need the same `ROS_DOMAIN_ID` and ROS 2 distro. For a bridge beside MITI, set the domain in the {ref}`ROS network settings <ros-network>`.
+: The bridge and the robot need the same `ROS_DOMAIN_ID` and ROS 2 distro. For a bridge beside MITI, set the domain in [the ROS network settings](change-ros-network-settings.md).
 
 Topics come and go, mostly over Wi-Fi
 : DDS discovery relies on multicast, which Wi-Fi often drops. Enter the robot's IP address in the ROS network settings, or set `ROS_STATIC_PEERS=<robot-ip>`.
 
 A topic of the robot's own message type is missing
-: The bridge offers only topics whose message definitions it has. A bridge beside MITI needs the robot's message packages installed on the MITI machine; see the [deployment guide](deployment.md#the-robots-own-message-types).
+: The bridge offers only topics whose message definitions it has. A bridge beside MITI needs the robot's message packages installed on the MITI machine; see [Add the robot's message types](add-the-robots-message-types.md).
 
 ## A panel shows nothing
 
@@ -43,10 +45,25 @@ The robot model does not appear
 : The robot must run `robot_state_publisher`, which publishes `/robot_description`. If MITI says the topic is not published, the bridge cannot see it. With the bridge beside MITI, the robot's description package must also be on the MITI machine for its meshes.
 
 **No transform: A → B**
-: TF has no path from the topic's frame A to the frame B MITI draws in. Publish the missing transform, or choose a fixed frame that the topic's frame connects to. See {doc}`3d-scene`.
+: TF has no path from the topic's frame A to the frame B MITI draws in. Publish the missing transform, or choose a fixed frame that the topic's frame connects to. See [Frames and transforms](../concepts/frames-and-transforms.md).
+
+```{figure} ../images/scene-no-transform.webp
+:alt: The 3D Scene settings of /cloud_registered with the error No transform: camera_init → map
+
+A cloud in FAST-LIO's `camera_init` frame, while `/fast_lio/tf` is not in TF topics.
+```
+
+**TF is too old: A** or **No TF at the image time**
+: The transforms MITI has are older than the message, usually because the robot's and MITI's clocks differ or a simulator runs slower than real time. Turn **Sync timestamps** off in the panel's **Frame** settings; see [Time](../concepts/frames-and-transforms.md#time).
+
+```{figure} ../images/scene-tf-too-old.webp
+:alt: The 3D Scene settings of /points with the error TF is too old: base_link, while Sync timestamps is on
+
+With Sync timestamps on, a cloud newer than the latest transform.
+```
 
 A layer is drawn in the wrong place over the camera
-: See {ref}`When the overlay looks wrong <camera-overlay-problems>`.
+: See [When the overlay looks wrong](draw-topics-over-a-camera.md#when-the-overlay-looks-wrong).
 
 ## MITI is slow or images lag
 
@@ -56,3 +73,17 @@ Raw camera images are large: a 1280 × 720 image is 2.8 MB, and a few cameras ca
 - Close or hide camera panels you are not watching; MITI only receives topics that a panel shows.
 - In the connection settings, choose **Prioritize robot motion** so the robot model and TF stay real-time while cameras lag.
 - Run foxglove_bridge beside MITI, so the robot does not encode and send every stream itself.
+
+## Installing and running MITI
+
+`pixi run miti` fails in `npm ci`
+: Run `pixi run remove`, then `pixi run miti` again.
+
+The development server shows a blank page after a build
+: Restart `npm run dev`: builds and the development server share `.next`.
+
+The Docker container keeps restarting
+: Read `docker compose logs miti` (or `docker logs miti`), and check memory with `docker stats`.
+
+On Windows
+: See the common problems in [Install on Windows](install-on-windows.md#common-problems).

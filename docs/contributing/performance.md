@@ -1,4 +1,6 @@
-# Performance under robot-sized data
+# Performance
+
+How MITI was measured and tuned under robot-sized data.
 
 MITI has to stay responsive while a robot streams raw cameras, a lidar cloud, TF and logs. This page
 describes the load harness used to measure that and what it measured.

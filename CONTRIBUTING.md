@@ -28,7 +28,7 @@ Open an issue with the **Feature request** template. Check first whether it has 
 1. Fork the repository and create a branch from `main`.
 2. Keep the change focused on one fix or feature.
 3. Run the checks below and make sure they pass.
-4. Update the manual in `docs/` when behavior changes (it is the Read the Docs site; see [docs/develop/releases.md](docs/develop/releases.md#user-manual-read-the-docs)), and add a line under `## [Unreleased]` in CHANGELOG.md.
+4. Update the manual in `docs/` when behavior changes (it is the Read the Docs site, organized into tutorials, how-to guides, concepts, reference and contributing; see [docs/contributing/releases.md](docs/contributing/releases.md#user-manual-read-the-docs)), and add a line under `## [Unreleased]` in CHANGELOG.md.
 5. Open the pull request with the template filled in, including how you tested it.
 
 CI (`.github/workflows/ci.yml`) runs lint, type check, build and tests on every pull request to `main`, and `.github/workflows/docker.yml` builds the Docker image.
@@ -53,8 +53,8 @@ CI and the Docker image install with `npm ci` from `package-lock.json`; update i
 MITI talks to [foxglove_bridge](https://github.com/foxglove/foxglove-sdk) over the Foxglove WebSocket protocol (default port 8765). Enter the bridge address in the connection box in the status bar, or set `NEXT_PUBLIC_BRIDGE_URL` (see `.env.example`). Without it, MITI connects to `ws://<host MITI was served from>:8765`.
 
 - On a robot: `ros2 launch foxglove_bridge foxglove_bridge_launch.xml`
-- Beside MITI, joined to the robot over DDS: `pixi run -e humble bridge` (or `-e jazzy`); see [docs/manual/deployment.md](docs/manual/deployment.md)
-- Without a robot: `node scripts/heavy-bridge.js` streams robot-sized test data on `ws://localhost:8790`; see [docs/develop/performance.md](docs/develop/performance.md)
+- Beside MITI, joined to the robot over DDS: `pixi run -e humble bridge` (or `-e jazzy`); see [docs/how-to-guides/run-foxglove-bridge-beside-miti.md](docs/how-to-guides/run-foxglove-bridge-beside-miti.md)
+- Without a robot: `node scripts/heavy-bridge.js` streams robot-sized test data on `ws://localhost:8790`; see [docs/contributing/performance.md](docs/contributing/performance.md)
 
 ### Checks
 

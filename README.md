@@ -36,11 +36,11 @@ With Docker:
 docker run -d --restart unless-stopped -p 3000:3000 --name miti ghcr.io/hiran-t/miti:latest
 ```
 
-On macOS and Windows, or to run foxglove_bridge beside MITI, see [Install and run MITI](https://miti.readthedocs.io/en/latest/manual/install.html).
+On macOS and Windows, or to run foxglove_bridge beside MITI, see the [How-To Guides](https://miti.readthedocs.io/en/latest/how-to-guides/index.html).
 
 ## Documentation
 
-The manual is at **[miti.readthedocs.io/en/latest](https://miti.readthedocs.io/en/latest/)**: installing, connecting to a robot, every panel, deployment and troubleshooting, plus reference and developer guides. Its source is in [`docs/`](docs/).
+The documentation is at **[miti.readthedocs.io/en/latest](https://miti.readthedocs.io/en/latest/)**: tutorials, how-to guides, concepts, reference and contributing. Its source is in [`docs/`](docs/).
 
 ## Contributing
 

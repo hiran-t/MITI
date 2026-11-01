@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- The documentation is organized like the MoveIt documentation, on the Read the Docs theme in MITI's colors: Tutorials (getting started, connecting, the workspace, the 3D Scene, cameras), How-To Guides grouped by task (install and deploy, connect to ROS 2, visualize data, monitor and control, troubleshooting), Concepts (how MITI works, frames and transforms), Reference (command line, configuration, panel settings, 3D Scene layers, state machine messages) and Contributing. The deployment guide is split into one guide per task. Architecture diagrams (foxglove_bridge on the robot or beside MITI, and the data flow in the browser) replace the text drawings; diagrams of the TF tree, the stream modes and discovery over Wi-Fi, and screenshots of the ROS network settings, TF errors and the Publish settings, explain those pages; and the GitHub link on every page opens the repository
+
 ## [3.3.6] - 2026-10-31
 
 ### Added

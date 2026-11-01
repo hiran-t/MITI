@@ -1,4 +1,4 @@
-# Draw 3D topics over a camera
+# Draw 3D Topics over a Camera
 
 A camera panel can draw ROS data over the image: LiDAR points, maps and costmaps, planned paths and TF frames. To place them correctly MITI needs three things that belong together:
 
@@ -19,7 +19,7 @@ A topic being listed, or its eye icon being on, does not mean anything is drawn 
 5. Leave **Sync timestamps** on, so the TF at the image's time is used. If MITI reports **TF is too old**, for example with a simulator whose TF lags behind the image, turn it off to draw with the latest TF.
 6. Use **Rectify** when the calibration describes lens distortion. It does not fix missing TF.
 
-```{figure} images/camera.webp
+```{figure} ../images/camera.webp
 :alt: Camera settings with the image topic, Calibration set to Auto with the camera_info topic, and Sync timestamps
 
 **General** holds the image topic, its calibration and time sync.
@@ -41,7 +41,7 @@ For a `sensor_msgs/msg/PointCloud2` topic such as `/livox/lidar`:
 
 RGB and RGBA color modes use colors stored in the cloud, when it has them. Color maps and gradients color points by one of the cloud's fields.
 
-```{figure} images/camera-cloud.webp
+```{figure} ../images/camera-cloud.webp
 :alt: Livox lidar points drawn in cyan over a live camera image, with the point cloud settings in the sidebar
 
 `/livox/lidar` drawn over the camera image.
@@ -58,7 +58,7 @@ For a `nav_msgs/msg/OccupancyGrid` topic such as `/local_costmap/costmap`:
 
 The map can only be drawn when TF connects its frame to the camera.
 
-```{figure} images/camera-costmap.webp
+```{figure} ../images/camera-costmap.webp
 :alt: The local costmap drawn over a live camera image in costmap colors at opacity 0.45, with its settings in the sidebar
 
 `/local_costmap/costmap` drawn over the camera image.
@@ -82,7 +82,7 @@ A planner usually publishes a path only while it has a goal, so the topic can be
 3. Set **Labels**, **Label size (px)**, **Axis scale**, **Line width** and **Line color**.
 4. Turn single frames on and off with their eye icons to keep the image readable.
 
-```{figure} images/camera-tf.webp
+```{figure} ../images/camera-tf.webp
 :alt: A live camera image with TF axes, connecting lines and frame names drawn over it, and the Transforms group open in the settings
 
 TF frames drawn over a live camera image.

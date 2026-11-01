@@ -1,4 +1,4 @@
-# 3D Scene panel
+# 3D Scene Layers
 
 The scene is independent of the robot description. A grid, TF frames and sensor layers can be used without a URDF model. Select a 3D Scene panel and open **Panel** in the activity bar: settings are grouped like Foxglove's 3D panel — **Frame**, **Scene**, **View**, **Transforms**, **Topics**, **Custom layers** and **Publish** — and take effect immediately. Layouts saved by MITI 2.0 are converted automatically.
 

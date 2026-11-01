@@ -1,6 +1,6 @@
-# How to create a release
+# Making a Release
 
-This guide describes how MITI releases are made. A release is a version bump, a CHANGELOG entry, a git tag and a GitHub release with release notes. Publishing it builds the Debian packages and the Docker image; users install those or run the tagged source with pixi (see [Deployment](../manual/deployment.md)).
+This guide describes how MITI releases are made. A release is a version bump, a CHANGELOG entry, a git tag and a GitHub release with release notes. Publishing it builds the Debian packages and the Docker image; users install those or run the tagged source with pixi (see the [How-To Guides](../how-to-guides/index.md#install-and-deploy)).
 
 ## Release checklist
 
@@ -72,7 +72,7 @@ To rebuild the packages of a release, run **Packages** from the Actions tab with
 
 ## User manual (Read the Docs)
 
-All documentation is in `docs/` and published as one site: the user manual (`manual/`), reference (`reference/`) and developer guides (`develop/`), built with Sphinx, MyST and the Furo theme (`docs/conf.py`, `docs/requirements.txt`, `.readthedocs.yaml`). Its screenshots are not in the source tree: they live on the `docs-images` branch (`images/`, WebP, 1920 × 1200, taken from MITI connected to a robot), together with the scripts that take them (`capture/`). `docs/conf.py` fetches them into `docs/manual/images/` (ignored by git) through `docs/fetch-images.sh`. To change a screenshot, commit the new image to that branch.
+All documentation is in `docs/` and published as one site, organized like the MoveIt documentation: `tutorials/`, `how-to-guides/`, `concepts/`, `reference/` and `contributing/`. It is built with Sphinx, MyST and the Read the Docs theme (`docs/conf.py`, `docs/_static/miti.css`, `docs/requirements.txt`, `.readthedocs.yaml`). Its screenshots are not in the source tree: they live on the `docs-images` branch (`images/`, WebP, 1920 × 1200, taken from MITI connected to a robot), together with the scripts that take them (`capture/`). `docs/conf.py` fetches them into `docs/images/` (ignored by git) through `docs/fetch-images.sh`. To change a screenshot, commit the new image to that branch.
 
 Build it locally; `-W` fails on any warning, as Read the Docs does:
 

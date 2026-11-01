@@ -1,22 +1,7 @@
 # Architecture
 
 This document describes how MITI is built and why, as of v3.2.0. For hook and function
-signatures see [API](api.md); for running MITI see [Deployment](../manual/deployment.md).
-
-## Table of contents
-
-- [Overview](#overview)
-- [Technology stack](#technology-stack)
-- [Project structure](#project-structure)
-- [Data flow](#data-flow)
-- [Key components](#key-components)
-- [State management](#state-management)
-- [Performance considerations](#performance-considerations)
-- [Design patterns](#design-patterns)
-- [Error handling](#error-handling)
-- [Security considerations](#security-considerations)
-- [Deployment](#deployment)
-- [Future improvements](#future-improvements)
+signatures see [API](api.md); for running MITI see the [How-To Guides](../how-to-guides/index.md).
 
 ## Overview
 
@@ -30,24 +15,19 @@ meshes and URDFs from the local ROS workspace. ROS data never passes through it.
 
 The bridge can run on the robot:
 
-```
-┌──────────────┐  HTTP (port 3000)  ┌──────────────┐
-│   Browser    │ ◄────────────────► │ MITI server  │
-│  (MITI app)  │                    └──────────────┘
-│              │  WebSocket (8765)  ┌──────────────┐   ROS 2 (DDS)   ┌──────────────┐
-│              │ ◄────────────────► │ foxglove_    │ ◄─────────────► │  ROS 2 nodes │
-└──────────────┘                    │ bridge       │   same machine  │  (robot)     │
-                                    └──────────────┘                 └──────────────┘
+```{figure} ../images/architecture-bridge-on-robot.webp
+:alt: The browser loads MITI from the MITI server over HTTP on port 3000 and connects over WebSocket on port 8765 to foxglove_bridge on the robot, which talks to the robot's ROS 2 nodes over DDS
+
+foxglove_bridge on the robot.
 ```
 
 Or beside MITI on another machine, joined to the robot's ROS 2 network over DDS
 (`pixi run miti-bridge`, or the Docker Compose `bridge` profile):
 
-```
-┌──────────────┐  HTTP + WebSocket  ┌──────────────────────────┐   ROS 2 (DDS)   ┌──────────────┐
-│   Browser    │ ◄────────────────► │ MITI server              │ ◄─────────────► │  ROS 2 nodes │
-│  (MITI app)  │   3000 and 8765    │ + foxglove_bridge        │    network      │  (robot)     │
-└──────────────┘                    └──────────────────────────┘                 └──────────────┘
+```{figure} ../images/architecture-bridge-beside-miti.webp
+:alt: The browser loads MITI from the MITI server over HTTP on port 3000 and connects over WebSocket on port 8765 to foxglove_bridge on the MITI machine, which reaches the robot's ROS 2 nodes over DDS across the network; nothing is installed on the robot
+
+foxglove_bridge beside MITI.
 ```
 
 By default the browser connects to port 8765 on the host that served MITI, so the second setup
@@ -90,7 +70,7 @@ caches):
 
 ```
 MITI/
-├── docs/                     # The manual (Read the Docs): manual/, reference/, develop/, conf.py
+├── docs/                     # The documentation site: tutorials/, how-to-guides/, concepts/, reference/, contributing/
 ├── packaging/                # The apt package: nfpm.yaml, miti command, services, build and test scripts
 ├── public/                   # main_logo.svg, robot_logo.svg
 ├── ros/                      # foxglove_bridge beside MITI
@@ -261,6 +241,12 @@ src/
 
 ## Data flow
 
+```{figure} ../images/architecture-data-flow.webp
+:alt: Inside the browser, messages from foxglove_bridge pass the BridgeClient, the rate cap and throttle, then are decoded in the DecodePool web workers (images, point clouds, maps) or on the main thread (other messages), reach the subscribers through useTopic and are drawn by the panels; /tf and /tf_static feed a TF tree with 30 s of history that the panels use
+
+How a message travels from foxglove_bridge to a panel.
+```
+
 ### 1. Connection
 
 ```
@@ -379,7 +365,7 @@ Panel types (`types/widget.ts`): Topics, 3D Scene (`urdf-viewer`), Point Cloud, 
 
 #### 3D Scene
 
-`visualization/scene/`, modelled on Foxglove's 3D panel (see [3D Scene](../reference/3d-scene.md)):
+`visualization/scene/`, modelled on Foxglove's 3D panel (see [3D Scene](../reference/3d-scene-layers.md)):
 
 - `SceneViewer` reads the panel's `SceneConfig`, runs `useTF`, picks the fixed and display frames
   and hosts the publish tools (point, pose, pose estimate).
@@ -414,7 +400,7 @@ Panel types (`types/widget.ts`): Topics, 3D Scene (`urdf-viewer`), Point Cloud, 
 - **Topics**: the topic list with a live preview per topic.
 - **Log**: `/rosout`-style logs with level, name and text filters.
 - **State Machine**: SMACC2 and behavior tree status (see
-  [State machine monitoring](../reference/state-machine.md)).
+  [State machine monitoring](../reference/state-machine-messages.md)).
 - **Button Switch**: publishes a JSON payload or calls a service when toggled.
 
 ## State management
@@ -589,7 +575,7 @@ on a trusted network.
 
 ## Deployment
 
-Details are in [Deployment](../manual/deployment.md). In short:
+Details are in the [How-To Guides](../how-to-guides/index.md#install-and-deploy). In short:
 
 - **pixi** (`pixi.toml`) provides Node.js 22 and, in the `humble` and `jazzy` environments,
   foxglove_bridge from RoboStack. Tasks: `miti` (build if needed and serve on port 3000),

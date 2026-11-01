@@ -1,17 +1,7 @@
-# API reference
+# API Reference
 
 This document describes MITI's hooks, components, types and utilities as of v3.2.0. All paths
 are relative to `src/`, and `@/` is the import alias for `src/`.
-
-## Table of contents
-
-- [Hooks](#hooks)
-- [Components](#components)
-- [Types](#types)
-- [Utilities](#utilities)
-- [BridgeClient API](#bridgeclient-api)
-- [HTTP routes](#http-routes)
-- [Examples](#examples)
 
 ## Hooks
 
@@ -458,7 +448,7 @@ export function SettingsSection(props: {
 ### SceneViewer
 
 `visualization/scene/SceneViewer.tsx`. The 3D Scene panel (widget type `urdf-viewer`). Settings are
-grouped like Foxglove's 3D panel; see [3D Scene](../reference/3d-scene.md).
+grouped like Foxglove's 3D panel; see [3D Scene](../reference/3d-scene-layers.md).
 
 ```typescript
 export default function SceneViewer(props: {
@@ -582,7 +572,7 @@ interface ButtonSwitchWidgetComponentProps {
 }
 ```
 
-See [State machine monitoring](../reference/state-machine.md) for the state machine panel.
+See [State machine monitoring](../reference/state-machine-messages.md) for the state machine panel.
 
 ## Types
 
@@ -688,7 +678,7 @@ export type MosaicTree = string | MosaicSplit;
 
 - **3D Scene:** `SceneConfig` in `types/scene-config.ts` (frame, scene, view, transforms, publish,
   per-topic settings and custom grid/URDF layers). Layer kinds and their message types are in
-  `LAYER_TYPES` in `types/scene.ts`. See [3D Scene](../reference/3d-scene.md).
+  `LAYER_TYPES` in `types/scene.ts`. See [3D Scene](../reference/3d-scene-layers.md).
 - **Image:** `ImagePanelConfig` in `lib/camera/image-config.ts`:
 
 ```typescript
