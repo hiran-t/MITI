@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 jobs:
   lint:
@@ -96,6 +96,6 @@ jobs:
         run: npm run build
 
       # Headless Chrome against the build and scripts/heavy-bridge.js: panels, widgets, layout
-      # files and branding (scripts/e2e.js).
+      # files (scripts/e2e.js).
       - name: Run end-to-end checks
         run: npm run e2e

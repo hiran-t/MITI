@@ -56,7 +56,6 @@ control-the-robot-with-a-button-switch
 
 install-a-widget
 share-a-layout
-brand-miti
 ```
 
 ## Fix problems

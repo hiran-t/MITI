@@ -253,7 +253,6 @@ src/
 ├── lib/widgets/manifest.ts               # Widget manifest checks (browser, server, packer)
 ├── lib/server/widget-store.ts            # Widgets unpacked under MITI_STATE_DIR/widgets
 ├── lib/server/download.ts                # Import from URL: public https addresses only
-├── lib/server/branding.ts                # MITI_BRANDING_DIR: name, logo, icon, accent
 ├── lib/layout/layout-file.ts             # Export and Import layout
 ├── app/api/widgets/                      # List, import, remove, serve widget files
 └── components/features/widgets/
@@ -638,7 +637,7 @@ Details are in the [How-To Guides](../how-to-guides/index.md#install-and-deploy)
 - **Load testing**: `scripts/heavy-bridge.js` and `scripts/perf-run.js`, described in
   [Performance](performance.md).
 - **End-to-end checks**: `npm run e2e` (`scripts/e2e.js`) drives headless Chrome against the
-  production build and `scripts/heavy-bridge.js`: panels, widgets, layout files and branding. CI
+  production build and `scripts/heavy-bridge.js`: panels, widgets and layout files. CI
   runs it on every change.
 
 ## Future improvements
