@@ -252,6 +252,9 @@ src/
 ├── sdk/                                  # @miti/sdk, what widgets import
 ├── lib/widgets/manifest.ts               # Widget manifest checks (browser, server, packer)
 ├── lib/server/widget-store.ts            # Widgets unpacked under MITI_STATE_DIR/widgets
+├── lib/server/download.ts                # Import from URL: public https addresses only
+├── lib/server/branding.ts                # MITI_BRANDING_DIR: name, logo, icon, accent
+├── lib/layout/layout-file.ts             # Export and Import layout
 ├── app/api/widgets/                      # List, import, remove, serve widget files
 └── components/features/widgets/
     └── WidgetManager.tsx                 # The Widgets view of the sidebar
@@ -609,8 +612,12 @@ on a trusted network.
   MITI, with MITI's access to the robot, so anyone who can reach MITI can install code there; set
   `MITI_WIDGET_IMPORT=off` where that is not wanted. Requests from another site's page are refused
   (`Sec-Fetch-Site`, or `Origin` against `Host`), and a package must be sent as
-  `application/octet-stream`, which other sites cannot send without a CORS preflight. Packages are limited to 20 MB and 500 files,
-  their paths are checked, and they are unpacked beside the installed widgets and swapped in.
+  `application/octet-stream` (or a URL as JSON), which other sites cannot send without a CORS
+  preflight. Packages are limited to 20 MB and 500 files, their paths are checked, and they are
+  unpacked beside the installed widgets and swapped in.
+- Import from URL downloads only from `https` addresses on the public internet: every address a
+  name resolves to is checked when connecting and on each redirect, and IP addresses are checked
+  as written, so the server cannot be used to reach the robot or other machines on its network.
 
 ### 3. Rendering
 
@@ -630,6 +637,9 @@ Details are in the [How-To Guides](../how-to-guides/index.md#install-and-deploy)
   robot over DDS.
 - **Load testing**: `scripts/heavy-bridge.js` and `scripts/perf-run.js`, described in
   [Performance](performance.md).
+- **End-to-end checks**: `npm run e2e` (`scripts/e2e.js`) drives headless Chrome against the
+  production build and `scripts/heavy-bridge.js`: panels, widgets, layout files and branding. CI
+  runs it on every change.
 
 ## Future improvements
 

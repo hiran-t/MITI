@@ -22,6 +22,7 @@ import { useLayoutConfig } from '@/hooks/useLayoutConfig';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import ConnectionStatus from '../connection/ConnectionStatus';
 import AddWidgetButton from '../layout/AddWidgetButton';
+import LayoutFileActions from '../layout/LayoutFileActions';
 import ConnectionSettings from '../connection/ConnectionSettings';
 import { SettingsSearchContext } from '../layout/WidgetSettingsPortal';
 import ActivityBar, { sidebarViewLabel } from './ActivityBar';
@@ -51,6 +52,7 @@ function initialBridgeUrl(): string {
 }
 
 export default function Dashboard() {
+  const branding = window.__MITI__?.branding;
   const [bridgeUrl, setBridgeUrl] = useLocalStorage(STORAGE_KEY_BRIDGE_URL, initialBridgeUrl());
   const [streamMode, setStreamMode] = useLocalStorage<StreamMode>(
     STORAGE_KEY_STREAM_MODE,
@@ -67,6 +69,7 @@ export default function Dashboard() {
     removeWidget,
     updateMosaic,
     resetLayout,
+    replaceLayout,
     toggleLock,
   } = useLayoutConfig();
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
@@ -152,10 +155,37 @@ export default function Dashboard() {
       <div className="miti-workspace">
         <header className="workspace-titlebar">
           <div className="workspace-brand">
-            <Image src="/main_logo.svg" alt="MITI" width={106} height={42} priority />
+            {branding?.logo ? (
+              // Any size of logo fits the title bar's height.
+              <Image
+                src={branding.logo}
+                alt={branding.name}
+                width={106}
+                height={42}
+                unoptimized
+                priority
+                style={{ objectFit: 'contain', objectPosition: 'left center' }}
+              />
+            ) : (
+              <Image
+                src="/main_logo.svg"
+                alt={branding?.name ?? 'MITI'}
+                width={106}
+                height={42}
+                priority
+              />
+            )}
           </div>
           <span className="layout-name">Live monitoring</span>
           <div className="titlebar-actions">
+            <LayoutFileActions
+              layout={layout}
+              onReplace={(next) => {
+                replaceLayout(next);
+                setSelectedWidgetId(null);
+                setSettingsSearch('');
+              }}
+            />
             <button
               aria-label="Reset layout"
               title="Reset layout"

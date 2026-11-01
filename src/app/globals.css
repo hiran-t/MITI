@@ -824,6 +824,27 @@ button:disabled {
   font-size: 11px;
   color: var(--miti-text-secondary);
 }
+.widget-url {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--miti-border);
+}
+.widget-url input {
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--miti-border-strong);
+  border-radius: 3px;
+  background: var(--miti-bg-input);
+  color: var(--miti-text-strong);
+  font-size: 12px;
+}
+.widget-url input:focus {
+  border-color: var(--miti-accent);
+  outline: none;
+}
 .widget-message {
   display: flex;
   align-items: flex-start;

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Installs a MITI .deb in a clean Ubuntu container and checks `miti run`: nothing starts on install,
-# the page and API answer, Ctrl+C stops everything, ports move, shell variables win over
-# /etc/miti, and `--bridge` starts foxglove_bridge (a stand-in ROS) with /etc/miti/bridge.env.
+# the page and API answer, a widget imported from the browser is kept and served, Ctrl+C stops
+# everything, ports move, shell variables win over /etc/miti, and `--bridge` starts
+# foxglove_bridge (a stand-in ROS) with /etc/miti/bridge.env.
 # Run as root in the container, on a machine of the package's architecture:
 #   docker run --rm -v "$PWD:/src:ro" ubuntu:24.04 bash /src/packaging/test-deb.sh /src/dist/miti_<v>_amd64.deb
 # Commands in single quotes run later, in the container's shells.
@@ -50,7 +51,7 @@ interrupt() {
 nothing_left() { ! pgrep -u robot >/dev/null; }
 
 apt-get update -qq >/dev/null
-apt-get install -y -qq curl procps >/dev/null
+apt-get install -y -qq curl procps zip >/dev/null
 apt-get install -y -qq "$deb" >/dev/null
 useradd -m robot
 echo "$(. /etc/os-release && echo "$PRETTY_NAME"), $(dpkg --print-architecture), $(miti version)"
@@ -64,6 +65,15 @@ check "miti run serves the page" up 3000
 check "the page names miti run --bridge" bash -c \
   'curl -s localhost:3000 | grep -q "\"bridgeHint\":\"miti run --bridge\""'
 check "/api/bridge answers" bash -c 'curl -s localhost:3000/api/bridge | grep -q available'
+check "an imported widget is kept in ~/.config/miti and served" bash -c '
+  mkdir -p /tmp/widget && cd /tmp/widget &&
+  printf "{\"id\":\"test.deb\",\"name\":\"Test\",\"version\":\"1.0.0\",\"miti\":{\"apiVersion\":1}}" >manifest.json &&
+  printf "export default { panels: [] };\n" >index.js &&
+  zip -q /tmp/widget.miti-widget manifest.json index.js &&
+  curl -sf -X POST -H "Content-Type: application/octet-stream" \
+    --data-binary @/tmp/widget.miti-widget localhost:3000/api/widgets >/dev/null &&
+  [ -f /home/robot/.config/miti/widgets/test.deb/index.js ] &&
+  curl -sf localhost:3000/api/widgets/files/test.deb/1.0.0/index.js | grep -q panels'
 interrupt
 check "Ctrl+C stops everything" nothing_left
 

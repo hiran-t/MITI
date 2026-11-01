@@ -1270,8 +1270,11 @@ and to requests from another site's page (`Sec-Fetch-Site`, or `Origin` against 
 | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET /api/widgets`                             | `{ importAllowed, widgets, problems }`: each widget's manifest with `installedAt`, and folders that cannot be read                                                                                       |
 | `POST /api/widgets`                            | The body is a `.miti-widget` file sent as `application/octet-stream`: installs it, replacing any version of the same widget; `201` with the manifest, `400` with `error`, `415` for another content type |
+| `POST /api/widgets` (JSON)                     | `{ "url": "https://…" }`: downloads the package from a public https address (`lib/server/download.ts`) and installs it; with `"check": true` only answers its manifest                                   |
 | `DELETE /api/widgets?id=<id>`                  | Removes a widget; `204`, or `404` when it is not installed                                                                                                                                               |
 | `GET /api/widgets/files/<id>/<version>/<path>` | A file of the installed version, cached for good; `404` for any other version                                                                                                                            |
+
+`/api/branding/logo` and `/api/branding/icon` serve the images of `MITI_BRANDING_DIR` (`lib/server/branding.ts`); `404` when MITI is not branded.
 
 ## Examples
 

@@ -2,11 +2,18 @@
 
 ## [Unreleased]
 
+## [3.4.0] - 2026-11-01
+
 ### Added
 
 - Widgets: panels that come in a `.miti-widget` file and are imported under **Widgets** in the sidebar, without rebuilding MITI. The server keeps them under `MITI_STATE_DIR/widgets` (`.miti/widgets` with pixi, `/var/lib/miti/widgets` for the apt service, `/data/widgets` in Docker, kept in the `miti-data` volume), so every browser that opens MITI gets them; `MITI_WIDGET_IMPORT=off` stops importing and removing them from the browser. A widget is made in its own repository, started from the template [MITI-widget-dev](https://github.com/hiran-t/MITI-widget-dev), against `@miti/sdk` from [MITI-sdk](https://github.com/hiran-t/MITI-sdk): panel definitions, `useTopic`, `useTF`, `ImageCanvas`, and the settings fields and portals MITI's panels use. Its `miti-widget build` makes the `.miti-widget` file and lets the widget share MITI's React; `miti-widget dev` keeps it imported into a running MITI while it changes. New pages: Write a Widget, Install a Widget and Widget SDK
 - Each panel has an error boundary: a panel that throws shows its error and a **Reload panel** button, and the other panels keep running
 - Widgets that fail to load are listed under Problems
+- Import a widget from its address: paste a `https` link to a `.miti-widget` file, such as one in a GitHub release, under **Import widget…**; MITI's server downloads it and shows what it is before importing. Only addresses on the public internet are downloaded, never machines on MITI's own network
+- **Export layout** and **Import layout** in the title bar save the layout as a JSON file and open one, to move it to another browser or MITI. The file lists the widgets its panels need, and MITI names those it does not have before opening it. New page: Share a Layout
+- Branding: `MITI_BRANDING_DIR` names a folder with `branding.json` (name, browser title, logo, icon, accent color) that replaces MITI's own on the next page load, without rebuilding MITI. New page: Brand MITI
+- `npm run e2e` checks MITI in headless Chrome against the production build and `scripts/heavy-bridge.js`: the built-in panels, importing, using and removing a widget, layout files and branding. CI runs it for every change
+- The apt package test (`packaging/test-deb.sh`) imports a widget through `miti run` and checks that it is kept and served
 
 ### Changed
 

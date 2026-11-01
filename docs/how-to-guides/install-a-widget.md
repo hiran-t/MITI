@@ -9,6 +9,12 @@ A widget adds panels to MITI, for example a panel for a robot's driver or for a 
 3. MITI shows the widget's name, version, id and author, and asks before importing it.
 4. Click **+** in the title bar: the widget's panels are listed under **Widgets**, below MITI's own panels.
 
+### From an address
+
+A widget published on the web, such as a file in a GitHub release, can be imported without downloading it first: paste its address (`https://…/<id>-<version>.miti-widget`) in the field under **Import widget…** and click **Import**. MITI's server downloads it, shows its name, version and author, and asks before importing it.
+
+Only `https` addresses on the public internet are downloaded, never machines on MITI's own network; for a widget kept on a local server, download the file and import it as above.
+
 :::{warning}
 A widget runs inside MITI with the same access as MITI: it reads any topic and, when foxglove_bridge allows it, publishes messages and calls services on the robot. Import widgets only from sources you trust.
 :::
