@@ -186,6 +186,11 @@ export function useLayoutConfig() {
     setLayout(DEFAULT_LAYOUT);
   }, []);
 
+  /** Replace the layout, e.g. with one read from a file. */
+  const replaceLayout = useCallback((next: LayoutConfig) => {
+    setLayout(normalizeLayout(next));
+  }, []);
+
   return {
     hydrated,
     layout,
@@ -194,6 +199,7 @@ export function useLayoutConfig() {
     removeWidget,
     updateMosaic,
     resetLayout,
+    replaceLayout,
     toggleLock,
   };
 }

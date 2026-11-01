@@ -3,8 +3,15 @@
 import { useRef, useState, type DragEvent } from 'react';
 import { AlertCircle, Puzzle, Upload } from 'lucide-react';
 import { usePanels } from '@/panels';
-import { importWidget, readWidgetManifest, removeWidget, useWidgets } from '@/panels/loader';
-import { WIDGET_FILE_EXTENSION } from '@/lib/widgets/manifest';
+import {
+  checkWidgetUrl,
+  importWidget,
+  importWidgetUrl,
+  readWidgetManifest,
+  removeWidget,
+  useWidgets,
+} from '@/panels/loader';
+import { WIDGET_FILE_EXTENSION, type WidgetManifest } from '@/lib/widgets/manifest';
 
 const STATUS = { loading: 'Loading…', loaded: 'Loaded', failed: 'Failed' } as const;
 
@@ -19,6 +26,7 @@ export default function WidgetManager({ usedTypes }: { usedTypes: string[] }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [url, setUrl] = useState('');
 
   const run = async (task: () => Promise<string | null>) => {
     setBusy(true);
@@ -33,22 +41,35 @@ export default function WidgetManager({ usedTypes }: { usedTypes: string[] }) {
     }
   };
 
+  /** Ask before importing, naming the widget and what it replaces. */
+  const confirmImport = (manifest: WidgetManifest, from?: string) => {
+    const installed = widgets.find((widget) => widget.id === manifest.id);
+    const by = manifest.author ? ` by ${manifest.author}` : '';
+    const replaces = installed ? ` It replaces version ${installed.version}.` : '';
+    const source = from ? `\n\nFrom ${from}` : '';
+    return window.confirm(
+      `Import ${manifest.name} ${manifest.version} (${manifest.id})${by}?${replaces}${source}\n\n` +
+        'A widget runs inside MITI with the same access as MITI, including sending commands ' +
+        'to the robot. Import only widgets from sources you trust.'
+    );
+  };
+  const imported = (manifest: WidgetManifest) =>
+    `Imported ${manifest.name} ${manifest.version}. Its panels are in Add panel.`;
+
   const importFile = (file: File) =>
     run(async () => {
       const manifest = await readWidgetManifest(file);
-      const installed = widgets.find((widget) => widget.id === manifest.id);
-      const by = manifest.author ? ` by ${manifest.author}` : '';
-      const replaces = installed ? ` It replaces version ${installed.version}.` : '';
-      if (
-        !window.confirm(
-          `Import ${manifest.name} ${manifest.version} (${manifest.id})${by}?${replaces}\n\n` +
-            'A widget runs inside MITI with the same access as MITI, including sending commands ' +
-            'to the robot. Import only widgets from sources you trust.'
-        )
-      )
-        return null;
-      await importWidget(file);
-      return `Imported ${manifest.name} ${manifest.version}. Its panels are in Add panel.`;
+      if (!confirmImport(manifest)) return null;
+      return imported(await importWidget(file));
+    });
+
+  const importUrl = (address: string) =>
+    run(async () => {
+      const manifest = await checkWidgetUrl(address);
+      if (!confirmImport(manifest, address)) return null;
+      const done = await importWidgetUrl(address);
+      setUrl('');
+      return imported(done);
     });
 
   const remove = (id: string, name: string) => {
@@ -111,6 +132,27 @@ export default function WidgetManager({ usedTypes }: { usedTypes: string[] }) {
           <span className="widget-note">Importing is turned off on this MITI.</span>
         )}
       </div>
+      {importAllowed && (
+        <form
+          className="widget-url"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (url.trim() && !busy) importUrl(url.trim());
+          }}
+        >
+          <input
+            type="url"
+            aria-label="Widget address"
+            placeholder={`https://…/widget${WIDGET_FILE_EXTENSION}`}
+            value={url}
+            onChange={(event) => setUrl(event.target.value)}
+            spellCheck={false}
+          />
+          <button className="sidebar-button" type="submit" disabled={!url.trim() || busy}>
+            Import
+          </button>
+        </form>
+      )}
       {message && (
         <p role={message.error ? 'alert' : 'status'} className="widget-message">
           {message.error && <AlertCircle size={13} aria-hidden="true" />}

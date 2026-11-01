@@ -3,9 +3,11 @@ import {
   MAX_PACKAGE_BYTES,
   installWidget,
   listWidgets,
+  readPackage,
   removeWidget,
   widgetImportAllowed,
 } from '@/lib/server/widget-store';
+import { downloadPackage } from '@/lib/server/download';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -73,11 +75,38 @@ async function readBody(request: Request): Promise<Uint8Array | null> {
   return body;
 }
 
-/** Import a widget: the body is the `.miti-widget` file. */
+/** Problems with the package or its address are the sender's; anything else is the server's. */
+const failed = (error: unknown) => {
+  const message = (error as Error).message;
+  const status = /^(The |manifest\.json|Only |Cannot download)/.test(message) ? 400 : 500;
+  return NextResponse.json({ error: message }, { status });
+};
+
+/**
+ * Import a widget. The body is the `.miti-widget` file, or JSON `{ "url": "https://…" }` for MITI
+ * to download it; with `"check": true` it only answers the package's manifest, to show before
+ * importing.
+ */
 export async function POST(request: Request) {
   if (!widgetImportAllowed()) return refused();
   if (fromAnotherSite(request)) return crossSite();
-  if (!PACKAGE_TYPES.test(request.headers.get('content-type') ?? ''))
+  const type = request.headers.get('content-type') ?? '';
+  if (/^application\/json\b/i.test(type)) {
+    const { url, check } = (await request.json().catch(() => ({}))) as {
+      url?: unknown;
+      check?: unknown;
+    };
+    if (typeof url !== 'string')
+      return NextResponse.json({ error: 'Send { "url": "https://…" }' }, { status: 400 });
+    try {
+      const archive = await downloadPackage(url, MAX_PACKAGE_BYTES);
+      if (check === true) return NextResponse.json(readPackage(archive).manifest);
+      return NextResponse.json(await installWidget(archive), { status: 201 });
+    } catch (error) {
+      return failed(error);
+    }
+  }
+  if (!PACKAGE_TYPES.test(type))
     return NextResponse.json(
       { error: 'Send the package as Content-Type: application/octet-stream' },
       { status: 415 }
@@ -91,10 +120,7 @@ export async function POST(request: Request) {
   try {
     return NextResponse.json(await installWidget(body), { status: 201 });
   } catch (error) {
-    const message = (error as Error).message;
-    // Problems with the package are the sender's; anything else is the server's (e.g. disk).
-    const status = /^(The |manifest\.json)/.test(message) ? 400 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return failed(error);
   }
 }
 

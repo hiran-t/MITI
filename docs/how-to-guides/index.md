@@ -55,6 +55,8 @@ control-the-robot-with-a-button-switch
 :maxdepth: 1
 
 install-a-widget
+share-a-layout
+brand-miti
 ```
 
 ## Fix problems

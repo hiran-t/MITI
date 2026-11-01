@@ -19,6 +19,7 @@ MITI and the foxglove_bridge beside it are configured with environment variables
 | `MITI_PACKAGE_PATH`      | —         | Extra ROS package folders, separated by `:`, for robot meshes when foxglove_bridge does not serve them (`AMENT_PREFIX_PATH` and `ROS_PACKAGE_PATH` are read too)   |
 | `MITI_STATE_DIR`         | `.miti`   | Where MITI keeps ROS settings changed in the browser and imported widgets: `/var/lib/miti` for the apt service, `~/.config/miti` for `miti run`, `/data` in Docker |
 | `MITI_WIDGET_IMPORT`     | `on`      | `off` stops importing and removing widgets from the browser; installed widgets still load                                                                          |
+| `MITI_BRANDING_DIR`      | —         | A folder with `branding.json`, a logo and an icon that replace MITI's name, logo, browser icon and accent color; see {doc}`../how-to-guides/brand-miti`            |
 | `NEXT_PUBLIC_BRIDGE_URL` | —         | Bridge address MITI opens first, built into the app: rebuild after changing it. The address chosen in the connection settings always wins                          |
 | `PORT`                   | `3000`    | Port for `npm start` when running from source                                                                                                                      |
 | `COMPOSE_PROFILES`       | —         | `bridge` to start foxglove_bridge with every `docker compose up`                                                                                                   |

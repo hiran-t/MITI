@@ -11,7 +11,7 @@ The workspace connected to a robot.
 ## The parts of the window
 
 Title bar
-: The MITI logo on the left; **Reset layout** and **+ (Add panel)** on the right.
+: The MITI logo on the left; **Export layout**, **Import layout**, **Reset layout** and **+ (Add panel)** on the right.
 
 Activity bar
 : The icons on the far left switch the sidebar between **Panel settings**, **Topics**, **Problems**, **Sources** and **Widgets**. Click the open one again to hide the sidebar.

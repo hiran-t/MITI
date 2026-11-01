@@ -135,6 +135,30 @@ export async function importWidget(
   return body;
 }
 
+async function postUrl(url: string, check: boolean) {
+  const response = await fetch('/api/widgets', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url, check }),
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.error ?? `The import failed (HTTP ${response.status})`);
+  return body as WidgetManifest;
+}
+
+/** The manifest of the package at `url`, which the server downloads to read it. */
+export const checkWidgetUrl = (url: string) => postUrl(url, true);
+
+/** Have the server download and install the package at `url`, and load it here. */
+export async function importWidgetUrl(
+  url: string,
+  importModule: ImportModule = importFromUrl
+): Promise<WidgetManifest> {
+  const manifest = await postUrl(url, false);
+  await refreshWidgets(importModule);
+  return manifest;
+}
+
 /** Remove a widget from the server; layouts keep its panels, shown as not installed. */
 export async function removeWidget(id: string): Promise<void> {
   const response = await fetch(`/api/widgets?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
