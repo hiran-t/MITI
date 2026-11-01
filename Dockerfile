@@ -43,8 +43,10 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
-# Set correct permissions
-RUN chown -R nextjs:nodejs /app
+# Set correct permissions; /data keeps imported widgets (mount a volume there to keep them)
+RUN mkdir -p /data && chown -R nextjs:nodejs /app /data
+ENV MITI_STATE_DIR=/data
+VOLUME /data
 
 USER nextjs
 

@@ -49,6 +49,14 @@ monitor-a-state-machine
 control-the-robot-with-a-button-switch
 ```
 
+## Extend MITI
+
+```{toctree}
+:maxdepth: 1
+
+install-a-widget
+```
+
 ## Fix problems
 
 ```{toctree}

@@ -43,8 +43,11 @@ ros/overlay/build/
 ros/overlay/install/
 ros/overlay/log/
 
-# ROS settings changed in MITI (scripts/bridge-settings.mjs)
+# ROS settings and imported widgets kept by MITI (MITI_STATE_DIR)
 .miti/
+
+# Widget packages (built in a widget's own repository, see hiran-t/MITI-widget-dev)
+*.miti-widget
 
 # The manual built by Sphinx (docs/conf.py), and its screenshots from the docs-images branch
 docs/_build/

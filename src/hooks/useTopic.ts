@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { BridgeClient } from '@/lib/bridge/client';
+import type { BridgeClient } from '@/lib/bridge/client';
 import { usePanelVisibleRef } from './usePanelVisible';
 
 export interface TopicOptions {
@@ -15,7 +15,7 @@ export interface TopicOptions {
 }
 
 export function useTopic<T = unknown>(
-  client: BridgeClient | null,
+  client: Pick<BridgeClient, 'subscribe' | 'unsubscribe'> | null,
   topic: string,
   messageType?: string,
   options?: TopicOptions

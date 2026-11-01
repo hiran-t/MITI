@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { normalizeLayout, useLayoutConfig } from '../useLayoutConfig';
 import { DEFAULT_LAYOUT } from '@/types/widget';
+import { registerPanels, unregisterPanels } from '@/panels';
 
 const key = 'miti_layout_config';
 beforeEach(() => localStorage.clear());
@@ -145,4 +146,37 @@ test('migrates shared URDF settings to independent widgets and keeps later edits
     props: { topic: '/legacy/robot' },
   });
   expect(JSON.parse(localStorage.getItem('miti_urdf_config')!).topic).toBe('/legacy/robot');
+});
+
+test("keeps panels of widgets that are not installed, and adds a widget's panel with its defaults", () => {
+  const layout = normalizeLayout({
+    widgets: [
+      { i: 'g', type: 'acme.vision/detections', title: 'Detections', props: { topic: '/det' } },
+      { i: 'x', type: '', title: 'No type' },
+    ],
+  });
+  expect(layout.widgets).toEqual([
+    expect.objectContaining({ i: 'g', type: 'acme.vision/detections', props: { topic: '/det' } }),
+  ]);
+
+  registerPanels('acme.vision', [
+    {
+      type: 'acme.vision/detections',
+      label: 'Detections',
+      component: () => null,
+      defaultConfig: () => ({ topic: '/detections' }),
+    },
+  ]);
+  localStorage.setItem(key, JSON.stringify({ widgets: [] }));
+  const { result } = renderHook(() => useLayoutConfig());
+  act(() => result.current.addWidget('acme.vision/detections'));
+  expect(result.current.layout.widgets).toEqual([
+    expect.objectContaining({
+      i: 'acme-vision-detections-1',
+      type: 'acme.vision/detections',
+      title: 'Detections',
+      props: { topic: '/detections' },
+    }),
+  ]);
+  unregisterPanels('acme.vision');
 });

@@ -1,10 +1,10 @@
 'use client';
 
 import type { Ref } from 'react';
-import { AlertCircle, ListTree, Radio, SlidersHorizontal } from 'lucide-react';
+import { AlertCircle, ListTree, Puzzle, Radio, SlidersHorizontal } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-export const SIDEBAR_TABS = ['Panel', 'Topics', 'Problems', 'Sources'] as const;
+export const SIDEBAR_TABS = ['Panel', 'Topics', 'Problems', 'Sources', 'Widgets'] as const;
 export type SidebarTab = (typeof SIDEBAR_TABS)[number];
 
 const TAB_META: Record<SidebarTab, { icon: LucideIcon; label: string }> = {
@@ -12,6 +12,7 @@ const TAB_META: Record<SidebarTab, { icon: LucideIcon; label: string }> = {
   Topics: { icon: ListTree, label: 'Topics' },
   Problems: { icon: AlertCircle, label: 'Problems' },
   Sources: { icon: Radio, label: 'Sources' },
+  Widgets: { icon: Puzzle, label: 'Widgets' },
 };
 
 export const sidebarViewLabel = (tab: SidebarTab) => TAB_META[tab].label;

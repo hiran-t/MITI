@@ -93,7 +93,7 @@ export interface LogWidgetProps {
   showSource?: boolean;
 }
 
-// ─── Discriminated union variants ────────────────────────────────────────────
+// ─── Built-in panels ─────────────────────────────────────────────────────────
 
 export type TopicsWidgetConfig = WidgetBase & { type: 'topics' };
 export type URDFWidgetProps = SceneConfig | LegacyURDFWidgetProps;
@@ -114,17 +114,11 @@ export type ButtonSwitchWidgetConfig = WidgetBase & {
 
 export type LogWidgetConfig = WidgetBase & { type: 'log'; props?: LogWidgetProps };
 
-export type WidgetConfig =
-  | LogWidgetConfig
-  | TopicsWidgetConfig
-  | URDFWidgetConfig
-  | PointCloudWidgetConfig
-  | CameraWidgetConfig
-  | StateMachineWidgetConfig
-  | ButtonSwitchWidgetConfig;
-
-// Derived from the union — stays in sync automatically
-export type WidgetType = WidgetConfig['type'];
+/**
+ * A panel in the layout. `type` names a registered panel (see `@/panels`): a built-in one, or one
+ * a widget adds; `props` are its settings, which only that panel interprets.
+ */
+export type WidgetConfig = WidgetBase & { type: string; props?: unknown };
 
 // ─── Layout config ───────────────────────────────────────────────────────────
 
@@ -136,68 +130,6 @@ export interface LayoutConfig {
    */
   mosaic?: MosaicTree | null;
 }
-
-// ─── Widget type metadata ────────────────────────────────────────────────────
-
-export interface WidgetTypeInfo {
-  type: WidgetType;
-  label: string;
-  icon: string;
-  defaultSize: { w: number; h: number };
-  minSize: { minW: number; minH: number };
-}
-
-export const WIDGET_TYPES: WidgetTypeInfo[] = [
-  {
-    type: 'topics',
-    label: 'Topics',
-    icon: '📋',
-    defaultSize: { w: 4, h: 10 },
-    minSize: { minW: 1, minH: 2 },
-  },
-  {
-    type: 'urdf-viewer',
-    label: '3D Scene',
-    icon: '🤖',
-    defaultSize: { w: 6, h: 16 },
-    minSize: { minW: 1, minH: 1 },
-  },
-  {
-    type: 'pointcloud-viewer',
-    label: 'Point Cloud',
-    icon: '☁️',
-    defaultSize: { w: 4, h: 9 },
-    minSize: { minW: 1, minH: 1 },
-  },
-  {
-    type: 'camera-viewer',
-    label: 'Camera',
-    icon: '📷',
-    defaultSize: { w: 4, h: 9 },
-    minSize: { minW: 1, minH: 1 },
-  },
-  {
-    type: 'state-machine',
-    label: 'State Machine',
-    icon: '🔀',
-    defaultSize: { w: 6, h: 14 },
-    minSize: { minW: 2, minH: 3 },
-  },
-  {
-    type: 'button-switch',
-    label: 'Button Switch',
-    icon: '🔘',
-    defaultSize: { w: 4, h: 9 },
-    minSize: { minW: 1, minH: 1 },
-  },
-  {
-    type: 'log',
-    label: 'Log',
-    icon: '📜',
-    defaultSize: { w: 6, h: 10 },
-    minSize: { minW: 2, minH: 3 },
-  },
-];
 
 const DEFAULT_WIDGETS: WidgetConfig[] = [
   {

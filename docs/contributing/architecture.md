@@ -118,7 +118,7 @@ src/
 │       ├── controls/
 │       │   └── ButtonSwitchWidget.tsx    # Button Switch panel
 │       ├── dashboard/
-│       │   ├── ActivityBar.tsx           # Panel / Topics / Problems / Sources views
+│       │   ├── ActivityBar.tsx           # Panel / Topics / Problems / Sources / Widgets views
 │       │   └── Dashboard.tsx             # Title bar, sidebar, workspace, status bar
 │       ├── layout/
 │       │   ├── __tests__/
@@ -126,7 +126,7 @@ src/
 │       │   ├── PanelIcon.tsx
 │       │   ├── PanelMosaic.tsx           # Tiled panels with tab-style headers
 │       │   ├── SettingsTree.tsx          # Settings field components
-│       │   ├── WidgetContainer.tsx       # Panel type → component
+│       │   ├── WidgetContainer.tsx       # A layout panel → its registered component
 │       │   └── WidgetSettingsPortal.tsx  # Settings and status portals
 │       ├── logs/
 │       │   ├── __tests__/
@@ -236,7 +236,25 @@ src/
     ├── scene.ts                          # Layer types and display settings
     ├── tf-messages.d.ts
     ├── urdf-config.ts                    # Legacy URDF settings
-    └── widget.ts                         # Panel types and the default layout
+    └── widget.ts                         # Layout types and the default layout
+```
+
+Panels, widgets and the widget SDK:
+
+```
+src/
+├── panels/
+│   ├── builtin.tsx                       # The seven built-in panels
+│   ├── registry.ts                       # Panel type → definition; usePanels()
+│   ├── loader.ts                         # Loads the widgets installed on the server
+│   ├── MissingPanel.tsx                  # A panel whose widget is loading, failed or missing
+│   └── PanelErrorBoundary.tsx            # A panel that throws shows its error
+├── sdk/                                  # @miti/sdk, what widgets import
+├── lib/widgets/manifest.ts               # Widget manifest checks (browser, server, packer)
+├── lib/server/widget-store.ts            # Widgets unpacked under MITI_STATE_DIR/widgets
+├── app/api/widgets/                      # List, import, remove, serve widget files
+└── components/features/widgets/
+    └── WidgetManager.tsx                 # The Widgets view of the sidebar
 ```
 
 ## Data flow
@@ -358,8 +376,23 @@ Panels tile the workspace like Foxglove's layout:
 - Layouts are saved in `localStorage`. MITI 2.x grid layouts are converted to a split tree on
   load.
 
-Panel types (`types/widget.ts`): Topics, 3D Scene (`urdf-viewer`), Point Cloud, Camera / Image
-(`camera-viewer`), State Machine, Button Switch and Log.
+Panel types live in a registry (`panels/registry.ts`). The seven built-in ones are registered from
+`panels/builtin.tsx`: Topics, 3D Scene (`urdf-viewer`), Point Cloud, Camera / Image
+(`camera-viewer`), State Machine, Button Switch and Log. Widgets register more at run time:
+
+- A widget is a `.miti-widget` file (a zip with `manifest.json` and an ES module), imported under
+  **Widgets** in the sidebar. The server unpacks it under `MITI_STATE_DIR/widgets`
+  (`lib/server/widget-store.ts`) and serves it from `/api/widgets/files/<id>/<version>/`.
+- On load the page lists the installed widgets and imports each one's module
+  (`panels/loader.ts`); its default export lists its panels, whose types start with the widget id.
+- Widgets are made in their own repositories, from the template
+  [MITI-widget-dev](https://github.com/hiran-t/MITI-widget-dev), against `@miti/sdk` from
+  [MITI-sdk](https://github.com/hiran-t/MITI-sdk): its `index.d.ts` declares the API that `src/sdk`
+  provides, and its CI checks that MITI still does. Its `miti-widget build` turns a widget's imports
+  of React and `@miti/sdk` into reads of `window.__MITI_MODULES__` (`sdk/runtime.ts`), so a widget
+  shares MITI's React, contexts and components.
+- A layout keeps panels whose type is not registered, with their settings; they show as loading,
+  failed or not installed (`MissingPanel`) until their widget is there.
 
 ### 4. Visualization components
 
@@ -431,6 +464,8 @@ throttled before it reaches React, and hidden panels hold data without rendering
 | Storage                                | Key                    | Contents                                    |
 | -------------------------------------- | ---------------------- | ------------------------------------------- |
 | `localStorage`                         | `miti_layout_config`   | Panels, their settings and the split tree   |
+| Server, `MITI_STATE_DIR/widgets`       | one folder per widget  | Imported widgets, shared by every browser   |
+| Server, `MITI_STATE_DIR/bridge.json`   | —                      | ROS settings of a bridge beside MITI        |
 | `localStorage`                         | `miti_bridge_url`      | Bridge address                              |
 | `localStorage`                         | `miti_stream_mode`     | `synchronized` or `separate`                |
 | `localStorage`                         | `miti_sidebar_width`   | Sidebar width                               |
@@ -544,6 +579,9 @@ reads them.
 
 ### 3. Render errors
 
+- Each panel has an error boundary (`PanelErrorBoundary`): a panel that throws shows its error and
+  a **Reload panel** button, and the other panels keep running.
+- A widget that fails to load is reported under Problems and in its panels.
 - Each 3D Scene layer has an error boundary (`LayerBoundary` in `SceneLayer.tsx`): a failing layer
   reports its error and the rest of the scene keeps running.
 - Mesh load failures are reported per mesh (`meshErrorMessage`).
@@ -567,6 +605,12 @@ on a trusted network.
   referrer policy, and removes the `X-Powered-By` header.
 - `/api/package` and `/api/file` serve only mesh, texture and URDF files inside the ROS package
   search paths; package names are validated and paths cannot leave those directories.
+- `/api/widgets` imports and removes widgets. A widget's code runs in every browser that opens
+  MITI, with MITI's access to the robot, so anyone who can reach MITI can install code there; set
+  `MITI_WIDGET_IMPORT=off` where that is not wanted. Requests from another site's page are refused
+  (`Sec-Fetch-Site`, or `Origin` against `Host`), and a package must be sent as
+  `application/octet-stream`, which other sites cannot send without a CORS preflight. Packages are limited to 20 MB and 500 files,
+  their paths are checked, and they are unpacked beside the installed widgets and swapped in.
 
 ### 3. Rendering
 
@@ -593,4 +637,5 @@ Details are in the [How-To Guides](../how-to-guides/index.md#install-and-deploy)
    fold it into the 3D Scene.
 2. **Topic list**: virtual scrolling for robots with many topics.
 3. **Security**: optional authentication and a Content Security Policy.
-4. **Error reporting**: an application-level error boundary around each panel.
+4. **Widgets**: 3D panels with three.js and React Three Fiber shared like React, and signed
+   widget packages.
