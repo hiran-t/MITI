@@ -2,7 +2,16 @@
 
 ## [Unreleased]
 
+### Added
+
+- Widgets: panels that come in a `.miti-widget` file and are imported under **Widgets** in the sidebar, without rebuilding MITI. The server keeps them under `MITI_STATE_DIR/widgets` (`.miti/widgets` with pixi, `/var/lib/miti/widgets` for the apt service, `/data/widgets` in Docker, kept in the `miti-data` volume), so every browser that opens MITI gets them; `MITI_WIDGET_IMPORT=off` stops importing and removing them from the browser. A widget is made in its own repository, started from the template [MITI-widget-dev](https://github.com/hiran-t/MITI-widget-dev), against `@miti/sdk` from [MITI-sdk](https://github.com/hiran-t/MITI-sdk): panel definitions, `useTopic`, `useTF`, `ImageCanvas`, and the settings fields and portals MITI's panels use. Its `miti-widget build` makes the `.miti-widget` file and lets the widget share MITI's React; `miti-widget dev` keeps it imported into a running MITI while it changes. New pages: Write a Widget, Install a Widget and Widget SDK
+- Each panel has an error boundary: a panel that throws shows its error and a **Reload panel** button, and the other panels keep running
+- Widgets that fail to load are listed under Problems
+
 ### Changed
+
+- Panel types are registered (`src/panels`) instead of listed in four places; the built-in panels are registered the same way as widgets' panels
+- A saved layout keeps panels whose type MITI does not know, with their settings, instead of dropping them; they show as not installed until their widget is imported
 
 - The documentation is organized like the MoveIt documentation, on the Read the Docs theme in MITI's colors: Tutorials (getting started, connecting, the workspace, the 3D Scene, cameras), How-To Guides grouped by task (install and deploy, connect to ROS 2, visualize data, monitor and control, troubleshooting), Concepts (how MITI works, frames and transforms), Reference (command line, configuration, panel settings, 3D Scene layers, state machine messages) and Contributing. The deployment guide is split into one guide per task. Architecture diagrams (foxglove_bridge on the robot or beside MITI, and the data flow in the browser) replace the text drawings; diagrams of the TF tree, the stream modes and discovery over Wi-Fi, and screenshots of the ROS network settings, TF errors and the Publish settings, explain those pages; and the GitHub link on every page opens the repository
 

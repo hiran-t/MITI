@@ -14,7 +14,7 @@ Title bar
 : The MITI logo on the left; **Reset layout** and **+ (Add panel)** on the right.
 
 Activity bar
-: The icons on the far left switch the sidebar between **Panel settings**, **Topics**, **Problems** and **Sources**. Click the open one again to hide the sidebar.
+: The icons on the far left switch the sidebar between **Panel settings**, **Topics**, **Problems**, **Sources** and **Widgets**. Click the open one again to hide the sidebar.
 
 Sidebar
 : The settings of the selected panel, the topic list, connection problems or the connection state. Drag its edge to resize it; double-click the edge to reset its width.

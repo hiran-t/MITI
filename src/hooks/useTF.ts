@@ -10,7 +10,7 @@ const HISTORY_SECONDS = 30;
 const HISTORY_SAMPLES = 3000;
 const TRIM_BATCH = 64;
 interface UseTFOptions {
-  client: BridgeClient | null;
+  client: Pick<BridgeClient, 'subscribe' | 'unsubscribe'> | null;
   maxAge?: number;
   enabled?: boolean;
   tfTopics?: string[];

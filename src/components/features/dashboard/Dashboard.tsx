@@ -26,6 +26,8 @@ import ConnectionSettings from '../connection/ConnectionSettings';
 import { SettingsSearchContext } from '../layout/WidgetSettingsPortal';
 import ActivityBar, { sidebarViewLabel } from './ActivityBar';
 import type { SidebarTab } from './ActivityBar';
+import WidgetManager from '../widgets/WidgetManager';
+import { refreshWidgets, useWidgets } from '@/panels/loader';
 
 // Drag and drop needs the browser, so the panel layout is not rendered on the server.
 const PanelMosaic = dynamic(() => import('../layout/PanelMosaic'), { ssr: false });
@@ -68,6 +70,18 @@ export default function Dashboard() {
     toggleLock,
   } = useLayoutConfig();
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
+  // Widgets installed on the server add their panels once loaded; until then those panels wait.
+  useEffect(() => {
+    refreshWidgets();
+  }, []);
+  const widgets = useWidgets();
+  const widgetProblems = [
+    ...widgets.problems,
+    ...widgets.widgets
+      .filter((widget) => widget.status === 'failed')
+      .map((widget) => ({ id: `${widget.name} ${widget.version}`, error: widget.error ?? '' })),
+  ];
+  const problemCount = (error ? 1 : 0) + widgetProblems.length;
   const [sidebarWidth, setSidebarWidth] = useLocalStorage(
     STORAGE_KEY_SIDEBAR_WIDTH,
     SIDEBAR_DEFAULT_WIDTH
@@ -187,7 +201,7 @@ export default function Dashboard() {
           <ActivityBar
             activeTab={activeTab}
             sidebarOpen={sidebarOpen}
-            problemCount={error ? 1 : 0}
+            problemCount={problemCount}
             activeRef={sidebarTrigger}
             onFocusTab={setActiveTab}
             onSelect={(tab) => {
@@ -299,7 +313,7 @@ export default function Dashboard() {
               hidden={activeTab !== 'Problems'}
               className="inspector-view"
             >
-              {error ? (
+              {error && (
                 <details className="inspector-problem" open>
                   <summary>
                     <AlertCircle size={14} />
@@ -310,7 +324,17 @@ export default function Dashboard() {
                     Check that foxglove_bridge at <code>{bridgeUrl}</code> is reachable.
                   </p>
                 </details>
-              ) : (
+              )}
+              {widgetProblems.map((problem) => (
+                <details key={problem.id} className="inspector-problem" open>
+                  <summary>
+                    <AlertCircle size={14} />
+                    Widget {problem.id}
+                  </summary>
+                  <p>{problem.error}</p>
+                </details>
+              ))}
+              {problemCount === 0 && (
                 <div className="inspector-empty">
                   <AlertCircle size={24} />
                   <strong>No reported errors</strong>
@@ -352,6 +376,15 @@ export default function Dashboard() {
                   />
                 </div>
               </details>
+            </div>
+            <div
+              id="sidebar-view-Widgets"
+              role="tabpanel"
+              aria-labelledby="sidebar-tab-Widgets"
+              hidden={activeTab !== 'Widgets'}
+              className="inspector-view"
+            >
+              <WidgetManager usedTypes={layout.widgets.map((widget) => widget.type)} />
             </div>
             <div
               className="sidebar-resizer"
@@ -409,9 +442,9 @@ export default function Dashboard() {
             onStreamModeChange={setStreamMode}
           />
           <span className="status-item is-optional">ROS 2 · foxglove_bridge</span>
-          <span className={`status-item ${error ? 'has-error' : ''}`} title="Problems">
+          <span className={`status-item ${problemCount ? 'has-error' : ''}`} title="Problems">
             <XCircle size={14} aria-hidden="true" />
-            {error ? 1 : 0}
+            {problemCount}
             <span className="sr-only">problems</span>
           </span>
           <span className="status-spacer" />

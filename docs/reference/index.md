@@ -10,4 +10,5 @@ configuration
 panel-settings
 3d-scene-layers
 state-machine-messages
+widget-sdk
 ```

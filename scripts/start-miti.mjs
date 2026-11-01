@@ -39,11 +39,10 @@ const host = process.env.MITI_HOST || '0.0.0.0';
 const isWindows = process.platform === 'win32';
 /** How many ports above the preferred one to try. */
 const SEARCH = 20;
+/** Where MITI keeps what it changes at run time: ROS settings and imported widgets. */
+const stateDir = process.env.MITI_STATE_DIR || path.join(root, '.miti');
 /** ROS settings changed in MITI's connection settings. */
-const settingsFile = path.join(
-  process.env.MITI_STATE_DIR || path.join(root, '.miti'),
-  'bridge.json'
-);
+const settingsFile = path.join(stateDir, 'bridge.json');
 /** How to start a bridge beside MITI, for messages (the apt package says `miti run --bridge`). */
 const bridgeHint = process.env.MITI_BRIDGE_HINT || 'pixi run -e <distro> miti-bridge';
 /** Bridge output lines kept for the connection settings, to show why it stopped. */
@@ -337,6 +336,7 @@ web = spawn(process.execPath, [...server, '--hostname', host, '--port', String(w
     // The standalone server reads these instead of --hostname and --port.
     HOSTNAME: host,
     PORT: String(webPort),
+    MITI_STATE_DIR: stateDir,
     MITI_BRIDGE_PORT: String(bridge.port),
     ...(control && { MITI_BRIDGE_CONTROL: control.url, MITI_BRIDGE_TOKEN: control.token }),
   },

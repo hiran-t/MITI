@@ -1,15 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { WIDGET_TYPES, WidgetType } from '@/types/widget';
 import { Plus } from 'lucide-react';
+import { BUILTIN_SOURCE, usePanels, type RegisteredPanel } from '@/panels';
 import PanelIcon from './PanelIcon';
 
-export default function AddWidgetButton({
-  onAddWidget,
-}: {
-  onAddWidget: (type: WidgetType) => void;
-}) {
+export default function AddWidgetButton({ onAddWidget }: { onAddWidget: (type: string) => void }) {
+  const panels = usePanels();
+  const builtin = panels.filter((panel) => panel.source === BUILTIN_SOURCE);
+  const fromWidgets = panels.filter((panel) => panel.source !== BUILTIN_SOURCE);
   const [open, setOpen] = useState(false);
   const container = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -31,6 +30,21 @@ export default function AddWidgetButton({
       document.removeEventListener('keydown', escape);
     };
   }, [open]);
+  const item = ({ type, label, description }: RegisteredPanel) => (
+    <button
+      key={type}
+      className="panel-picker-item"
+      title={description}
+      onClick={() => {
+        onAddWidget(type);
+        setOpen(false);
+        trigger.current?.focus();
+      }}
+    >
+      <PanelIcon type={type} />
+      <span className="flex-1">{label}</span>
+    </button>
+  );
   return (
     <div className="relative" ref={container}>
       <button
@@ -47,20 +61,9 @@ export default function AddWidgetButton({
       {open && (
         <div id="panel-picker" className="panel-picker" aria-label="Add panel">
           <p className="panel-picker-heading">Add panel</p>
-          {WIDGET_TYPES.map(({ type, label }) => (
-            <button
-              key={type}
-              className="panel-picker-item"
-              onClick={() => {
-                onAddWidget(type);
-                setOpen(false);
-                trigger.current?.focus();
-              }}
-            >
-              <PanelIcon type={type} />
-              <span className="flex-1">{label}</span>
-            </button>
-          ))}
+          {builtin.map(item)}
+          {fromWidgets.length > 0 && <p className="panel-picker-heading">Widgets</p>}
+          {fromWidgets.map(item)}
         </div>
       )}
     </div>

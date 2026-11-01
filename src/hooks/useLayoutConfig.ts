@@ -1,15 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import {
-  LayoutConfig,
-  WidgetConfig,
-  DEFAULT_LAYOUT,
-  WIDGET_TYPES,
-  WidgetType,
-} from '@/types/widget';
+import { LayoutConfig, WidgetConfig, DEFAULT_LAYOUT } from '@/types/widget';
 import { DEFAULT_URDF_CONFIG } from '@/types/urdf-config';
-import { CAMERA_TOPICS } from '@/constants/ros-topics';
+import { getPanel } from '@/panels';
 import {
   addToMosaic,
   mosaicFromGrid,
@@ -20,9 +14,13 @@ import {
 
 const STORAGE_KEY = 'miti_layout_config';
 
+/** Grid size of a new panel, kept for MITI 2.x layouts; the split tree decides its real size. */
+const NEW_PANEL_SIZE = { w: 4, h: 9 };
+
 /**
  * Preserve widget settings, clamp legacy grid geometry, and make sure the split tree holds every
- * panel exactly once. Layouts saved before the split tree are converted from their grid.
+ * panel exactly once. Layouts saved before the split tree are converted from their grid. Panels of
+ * a type MITI does not know, e.g. from a widget that is not installed, are kept with their settings.
  */
 export function normalizeLayout(value: unknown): LayoutConfig {
   if (!value || typeof value !== 'object' || !('widgets' in value) || !Array.isArray(value.widgets))
@@ -35,11 +33,11 @@ export function normalizeLayout(value: unknown): LayoutConfig {
         typeof widget !== 'object' ||
         typeof widget.i !== 'string' ||
         ids.has(widget.i) ||
-        !WIDGET_TYPES.some(({ type }) => type === widget.type) ||
+        typeof widget.type !== 'string' ||
+        !widget.type ||
         typeof widget.title !== 'string'
       )
         return false;
-      if (widget.type === 'camera-viewer' && typeof widget.props?.topic !== 'string') return false;
       ids.add(widget.i);
       return true;
     })
@@ -130,40 +128,32 @@ export function useLayoutConfig() {
 
   /** Adds a panel beside `beside` (e.g. the selected panel), or beside the whole layout. */
   const addWidget = useCallback(
-    (type: WidgetType, beside?: string | null) => {
-      const widgetInfo = WIDGET_TYPES.find((w) => w.type === type);
-      if (!widgetInfo) return;
+    (type: string, beside?: string | null) => {
+      const panel = getPanel(type);
+      if (!panel) return;
 
-      // Generate unique ID
+      // Generate a unique ID; a widget's panel types contain a slash, which ids leave out.
+      const base = type.replace(/[^\w-]+/g, '-');
       const existingIds = layout.widgets.map((w) => w.i);
       let counter = 1;
-      let newId = `${type}-${counter}`;
+      let newId = `${base}-${counter}`;
       while (existingIds.includes(newId)) {
         counter++;
-        newId = `${type}-${counter}`;
+        newId = `${base}-${counter}`;
       }
 
-      const newW = widgetInfo.defaultSize.w;
-      const newX = 0;
-      const newY = Math.max(0, ...layout.widgets.map((widget) => widget.y + widget.h));
-
-      const base = {
+      const props = panel.defaultConfig?.();
+      const newWidget: WidgetConfig = {
         i: newId,
-        title: widgetInfo.label,
-        x: newX,
-        y: newY,
-        w: newW,
-        h: widgetInfo.defaultSize.h,
-        minW: widgetInfo.minSize.minW,
-        minH: widgetInfo.minSize.minH,
+        type,
+        title: panel.label,
+        x: 0,
+        y: Math.max(0, ...layout.widgets.map((widget) => widget.y + widget.h)),
+        ...NEW_PANEL_SIZE,
+        minW: 1,
+        minH: 1,
+        ...(props !== undefined && { props }),
       };
-
-      const newWidget: WidgetConfig =
-        type === 'camera-viewer'
-          ? { ...base, type, props: { topic: CAMERA_TOPICS.COLOR } }
-          : type === 'button-switch'
-            ? { ...base, type, props: {} }
-            : { ...base, type };
 
       setLayout((prev) => ({
         widgets: [...prev.widgets, newWidget],

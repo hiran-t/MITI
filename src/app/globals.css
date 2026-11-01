@@ -353,6 +353,37 @@ button:disabled {
   font-weight: 500;
   color: var(--miti-text-strong);
 }
+/* A panel that cannot show its content: its widget is not installed, or it stopped working. */
+.panel-notice {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--miti-text-secondary);
+}
+.panel-notice svg {
+  color: var(--miti-text-muted);
+}
+.panel-notice.is-error svg {
+  color: var(--miti-error);
+}
+.panel-notice strong {
+  color: var(--miti-text-strong);
+  font-weight: 500;
+}
+.panel-notice p {
+  max-width: 36em;
+}
+.panel-notice code {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-family: var(--miti-font-mono);
+}
 .panel-picker {
   position: absolute;
   right: 0;
@@ -748,6 +779,92 @@ button:disabled {
   padding: 8px 12px;
   border-top: 1px solid var(--miti-border);
 }
+.sidebar-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border: 1px solid var(--miti-border-strong);
+  border-radius: 3px;
+  background: var(--miti-bg-input);
+  color: var(--miti-text-strong);
+  font-size: 12px;
+}
+.sidebar-button:hover:not(:disabled) {
+  background: var(--miti-bg-hover);
+}
+.sidebar-button:focus-visible {
+  border-color: var(--miti-accent);
+  outline: none;
+}
+
+/* Widgets view: imported widgets and the Import button. */
+.widget-manager {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 100%;
+  outline: 1px dashed transparent;
+  outline-offset: -4px;
+}
+.widget-manager.is-dragging {
+  outline-color: var(--miti-accent);
+  background: var(--miti-accent-muted);
+}
+.widget-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--miti-border);
+}
+.widget-note {
+  font-size: 11px;
+  color: var(--miti-text-secondary);
+}
+.widget-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--miti-border);
+  font-size: 12px;
+  color: var(--miti-text);
+  overflow-wrap: anywhere;
+}
+.widget-message[role='alert'] {
+  color: var(--miti-error);
+}
+.widget-message svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.widget-item .widget-version {
+  font-family: var(--miti-font-mono);
+  color: var(--miti-text-secondary);
+}
+.widget-description {
+  padding: 0 12px 4px 34px;
+  color: var(--miti-text-secondary);
+}
+.widget-item dd {
+  overflow-wrap: anywhere;
+}
+.widget-item code {
+  font-family: var(--miti-font-mono);
+}
+.widget-item a {
+  color: var(--miti-accent);
+}
+.widget-failed {
+  color: var(--miti-error);
+}
+.widget-footer {
+  margin-top: auto;
+}
+
 /* Drag the sidebar's edge to resize it. */
 .sidebar-resizer {
   position: absolute;

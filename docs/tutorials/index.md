@@ -10,4 +10,5 @@ connect-to-a-robot
 tour-the-workspace
 see-your-robot-in-3d
 watch-the-cameras
+write-a-widget
 ```

@@ -192,7 +192,7 @@ export function useLayoutConfig(): {
   hydrated: boolean;
   layout: LayoutConfig;
   updateWidget: (widgetId: string, updates: Partial<WidgetConfig>) => void;
-  addWidget: (type: WidgetType, beside?: string | null) => void;
+  addWidget: (type: string, beside?: string | null) => void; // a registered panel type
   removeWidget: (widgetId: string) => void;
   updateMosaic: (mosaic: MosaicTree | null) => void;
   resetLayout: () => void;
@@ -372,8 +372,9 @@ interface PanelMosaicProps {
 
 ### WidgetContainer
 
-`layout/WidgetContainer.tsx`. Renders the component for a panel's `type` and provides the
-contexts the panel's portals need.
+`layout/WidgetContainer.tsx`. Renders the component registered for a panel's `type` (see
+[Panel registry](#panel-registry)) inside an error boundary, and provides the contexts the panel's
+portals need. A type nobody registered shows `MissingPanel`, which keeps the panel's settings.
 
 ```typescript
 interface WidgetContainerProps {
@@ -390,6 +391,8 @@ interface WidgetContainerProps {
 }
 ```
 
+Built-in panels (`panels/builtin.tsx`):
+
 | `type`              | Component             |
 | ------------------- | --------------------- |
 | `topics`            | `TopicList`           |
@@ -399,6 +402,25 @@ interface WidgetContainerProps {
 | `state-machine`     | `StateMachineMonitor` |
 | `button-switch`     | `ButtonSwitchWidget`  |
 | `log`               | `LogPanel`            |
+
+---
+
+### Panel registry
+
+`panels/registry.ts`, imported through `@/panels`, which registers the built-in panels first.
+
+```typescript
+registerPanels(source: string, definitions: PanelDefinition[]): void; // replaces source's panels
+unregisterPanels(source: string): void;
+getPanel(type: string): RegisteredPanel | undefined;
+listPanels(): readonly RegisteredPanel[]; // built-in first, then widgets in load order
+usePanels(): readonly RegisteredPanel[]; // re-renders when widgets add or remove panels
+usePanel(type: string): RegisteredPanel | undefined;
+```
+
+`source` is `builtin` or a widget's id; a widget's panel types must start with `<id>/`, and no
+source can take another's type. `PanelDefinition` and `PanelProps` are in
+[Widget SDK](../reference/widget-sdk.md).
 
 ---
 
@@ -628,17 +650,12 @@ interface WidgetBase {
   locked?: boolean;
 }
 
-export type WidgetConfig =
-  | LogWidgetConfig // type 'log', props?: LogWidgetProps
-  | TopicsWidgetConfig // type 'topics'
-  | URDFWidgetConfig // type 'urdf-viewer', props?: SceneConfig | LegacyURDFWidgetProps
-  | PointCloudWidgetConfig // type 'pointcloud-viewer', props?: { topic: string }
-  | CameraWidgetConfig // type 'camera-viewer', props: ImagePanelConfig | LegacyCameraWidgetProps
-  | StateMachineWidgetConfig // type 'state-machine', props?: StateMachineWidgetProps
-  | ButtonSwitchWidgetConfig; // type 'button-switch', props?: ButtonSwitchWidgetProps
+/** A registered panel type and its settings, which only that panel interprets. */
+export type WidgetConfig = WidgetBase & { type: string; props?: unknown };
 
-export type WidgetType = WidgetConfig['type'];
-// 'log' | 'topics' | 'urdf-viewer' | 'pointcloud-viewer' | 'camera-viewer' | 'state-machine' | 'button-switch'
+// The built-in panels' settings, e.g. CameraWidgetConfig: type 'camera-viewer',
+// props: ImagePanelConfig | LegacyCameraWidgetProps; also LogWidgetConfig, TopicsWidgetConfig,
+// URDFWidgetConfig, PointCloudWidgetConfig, StateMachineWidgetConfig, ButtonSwitchWidgetConfig.
 
 export interface LayoutConfig {
   widgets: WidgetConfig[];
@@ -646,15 +663,6 @@ export interface LayoutConfig {
   mosaic?: MosaicTree | null;
 }
 
-export interface WidgetTypeInfo {
-  type: WidgetType;
-  label: string;
-  icon: string;
-  defaultSize: { w: number; h: number };
-  minSize: { minW: number; minH: number };
-}
-
-export const WIDGET_TYPES: WidgetTypeInfo[]; // the Add panel menu, in order
 export const DEFAULT_LAYOUT: LayoutConfig; // a 3D Scene and four cameras
 ```
 
@@ -1254,6 +1262,17 @@ assets. Both serve only mesh, texture and URDF files found under the ROS package
 | `GET /api/bridge` | `{ available, domainId, peers, distro, rmw, port, state, exitCode, log }`; `available: false` with a `reason` when MITI did not start the bridge                    |
 | `PUT /api/bridge` | JSON `{ domainId: 0–232, peers: "192.168.10.27, …" }`: saves `.miti/bridge.json` and restarts the bridge; `400` with `error` for invalid values, `415` for non-JSON |
 
+`/api/widgets` keeps the widgets imported into MITI under `MITI_STATE_DIR/widgets`
+(`lib/server/widget-store.ts`). Importing and removing answer `403` when `MITI_WIDGET_IMPORT=off`,
+and to requests from another site's page (`Sec-Fetch-Site`, or `Origin` against `Host`).
+
+| Route                                          | Does                                                                                                                                                                                                     |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/widgets`                             | `{ importAllowed, widgets, problems }`: each widget's manifest with `installedAt`, and folders that cannot be read                                                                                       |
+| `POST /api/widgets`                            | The body is a `.miti-widget` file sent as `application/octet-stream`: installs it, replacing any version of the same widget; `201` with the manifest, `400` with `error`, `415` for another content type |
+| `DELETE /api/widgets?id=<id>`                  | Removes a widget; `204`, or `404` when it is not installed                                                                                                                                               |
+| `GET /api/widgets/files/<id>/<version>/<path>` | A file of the installed version, cached for good; `404` for any other version                                                                                                                            |
+
 ## Examples
 
 ### A custom panel
@@ -1289,8 +1308,9 @@ export default function BatteryPanel({ client }: { client: BridgeClient | null }
 }
 ```
 
-To make it a panel type, add a variant to `WidgetConfig` and an entry to `WIDGET_TYPES` in
-`types/widget.ts`, an icon in `layout/PanelIcon.tsx`, and a `case` in `layout/WidgetContainer.tsx`.
+To make it a built-in panel, add a definition to `BUILTIN_PANELS` in `panels/builtin.tsx` (type,
+label, icon, component). To ship it without changing MITI, make it a widget instead:
+[Write a widget](../tutorials/write-a-widget.md).
 
 ### A custom hook
 

@@ -24,6 +24,9 @@ services:
       MITI_BRIDGE_PORT: ${BRIDGE_PORT:-8765}
     ports:
       - '${MITI_PORT:-3000}:3000'
+    volumes:
+      # Widgets imported in MITI
+      - miti-data:/data
     restart: unless-stopped
 
   foxglove-bridge:
@@ -47,3 +50,6 @@ services:
       BRIDGE_TOPIC_WHITELIST: ${BRIDGE_TOPIC_WHITELIST:-['.*']}
       BRIDGE_SEND_BUFFER_LIMIT: ${BRIDGE_SEND_BUFFER_LIMIT:-10000000}
     restart: unless-stopped
+
+volumes:
+  miti-data:

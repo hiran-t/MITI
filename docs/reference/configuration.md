@@ -11,15 +11,17 @@ MITI and the foxglove_bridge beside it are configured with environment variables
 
 ## MITI
 
-| Variable                 | Default   | Meaning                                                                                                                                                          |
-| ------------------------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `MITI_PORT`              | `3000`    | Port MITI serves on; a taken port moves to the next free one                                                                                                     |
-| `MITI_HOST`              | `0.0.0.0` | Address MITI listens on; `0.0.0.0` serves every network                                                                                                          |
-| `BRIDGE_PORT`            | `8765`    | Port of foxglove_bridge; browsers connect to `ws://<host MITI was opened from>:<port>`                                                                           |
-| `MITI_PACKAGE_PATH`      | —         | Extra ROS package folders, separated by `:`, for robot meshes when foxglove_bridge does not serve them (`AMENT_PREFIX_PATH` and `ROS_PACKAGE_PATH` are read too) |
-| `NEXT_PUBLIC_BRIDGE_URL` | —         | Bridge address MITI opens first, built into the app: rebuild after changing it. The address chosen in the connection settings always wins                        |
-| `PORT`                   | `3000`    | Port for `npm start` when running from source                                                                                                                    |
-| `COMPOSE_PROFILES`       | —         | `bridge` to start foxglove_bridge with every `docker compose up`                                                                                                 |
+| Variable                 | Default   | Meaning                                                                                                                                                            |
+| ------------------------ | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `MITI_PORT`              | `3000`    | Port MITI serves on; a taken port moves to the next free one                                                                                                       |
+| `MITI_HOST`              | `0.0.0.0` | Address MITI listens on; `0.0.0.0` serves every network                                                                                                            |
+| `BRIDGE_PORT`            | `8765`    | Port of foxglove_bridge; browsers connect to `ws://<host MITI was opened from>:<port>`                                                                             |
+| `MITI_PACKAGE_PATH`      | —         | Extra ROS package folders, separated by `:`, for robot meshes when foxglove_bridge does not serve them (`AMENT_PREFIX_PATH` and `ROS_PACKAGE_PATH` are read too)   |
+| `MITI_STATE_DIR`         | `.miti`   | Where MITI keeps ROS settings changed in the browser and imported widgets: `/var/lib/miti` for the apt service, `~/.config/miti` for `miti run`, `/data` in Docker |
+| `MITI_WIDGET_IMPORT`     | `on`      | `off` stops importing and removing widgets from the browser; installed widgets still load                                                                          |
+| `NEXT_PUBLIC_BRIDGE_URL` | —         | Bridge address MITI opens first, built into the app: rebuild after changing it. The address chosen in the connection settings always wins                          |
+| `PORT`                   | `3000`    | Port for `npm start` when running from source                                                                                                                      |
+| `COMPOSE_PROFILES`       | —         | `bridge` to start foxglove_bridge with every `docker compose up`                                                                                                   |
 
 ## Bridge beside MITI
 
