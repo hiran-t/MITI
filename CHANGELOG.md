@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [3.4.1] - 2026-11-01
+
+### Changed
+
+- Documentation: corrections to the how-to guides, the configuration reference and the developer guides
+
 ## [3.4.0] - 2026-11-01
 
 ### Added
@@ -11,8 +17,7 @@
 - Widgets that fail to load are listed under Problems
 - Import a widget from its address: paste a `https` link to a `.miti-widget` file, such as one in a GitHub release, under **Import widget…**; MITI's server downloads it and shows what it is before importing. Only addresses on the public internet are downloaded, never machines on MITI's own network
 - **Export layout** and **Import layout** in the title bar save the layout as a JSON file and open one, to move it to another browser or MITI. The file lists the widgets its panels need, and MITI names those it does not have before opening it. New page: Share a Layout
-- Branding: `MITI_BRANDING_DIR` names a folder with `branding.json` (name, browser title, logo, icon, accent color) that replaces MITI's own on the next page load, without rebuilding MITI. New page: Brand MITI
-- `npm run e2e` checks MITI in headless Chrome against the production build and `scripts/heavy-bridge.js`: the built-in panels, importing, using and removing a widget, layout files and branding. CI runs it for every change
+- `npm run e2e` checks MITI in headless Chrome against the production build and `scripts/heavy-bridge.js`: the built-in panels, importing, using and removing a widget, and layout files. CI runs it for every change
 - The apt package test (`packaging/test-deb.sh`) imports a widget through `miti run` and checks that it is kept and served
 
 ### Changed

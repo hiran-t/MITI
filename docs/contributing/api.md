@@ -1274,8 +1274,6 @@ and to requests from another site's page (`Sec-Fetch-Site`, or `Origin` against 
 | `DELETE /api/widgets?id=<id>`                  | Removes a widget; `204`, or `404` when it is not installed                                                                                                                                               |
 | `GET /api/widgets/files/<id>/<version>/<path>` | A file of the installed version, cached for good; `404` for any other version                                                                                                                            |
 
-`/api/branding/logo` and `/api/branding/icon` serve the images of `MITI_BRANDING_DIR` (`lib/server/branding.ts`); `404` when MITI is not branded.
-
 ## Examples
 
 ### A custom panel
