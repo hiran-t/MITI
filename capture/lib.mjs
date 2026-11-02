@@ -45,7 +45,7 @@ export async function fill(expr, text) {
 export async function setStorage(entries) {
   await js(`(${JSON.stringify(entries)}).forEach(([k, v]) => localStorage.setItem(k, JSON.stringify(v))) || true`);
 }
-export async function load(url = 'http://localhost:3000/') {
+export async function load(url = process.env.MITI_URL ?? 'http://localhost:3000/') {
   await send('Page.navigate', { url });
   for (let i = 0; i < 60; i++) {
     await sleep(500);

@@ -82,14 +82,14 @@ def lane(x, y, w, blocks, label=None):
 IMG, CLOUD, MAP, SMALL = AMBER, '#b48ae0', '#7aa7d8', TEAL
 small = lambda n: [(26, SMALL, '')] * n
 b = group(30, 40, 1600, 330, 'SYNCHRONIZED (DEFAULT)  ·  ONE CONNECTION')
-b += box(70, 130, 250, 110, 'foxglove_bridge') + box(1330, 130, 260, 110, 'Browser', 'MITI', accent=True)
+b += box(70, 130, 250, 110, 'miti_bridge') + box(1330, 130, 260, 110, 'Browser', 'MITI', accent=True)
 b += lane(350, 162, 920, [(26, SMALL, ''), (300, IMG, 'image 2.8 MB'), (26, SMALL, ''), (26, SMALL, ''),
                          (160, CLOUD, 'point cloud'), (26, SMALL, ''), (220, IMG, 'image')] )
 b += f'<line x1="320" y1="185" x2="350" y2="185" stroke="{TEAL}" stroke-width="2.2"/>' + arrow(1270, 185, 1328, 185)
 b += text(350, 284, 'Messages arrive in order, so cameras, TF and the 3D Scene show the same moment.', 19, LABEL)
-b += text(350, 314, 'On a slow link, small messages wait behind large images.', 19, SUB)
+b += text(350, 314, 'On a slow link, a small message can still wait for the image being sent.', 19, SUB)
 b += group(30, 410, 1600, 470, 'PRIORITIZE ROBOT MOTION  ·  HEAVY TOPICS ON THEIR OWN CONNECTIONS')
-b += box(70, 560, 250, 110, 'foxglove_bridge') + box(1330, 560, 260, 110, 'Browser', 'MITI', accent=True)
+b += box(70, 560, 250, 110, 'miti_bridge') + box(1330, 560, 260, 110, 'Browser', 'MITI', accent=True)
 b += lane(350, 498, 920, small(26), 'TF, joint states, odometry, log')
 b += lane(350, 590, 920, [(300, IMG, 'image 2.8 MB'), (300, IMG, 'image')], '/camera/camera/color/image_raw')
 b += lane(350, 682, 920, [(160, CLOUD, 'point cloud'), (160, CLOUD, 'point cloud'), (160, CLOUD, 'point cloud')], '/livox/lidar')
@@ -113,7 +113,7 @@ def cross(cx, cy, r=16):
             f'<path d="M{cx - r * 0.55},{cy - r * 0.55} L{cx + r * 0.55},{cy + r * 0.55} M{cx + r * 0.55},{cy - r * 0.55} L{cx - r * 0.55},{cy + r * 0.55}" stroke="{RED}" stroke-width="3" stroke-linecap="round"/>')
 def scene(x, title, good):
     s = group(x, 40, 770, 560, title)
-    s += box(x + 40, 400, 240, 100, 'Robot', 'ROS 2 nodes') + box(x + 490, 400, 240, 100, 'MITI machine', 'foxglove_bridge', accent=True)
+    s += box(x + 40, 400, 240, 100, 'Robot', 'ROS 2 nodes') + box(x + 490, 400, 240, 100, 'MITI machine', 'miti_bridge', accent=True)
     s += wifi(x + 385, 185) + text(x + 385, 228, 'Wi-Fi access point', 17, SUB, 400, 'middle')
     ax, ay = x + 385, 262
     if not good:

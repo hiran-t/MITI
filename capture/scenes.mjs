@@ -1,6 +1,7 @@
 // Screenshots for the MITI manual (docs/manual), taken from MITI connected to a robot.
 //
-// 1. Serve MITI on http://localhost:3000 (pixi run miti) and start headless Chrome:
+// 1. Serve MITI on http://localhost:3000 (pixi run miti; MITI_URL for another address) and start
+//    headless Chrome:
 //      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new \
 //        --remote-debugging-port=9333 --user-data-dir=/tmp/miti-capture --window-size=1440,987 \
 //        --force-device-scale-factor=2 --hide-scrollbars about:blank &
