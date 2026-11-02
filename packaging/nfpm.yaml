@@ -13,7 +13,7 @@ description: |
   Web dashboard for ROS 2 robots
   MITI shows a robot's topics in the browser: a 3D scene with the robot model,
   TF, point clouds and maps, camera images, logs and plots. It connects to
-  foxglove_bridge on the robot, or to one beside it (miti run --bridge).
+  miti_bridge on the robot, or to one beside it (miti run --bridge).
   Node.js is included. Start it with `miti run` (Ctrl+C stops it), or at boot
   with the miti service.
 
@@ -21,7 +21,7 @@ depends:
   - libc6 (>= 2.28)
   - libstdc++6
 recommends:
-  - ros-humble-foxglove-bridge | ros-jazzy-foxglove-bridge
+  - ros-humble-miti-bridge | ros-jazzy-miti-bridge
 
 contents:
   - src: ./build/deb/miti/

@@ -24,9 +24,9 @@ const RMW_NAMES: Record<string, string> = {
 };
 
 function stateText(status: BridgeNetworkStatus): string {
-  if (status.state === 'running') return 'foxglove_bridge running';
-  if (status.state === 'starting') return 'Starting foxglove_bridge…';
-  return `foxglove_bridge stopped${status.exitCode != null ? ` (exit ${status.exitCode})` : ''}`;
+  if (status.state === 'running') return 'Bridge running';
+  if (status.state === 'starting') return 'Starting the bridge…';
+  return `Bridge stopped${status.exitCode != null ? ` (exit ${status.exitCode})` : ''}`;
 }
 
 async function request(init?: RequestInit): Promise<BridgeNetworkStatus> {
@@ -37,7 +37,7 @@ async function request(init?: RequestInit): Promise<BridgeNetworkStatus> {
 }
 
 /**
- * ROS_DOMAIN_ID and the robot's addresses for the foxglove_bridge running beside MITI. Applying
+ * ROS_DOMAIN_ID and the robot's addresses for the bridge running beside MITI. Applying
  * them restarts that bridge; MITI reconnects on its own.
  */
 export default function BridgeNetworkSettings() {

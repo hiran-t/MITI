@@ -1,7 +1,7 @@
 /**
  * Resolves mesh and URDF resource URIs (package://, file://, http) to URLs a browser can fetch.
  *
- * Robot resources normally come through foxglove_bridge's asset service (see loadMeshResource).
+ * Robot resources normally come through the bridge's asset service (see loadMeshResource).
  * Without it, `package://` resources are served by MITI's own server (`/api/package/...`) from
  * the ROS workspace of the machine it runs on. A mesh server URL or per-package mapping
  * overrides both.

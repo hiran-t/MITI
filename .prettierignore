@@ -11,6 +11,9 @@ coverage
 out
 build
 
+# miti_bridge built from source (ros/build-miti-bridge.sh)
+ros/miti-sdk
+
 # misc
 .DS_Store
 *.pem

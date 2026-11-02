@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { BridgeClient } from '@/lib/bridge/client';
 import type { TopicInfo } from '@/lib/bridge/types';
 
-/** Topics advertised by foxglove_bridge; the list updates as the bridge advertises changes. */
+/** Topics the bridge advertises; the list updates as the bridge advertises changes. */
 export function useTopicList(client: BridgeClient | null): {
   topics: TopicInfo[];
   loading: boolean;

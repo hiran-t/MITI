@@ -30,8 +30,8 @@ cp -a .next/static "$stage/.next/static"
 cp -a public "$stage/public"
 # The cache is a symlink to /var/cache/miti in the package; .env files never ship.
 rm -rf "$stage/.next/cache" "$stage"/.env*
-cp ros/foxglove-bridge.sh ros/cyclonedds.xml "$stage/ros/"
-# The launcher behind `miti run` (it starts server.js, and foxglove_bridge with --bridge).
+cp ros/miti-bridge.sh ros/cyclonedds.xml "$stage/ros/"
+# The launcher behind `miti run` (it starts server.js, and miti_bridge with --bridge).
 cp scripts/start-miti.mjs scripts/bridge-settings.mjs "$stage/scripts/"
 
 # Architecture-specific files would only run on the build machine.

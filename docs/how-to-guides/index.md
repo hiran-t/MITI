@@ -21,8 +21,8 @@ serve-miti-over-https
 ```{toctree}
 :maxdepth: 1
 
-run-foxglove-bridge-on-the-robot
-run-foxglove-bridge-beside-miti
+run-miti-bridge-on-the-robot
+run-miti-bridge-beside-miti
 change-ros-network-settings
 improve-dds-over-wifi
 add-the-robots-message-types

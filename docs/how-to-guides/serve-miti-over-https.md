@@ -21,4 +21,4 @@ server {
 
 ## The bridge over HTTPS
 
-A page served over HTTPS can only open `wss://` bridges; MITI's default then becomes `wss://<host>:8765`, so terminate TLS for the bridge as well (for example a second `server` block proxying to port 8765), or use foxglove_bridge's own `tls:=true certfile:=... keyfile:=...`.
+A page served over HTTPS can only open `wss://` bridges; MITI's default then becomes `wss://<host>:8765`, so terminate TLS for the bridge as well, for example with a second `server` block proxying to port 8765: miti_bridge does not serve TLS itself yet.

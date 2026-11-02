@@ -10,7 +10,7 @@ declare global {
     /** Set by the server on each request (see src/app/layout.tsx). */
     __MITI__?: {
       bridgePort?: number | null;
-      /** How to start foxglove_bridge beside MITI, e.g. `miti run --bridge` (apt package). */
+      /** How to start the bridge beside MITI, e.g. `miti run --bridge` (apt package). */
       bridgeHint?: string | null;
       /** MITI_BRANDING_DIR's name and logo URL, when MITI is branded. */
       branding?: { name: string; logo: string | null; logoHeight?: number | null } | null;
@@ -18,7 +18,7 @@ declare global {
   }
 }
 
-/** The bridge port the server announced (MITI_BRIDGE_PORT), else foxglove_bridge's default. */
+/** The bridge port the server announced (MITI_BRIDGE_PORT), else the default, 8765. */
 export function runtimeBridgePort(): number {
   const port = typeof window === 'undefined' ? undefined : window.__MITI__?.bridgePort;
   return port && port > 0 ? port : BRIDGE_PORT;
@@ -39,7 +39,7 @@ export function defaultBridgeUrl(
   return `${page?.protocol === 'https:' ? 'wss' : 'ws'}://${host}:${port}`;
 }
 
-/** Connection to foxglove_bridge; a new URL or stream mode replaces the client. */
+/** Connection to the bridge; a new URL or stream mode replaces the client. */
 export function useBridge(url?: string, streamMode: StreamMode = 'synchronized') {
   const bridgeUrl = url || defaultBridgeUrl();
   const [client, setClient] = useState<BridgeClient | null>(null);

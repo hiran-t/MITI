@@ -1,4 +1,4 @@
-// ROS network settings of the foxglove_bridge that `pixi run -e <distro> miti-bridge` starts
+// ROS network settings of the bridge that `pixi run -e <distro> miti-bridge` starts
 // beside MITI: the ROS_DOMAIN_ID and the robot's IP addresses (ROS_STATIC_PEERS). They can be
 // changed in MITI's connection settings and are kept in .miti/bridge.json, which takes precedence
 // over the environment.
@@ -59,7 +59,7 @@ export function saveSettings(file, { domainId, peers }) {
   fs.writeFileSync(file, `${JSON.stringify({ domainId, peers }, null, 2)}\n`);
 }
 
-/** The environment that gives foxglove_bridge these settings. */
+/** The environment that gives the bridge these settings. */
 export function settingsEnv({ domainId, peers }) {
   return { ROS_DOMAIN_ID: String(domainId), ROS_STATIC_PEERS: peers.join(';') };
 }

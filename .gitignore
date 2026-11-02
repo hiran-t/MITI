@@ -42,6 +42,8 @@ next-env.d.ts
 ros/overlay/build/
 ros/overlay/install/
 ros/overlay/log/
+# miti_bridge built from source beside MITI (ros/build-miti-bridge.sh)
+ros/miti-sdk/
 
 # ROS settings and imported widgets kept by MITI (MITI_STATE_DIR)
 .miti/

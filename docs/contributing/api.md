@@ -9,7 +9,8 @@ All hooks live in `hooks/` and are client-only (`'use client'`).
 
 ### useBridge
 
-Connects to foxglove_bridge over the Foxglove WebSocket protocol. A new URL or stream mode
+Connects to the bridge: miti_bridge over the MITI protocol, or foxglove_bridge over the Foxglove
+WebSocket protocol. A new URL or stream mode
 disconnects the old `BridgeClient` and creates a new one.
 
 ```typescript
@@ -35,7 +36,7 @@ export function useBridge(
 
 **Parameters:**
 
-- `url` (optional): WebSocket URL of foxglove_bridge. An empty or missing value uses
+- `url` (optional): WebSocket URL of the bridge. An empty or missing value uses
   `defaultBridgeUrl()`.
 - `streamMode` (optional): `'synchronized'` (default) or `'separate'`. See
   [Stream modes](#stream-modes).
@@ -73,9 +74,11 @@ export interface TopicOptions {
   throttleRate?: number;
   /**
    * Deliver at most this many messages per second (Hz), dropping extras before they are decoded.
-   * The robot still sends every message; foxglove_bridge cannot throttle per client.
+   * miti_bridge sends only these; foxglove_bridge still sends every message.
    */
   maxRate?: number;
+  /** Over miti_bridge, transform the messages on the robot (see `SubscribeOptions.transform`). */
+  transform?: Transform;
 }
 
 export function useTopic<T = unknown>(
@@ -120,7 +123,7 @@ const { data, lastUpdate } = useTopic<sensor_msgs.CompressedImage>(
 
 ### useTopicList
 
-Returns the topics foxglove_bridge advertises. The list updates when the bridge advertises or
+Returns the topics the bridge advertises. The list updates when the bridge advertises or
 removes channels.
 
 ```typescript
@@ -872,7 +875,7 @@ export function ros2TypeName(type: string): string;
 
 ### Resource URLs and meshes
 
-Robot resources normally come through foxglove_bridge's asset service. Without it, `package://`
+Robot resources normally come through the bridge's asset service. Without it, `package://`
 resources are served by MITI's own server from the ROS workspace of the machine it runs on. A mesh
 server URL or a per-package mapping overrides both.
 
@@ -918,14 +921,14 @@ export interface MeshLoadOptions {
 }
 
 export interface ResourceSources extends ResourceOptions {
-  /** Reads package:// and file:// resources through foxglove_bridge, when it serves assets. */
+  /** Reads package:// and file:// resources through the bridge, when it serves assets. */
   fetchAsset?: (uri: string) => Promise<Uint8Array<ArrayBuffer>>;
 }
 
 /** Load an STL, OBJ or COLLADA mesh into the ROS (Z-up) convention. */
 export function loadMesh(url: string, options: MeshLoadOptions): Promise<THREE.Object3D>;
 
-/** Load a mesh from a mesh server or package mapping, foxglove_bridge, or MITI's server. */
+/** Load a mesh from a mesh server or package mapping, the bridge, or MITI's server. */
 export async function loadMeshResource(
   uri: string,
   sources: ResourceSources,
@@ -1097,8 +1100,10 @@ to the same worker, which keeps the channel's decoder.
 
 ## BridgeClient API
 
-`BridgeClient` (`lib/bridge/client.ts`) connects to foxglove_bridge with the WebSocket subprotocol
-`foxglove.sdk.v1`, falling back to `foxglove.websocket.v1` for older bridges. Messages arrive as
+`BridgeClient` (`lib/bridge/client.ts`) connects to the bridge through `ProtocolClient`
+(`lib/bridge/protocol.ts`), offering the WebSocket subprotocols `miti.bridge.v1`,
+`foxglove.sdk.v1` and `foxglove.websocket.v1`, in that order: miti_bridge selects the first,
+foxglove_bridge one of the others. `miti.*` operations go only to miti_bridge. Messages arrive as
 CDR (or JSON) and are decoded with the schemas the bridge advertises
 (`@foxglove/rosmsg2-serialization`).
 
@@ -1287,8 +1292,8 @@ fetchAsset(uri: string): Promise<Uint8Array<ArrayBuffer>>
 clearAssetCache(): Promise<void>
 ```
 
-`fetchAsset` fetches a `package://` or `file://` resource from the robot, as foxglove_bridge
-resolves it. Requires the `assets` capability. Each URI is requested once per session; results
+`fetchAsset` fetches a `package://` or `file://` resource from the robot, as the bridge resolves
+it. Requires the `assets` capability. Each URI is requested once per session; results
 are also kept in the browser's Cache Storage (`miti-robot-assets-v1`, secure contexts only), so a
 robot crosses a slow link once. At most 4 assets download at a time, each with a 60-second timeout
 and up to 3 attempts on timeout. `clearAssetCache` forgets fetched assets in memory and in Cache
@@ -1307,8 +1312,7 @@ warnings and not reported through `onError`.
 
 ## HTTP routes
 
-MITI's Next.js server has two routes for robot resources when foxglove_bridge does not serve
-assets. Both serve only mesh, texture and URDF files found under the ROS package search paths
+MITI's Next.js server has two routes for robot resources when the bridge does not serve assets. Both serve only mesh, texture and URDF files found under the ROS package search paths
 (`MITI_PACKAGE_PATH`, `AMENT_PREFIX_PATH`, `ROS_PACKAGE_PATH` of the server process).
 
 | Route                                | Serves                   |
@@ -1316,7 +1320,7 @@ assets. Both serve only mesh, texture and URDF files found under the ROS package
 | `GET /api/package/<pkg>/<path>`      | `package://<pkg>/<path>` |
 | `GET /api/file?path=<absolute path>` | `file://<absolute path>` |
 
-`/api/bridge` reads and changes the ROS network of the foxglove_bridge that `miti-bridge` started
+`/api/bridge` reads and changes the ROS network of the bridge that `miti-bridge` started
 (`scripts/start-miti.mjs` serves it to MITI's server on 127.0.0.1 with a per-run token).
 
 | Route             | Does                                                                                                                                                                |

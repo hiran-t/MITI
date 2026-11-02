@@ -38,7 +38,7 @@ export function useTopic<T = unknown>(
     setLastUpdate(null);
     if (!client || !topic) return;
 
-    // foxglove_bridge sends every message; throttle re-renders so heavy topics stay responsive.
+    // Messages may come faster than panels render; throttle re-renders so heavy topics stay responsive.
     let lastEmit = 0;
     let pending: { message: unknown } | null = null;
     let timer: ReturnType<typeof setTimeout> | null = null;

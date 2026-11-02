@@ -1,6 +1,6 @@
 # Install with pixi
 
-[pixi](https://pixi.sh) installs Node.js and, for foxglove_bridge, ROS 2 into the MITI folder, without a system ROS install. It works on Linux (x86-64 and ARM64), macOS on Apple silicon and Windows (x86-64; see [Install on Windows](install-on-windows.md)).
+[pixi](https://pixi.sh) installs Node.js and, for running miti_bridge beside MITI, ROS 2 into the MITI folder, without a system ROS install. It works on Linux (x86-64 and ARM64), macOS on Apple silicon and Windows (x86-64; see [Install on Windows](install-on-windows.md)).
 
 ## Install pixi and MITI
 
@@ -20,7 +20,7 @@ pixi run miti 8080     # on another port
 
 The first run installs Node.js 22 and the npm packages and builds MITI. Later runs skip both unless the source changed, and start in about a second. If port 3000 is taken, MITI uses the next free port; the first lines of the output show the addresses.
 
-To run foxglove_bridge beside MITI, use `pixi run -e humble miti-bridge` (or `-e jazzy`); see [Run foxglove_bridge beside MITI](run-foxglove-bridge-beside-miti.md). All tasks are in the [command line reference](../reference/command-line.md#pixi-tasks).
+To run miti_bridge beside MITI, use `pixi run -e humble miti-bridge` (or `-e jazzy`); the first run builds miti_bridge from source, which takes a few minutes. See [Run miti_bridge beside MITI](run-miti-bridge-beside-miti.md). All tasks are in the [command line reference](../reference/command-line.md#pixi-tasks).
 
 ## Start MITI at boot
 

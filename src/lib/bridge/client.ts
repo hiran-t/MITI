@@ -194,8 +194,7 @@ class Lane {
       client.on('time', ({ timestamp }) => events.time(this, timestamp));
       client.on('status', (status) => {
         if (status.level === StatusLevel.ERROR) events.error(this, new Error(status.message));
-        else if (status.level === StatusLevel.WARNING)
-          console.warn('foxglove_bridge:', status.message);
+        else if (status.level === StatusLevel.WARNING) console.warn('Bridge:', status.message);
       });
       client.on('error', (error) => {
         const err = error instanceof Error ? error : new Error('WebSocket error');
@@ -208,7 +207,7 @@ class Lane {
         this.reset();
         if (!opened) {
           this.failedAttempts += 1;
-          reject(new Error(`Cannot connect to foxglove_bridge at ${this.url}`));
+          reject(new Error(`Cannot connect to the bridge at ${this.url}`));
         }
         events.closed(this, wasReady);
         if (this.shouldReconnect) this.scheduleReconnect();
@@ -332,10 +331,11 @@ interface Pending<T> {
 }
 
 /**
- * Client for foxglove_bridge (the Foxglove WebSocket protocol). Messages arrive as CDR and are
- * decoded with the schemas the bridge advertises.
+ * Client for the robot's bridge: miti_bridge (the MITI protocol, miti.bridge.v1), or
+ * foxglove_bridge (the Foxglove WebSocket protocol) on robots that still run it. Messages arrive
+ * as CDR and are decoded with the schemas the bridge advertises.
  *
- * The bridge queues each client's messages in order. In the default `synchronized` stream mode
+ * The bridge sends each client's messages in order. In the default `synchronized` stream mode
  * every topic shares one connection, as in the Foxglove app: messages arrive in the order the
  * robot produced them, so cameras, TF and the 3D scene show the same moment (late together on a
  * slow link). In `separate` mode every heavy topic (images, point clouds, maps) gets a connection
@@ -345,9 +345,11 @@ interface Pending<T> {
  *
  * Subscriptions are shared per topic and survive reconnects and node restarts: they bind to a
  * channel whenever the bridge advertises the topic. A subscriber may cap how often it is called
- * (`maxRate`); messages arriving sooner are dropped before decoding. The protocol has no
- * server-side throttling, and the subscription is never paused to emulate one: measured against a
- * robot, resubscribing between frames lost more frames than it saved bandwidth.
+ * (`maxRate`). miti_bridge applies the limit itself, so the messages never cross the network.
+ * foxglove_bridge cannot: messages arriving sooner are dropped here, before decoding, and the
+ * subscription is never paused to emulate a limit (measured against a robot, resubscribing between
+ * frames lost more frames than it saved bandwidth). Over miti_bridge, subscribers may also ask for
+ * a transform (JPEG images, reduced point clouds), and the client reports the link's stats.
  *
  * Heavy messages (images, point clouds, maps) are decoded in Web Workers where the platform has
  * them, together with the per-pixel and per-point work their panels need (see `DecodePool`), so a
@@ -448,7 +450,7 @@ export class BridgeClient {
         // Per-topic connections are an optimisation; their failures do not make the bridge
         // unavailable.
         if (lane === this.control) this.errorCallbacks.forEach((cb) => cb(error));
-        else console.warn(`foxglove_bridge connection for ${lane.name}:`, error.message);
+        else console.warn(`Bridge connection for ${lane.name}:`, error.message);
       },
     };
     this.events = events;
@@ -572,9 +574,9 @@ export class BridgeClient {
    */
   publish(topic: string, message: unknown): void {
     const client = this.control.client;
-    if (!client || !this.connected) throw new Error('Not connected to foxglove_bridge');
+    if (!client || !this.connected) throw new Error('Not connected to the bridge');
     if (!this.hasCapability('clientPublish'))
-      throw new Error('foxglove_bridge does not allow publishing (clientPublish disabled)');
+      throw new Error('The bridge does not allow publishing (clientPublish disabled)');
     if (client.isMiti) {
       this.publishCdr(client, topic, message);
       return;
@@ -652,8 +654,7 @@ export class BridgeClient {
 
   callService(name: string, args: unknown = {}): Promise<unknown> {
     const client = this.control.client;
-    if (!client || !this.connected)
-      return Promise.reject(new Error('Not connected to foxglove_bridge'));
+    if (!client || !this.connected) return Promise.reject(new Error('Not connected to the bridge'));
     const service = this.services.get(name);
     if (!service) return Promise.reject(new Error(`Service ${name} is not available`));
     let data: Uint8Array;
@@ -675,22 +676,21 @@ export class BridgeClient {
   /** Read a ROS parameter, named `/node.parameter`. */
   getParameter(name: string): Promise<unknown> {
     const client = this.control.client;
-    if (!client || !this.connected)
-      return Promise.reject(new Error('Not connected to foxglove_bridge'));
+    if (!client || !this.connected) return Promise.reject(new Error('Not connected to the bridge'));
     if (!this.hasCapability('parameters'))
-      return Promise.reject(new Error('foxglove_bridge does not expose parameters'));
+      return Promise.reject(new Error('The bridge does not expose parameters'));
     const id = `parameter-${this.nextRequestId++}`;
     const promise = this.track(this.parameterRequests, id, `Parameter timeout: ${name}`);
     client.getParameters([name], id);
     return promise;
   }
 
-  /** Fetch a `package://` or `file://` resource from the robot, as foxglove_bridge resolves it. */
+  /** Fetch a `package://` or `file://` resource from the robot, as the bridge resolves it. */
   fetchAsset(uri: string): Promise<Uint8Array<ArrayBuffer>> {
     if (!this.control.client || !this.connected)
-      return Promise.reject(new Error('Not connected to foxglove_bridge'));
+      return Promise.reject(new Error('Not connected to the bridge'));
     if (!this.hasCapability('assets'))
-      return Promise.reject(new Error('foxglove_bridge does not serve assets'));
+      return Promise.reject(new Error('The bridge does not serve assets'));
     let request = this.assetCache.get(uri);
     if (!request) {
       request = this.loadAsset(uri);
@@ -917,7 +917,7 @@ export class BridgeClient {
     this.staticTransformCache.clear();
     const fail = (pending: Pending<never>) => {
       clearTimeout(pending.timer);
-      pending.reject(new Error('Disconnected from foxglove_bridge'));
+      pending.reject(new Error('Disconnected from the bridge'));
     };
     this.serviceCalls.forEach(fail);
     this.parameterRequests.forEach(fail);
@@ -925,7 +925,7 @@ export class BridgeClient {
     this.serviceCalls.clear();
     this.parameterRequests.clear();
     this.assetRequests.clear();
-    this.assetQueue.forEach(({ reject }) => reject(new Error('Disconnected from foxglove_bridge')));
+    this.assetQueue.forEach(({ reject }) => reject(new Error('Disconnected from the bridge')));
     this.assetQueue = [];
     this.assetsInFlight = 0;
     this.assetCache.clear();

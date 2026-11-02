@@ -14,7 +14,7 @@ To choose another camera, click the panel's tab and pick the topic in **General 
 A live color camera and its settings.
 ```
 
-The tab shows the image size, frame rate, size per frame and the time of the last frame. A raw 1280 × 720 image is 2.8 MB, so a slow link lowers the frame rate; compressed topics (`.../compressed`) arrive much faster.
+The tab shows the image size, frame rate, size per frame and the time of the last frame. A raw 1280 × 720 image is 2.8 MB, too much for most Wi-Fi links. With miti_bridge, the panel's **Compression** setting is **JPEG on robot** by default: the bridge sends color images as JPEG, around 100 KB a frame instead of 2.8 MB, and **Max FPS** limits how many it sends. Depth images stay raw.
 
 ## Show the depth camera
 
@@ -42,4 +42,4 @@ MITI projects the points into the image with the camera's calibration and TF. Co
 
 ## What next
 
-You have finished the tutorials. The [How-To Guides](../how-to-guides/index.md) cover specific tasks, such as running foxglove_bridge beside MITI or monitoring a state machine.
+You have finished the tutorials. The [How-To Guides](../how-to-guides/index.md) cover specific tasks, such as running miti_bridge beside MITI or monitoring a state machine.

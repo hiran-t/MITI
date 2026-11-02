@@ -10,8 +10,9 @@ Usage: miti run [--port <port>] [--bridge]
 
   run             Serve MITI in this terminal; Ctrl+C stops it.
     --port <port> Port to serve on (default 3000; a taken port moves to the next free one).
-    --bridge      Also run foxglove_bridge beside MITI, from the ROS 2 in /opt/ros
-                  (sudo apt install ros-<distro>-foxglove-bridge).
+    --bridge      Also run miti_bridge beside MITI, from the ROS 2 in /opt/ros
+                  (sudo apt install ros-<distro>-miti-bridge, from MITI-sdk's apt
+                  repository: https://github.com/hiran-t/MITI-sdk#install-miti_bridge).
   version         Show the installed version.
 
 Settings: /etc/miti/miti.env and /etc/miti/bridge.env; variables set in the shell win,

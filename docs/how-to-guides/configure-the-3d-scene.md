@@ -18,7 +18,7 @@ The robot model comes from `/robot_description`, which the robot's `robot_state_
 | Color, Opacity           | The model's color and transparency; leave the color empty to use the URDF's materials                  |
 | Show outlines, Show axis | Edges and link axes, to check the model                                                                |
 | Frame prefix             | When the robot's TF frame names have a prefix                                                          |
-| Mesh server URL          | An HTTP server for the robot's meshes, when foxglove_bridge does not serve them                        |
+| Mesh server URL          | An HTTP server for the robot's meshes, when the bridge does not serve them                             |
 | Joint states, Links      | Expand to see the model's joints and links                                                             |
 
 ```{figure} ../images/scene-robot.webp
@@ -27,7 +27,7 @@ The robot model comes from `/robot_description`, which the robot's `robot_state_
 Robot model settings.
 ```
 
-The model's meshes (`package://...`) come through foxglove_bridge from the robot's ROS workspace. When the bridge runs beside MITI, the robot's description package must be installed on the MITI machine too.
+The model's meshes (`package://...`) come through miti_bridge from the robot's ROS workspace. When the bridge runs beside MITI, the robot's description package must be installed on the MITI machine too.
 
 ## Point clouds
 

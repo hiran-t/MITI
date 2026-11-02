@@ -1,9 +1,10 @@
 // Starts MITI (`pixi run miti`, or `miti run` from the apt package) and, with --bridge,
-// foxglove_bridge beside it (`pixi run -e <distro> miti-bridge`, `miti run --bridge`). Runs the
-// same on Linux, macOS and Windows; Ctrl+C stops both.
+// miti_bridge beside it (`pixi run -e <distro> miti-bridge`, `miti run --bridge`); on Windows the
+// bridge is foxglove_bridge, until miti_bridge supports Windows. Runs the same on Linux, macOS and
+// Windows; Ctrl+C stops both.
 //
 // Ports move out of each other's way: if the web port is taken, MITI uses the next free one; if
-// the bridge port is taken by a foxglove_bridge, MITI uses that bridge, and if it is taken by
+// the bridge port is taken by a bridge (miti_bridge or foxglove_bridge), MITI uses it, and if by
 // something else, the bridge starts on the next free port. MITI learns the bridge port through
 // MITI_BRIDGE_PORT, so the browser connects to it without any setting.
 //
@@ -81,7 +82,7 @@ async function isFree(port) {
   return !(await answers(port)) && (await canListen(port));
 }
 
-/** True when a foxglove_bridge answers the WebSocket handshake on the port. */
+/** True when a bridge (miti_bridge, or a foxglove_bridge) answers the WebSocket handshake. */
 function isBridge(port) {
   return new Promise((resolve) => {
     const socket = net.connect(port, '127.0.0.1');
@@ -97,7 +98,7 @@ function isBridge(port) {
       socket.write(
         'GET / HTTP/1.1\r\nHost: localhost\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n' +
           'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n' +
-          'Sec-WebSocket-Protocol: foxglove.sdk.v1, foxglove.websocket.v1\r\n\r\n'
+          'Sec-WebSocket-Protocol: miti.bridge.v1, foxglove.sdk.v1, foxglove.websocket.v1\r\n\r\n'
       )
     );
     socket.on('data', (chunk) => {
@@ -105,7 +106,10 @@ function isBridge(port) {
       reply += chunk.toString('latin1');
       if (!reply.includes('\r\n\r\n')) return;
       answered = true;
-      if (!/^HTTP\/1\.1 101/.test(reply) || !/sec-websocket-protocol:\s*foxglove/i.test(reply))
+      if (
+        !/^HTTP\/1\.1 101/.test(reply) ||
+        !/sec-websocket-protocol:\s*(miti|foxglove)/i.test(reply)
+      )
         return done(false);
       // Close the WebSocket properly (masked, empty close frame), so the bridge does not log a
       // reset connection; the timeout above still ends the socket if it does not answer.
@@ -125,12 +129,12 @@ async function chooseBridge() {
   if (withBridge) {
     if (await isFree(bridgePreferred)) return { port: bridgePreferred, start: true };
     if (await isBridge(bridgePreferred)) {
-      console.log(`foxglove_bridge already runs on port ${bridgePreferred}; MITI uses it.`);
+      console.log(`A bridge already runs on port ${bridgePreferred}; MITI uses it.`);
       return { port: bridgePreferred, start: false, found: true };
     }
     const port = await firstFree(bridgePreferred + 1);
     console.log(
-      `Port ${bridgePreferred} is used by another program; foxglove_bridge uses ${port}.`
+      `Port ${bridgePreferred} is used by another program; the bridge uses ${port}.`
     );
     return { port, start: true };
   }
@@ -146,7 +150,7 @@ function lanAddress() {
   return null;
 }
 
-/** Ends a child and everything it started (ros2 launch starts foxglove_bridge, npm starts node). */
+/** Ends a child and everything it started (ros2 launch starts the bridge, npm starts node). */
 function stop(child) {
   if (!child || child.exitCode !== null || child.signalCode !== null) return;
   if (isWindows)
@@ -195,7 +199,7 @@ function startBridge() {
         'powershell',
         ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', 'ros/foxglove-bridge.ps1'],
       ]
-    : ['bash', ['ros/foxglove-bridge.sh']];
+    : ['bash', ['ros/miti-bridge.sh']];
   const child = spawn(script[0], script[1], {
     cwd: root,
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -224,10 +228,10 @@ function startBridge() {
     Object.assign(bridgeRun, { child: null, state: 'stopped', exitCode: code });
     const reason = code === null ? signal : `exit ${code}`;
     if (bridgeRun.fromWeb) {
-      console.log(`foxglove_bridge stopped (${reason}); apply the ROS settings in MITI to retry.`);
+      console.log(`The bridge stopped (${reason}); apply the ROS settings in MITI to retry.`);
       return;
     }
-    console.log(`foxglove_bridge stopped (${reason}); stopping MITI.`);
+    console.log(`The bridge stopped (${reason}); stopping MITI.`);
     shutdown(code ?? 1);
   });
   // "running" once it answers the WebSocket handshake.
@@ -248,7 +252,7 @@ async function restartBridge() {
     stop(old);
     await exited;
   }
-  // ros2 launch can exit before foxglove_bridge has let go of the port.
+  // ros2 launch can exit before the bridge has let go of the port.
   for (let tries = 0; tries < 20 && (await answers(bridge.port)); tries++)
     await new Promise((resolve) => setTimeout(resolve, 500));
   startBridge();
@@ -303,7 +307,7 @@ function startControl() {
     Object.assign(ros, settings, { saved: true });
     bridgeRun.fromWeb = true;
     console.log(
-      `ROS settings changed in MITI: ${describeSettings(ros)}; restarting foxglove_bridge.`
+      `ROS settings changed in MITI: ${describeSettings(ros)}; restarting the bridge.`
     );
     restarting = restarting.then(restartBridge);
     await restarting;
@@ -345,17 +349,17 @@ web = spawn(process.execPath, [...server, '--hostname', host, '--port', String(w
 const lan = lanAddress();
 console.log(
   `\nMITI: http://localhost:${webPort}${lan ? `  (other computers: http://${lan}:${webPort})` : ''}` +
-    `\nfoxglove_bridge: ws://<this machine>:${bridge.port}` +
+    `\nBridge: ws://<this machine>:${bridge.port}` +
     (bridge.start
       ? ` (${describeSettings(ros)}; change it in MITI's connection settings)`
       : bridge.found
         ? ' (already running)'
-        : ` (none running here: start one on the robot, or use ${bridgeHint})`) +
+        : ` (none running here: start miti_bridge on the robot, or use ${bridgeHint})`) +
     '\n'
 );
 
 // MITI ending ends the bridge; the bridge ending ends MITI unless it was restarted from MITI.
 web.on('exit', (code) => {
-  if (bridgeRun.child) console.log('MITI stopped; stopping foxglove_bridge.');
+  if (bridgeRun.child) console.log('MITI stopped; stopping the bridge.');
   shutdown(code ?? 0);
 });

@@ -41,7 +41,7 @@ const SIDEBAR_DEFAULT_WIDTH = 380;
 const STORAGE_KEY_BRIDGE_URL = 'miti_bridge_url';
 const STORAGE_KEY_STREAM_MODE = 'miti_stream_mode';
 
-/** Carry a saved rosbridge address over to foxglove_bridge's default port on the same host. */
+/** Carry a saved rosbridge address over to the bridge's default port on the same host. */
 function initialBridgeUrl(): string {
   try {
     const legacy = JSON.parse(localStorage.getItem('miti_rosbridge_url') ?? 'null');
@@ -229,8 +229,9 @@ export default function Dashboard() {
           <div role="status" className="connection-notice">
             <Radio size={14} />
             <span>
-              No foxglove_bridge at <code>{bridgeUrl}</code>. Start it on the robot and enter the
-              robot&apos;s address with the gear in the status bar, or run{' '}
+              No bridge at <code>{bridgeUrl}</code>. Start miti_bridge on the robot (
+              <code>ros2 launch miti_bridge miti_start</code>) and enter the robot&apos;s address
+              with the gear in the status bar, or run{' '}
               {window.__MITI__?.bridgeHint ? (
                 <code>{window.__MITI__.bridgeHint}</code>
               ) : (
@@ -369,7 +370,7 @@ export default function Dashboard() {
                   </summary>
                   <p>{error.message}</p>
                   <p>
-                    Check that foxglove_bridge at <code>{bridgeUrl}</code> is reachable.
+                    Check that the bridge at <code>{bridgeUrl}</code> is reachable.
                   </p>
                 </details>
               )}

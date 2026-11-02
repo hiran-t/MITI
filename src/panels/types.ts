@@ -2,7 +2,7 @@ import type { ComponentType } from 'react';
 import type { BridgeClient } from '@/lib/bridge/client';
 import type { TopicInfo } from '@/lib/bridge/types';
 
-/** The part of the foxglove_bridge connection a widget's panels may use. */
+/** The part of the bridge connection a widget's panels may use. */
 export type MitiClient = Pick<
   BridgeClient,
   | 'subscribe'
@@ -28,7 +28,7 @@ export interface PanelProps<Config = unknown, Client = MitiClient> {
   updateConfig: (patch: Partial<Config>) => void;
   /** Replace the settings. */
   setConfig: (config: Config) => void;
-  /** The connection to foxglove_bridge, or null while MITI is not connected. */
+  /** The connection to the robot's bridge, or null while MITI is not connected. */
   client: Client | null;
   topics: TopicInfo[];
   topicsLoading: boolean;

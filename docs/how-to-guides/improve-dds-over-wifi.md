@@ -1,6 +1,6 @@
 # Improve DDS over Wi-Fi
 
-When foxglove_bridge runs beside MITI, DDS carries every message it subscribes to from the robot to the MITI machine, so the network decides how much arrives. This guide covers the usual problems on Wi-Fi and busy networks.
+When miti_bridge runs beside MITI, DDS carries every message it subscribes to from the robot to the MITI machine, so the network decides how much arrives. This guide covers the usual problems on Wi-Fi and busy networks.
 
 ## Find the robot when multicast is dropped
 
@@ -37,4 +37,4 @@ On a machine with several networks (Wi-Fi, Ethernet, Docker), discovery can pick
 
 - The first subscription can take a few seconds while DDS discovery settles; later ones are immediate.
 - `sequence size exceeds remaining buffer` or `invalid data size` in the bridge log means the robot runs another ROS 2 distro: Humble cannot read Iron/Jazzy discovery data. Use the matching environment (`-e jazzy`) or `ROS_DISTRO` in Docker.
-- `Port 8765 is used by <process> (PID …); foxglove_bridge uses 8766 instead`: another program holds the port, so the bridge moved; `pixi run miti` and `miti-bridge` find it. To keep 8765, stop that program (the message shows the command).
+- `Port 8765 is used by <process> (PID …); miti_bridge uses 8766 instead`: another program holds the port, so the bridge moved; `pixi run miti` and `miti-bridge` find it. To keep 8765, stop that program (the message shows the command).

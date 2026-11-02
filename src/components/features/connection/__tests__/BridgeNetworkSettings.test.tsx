@@ -35,7 +35,7 @@ describe('BridgeNetworkSettings', () => {
     fetchMock.mockReturnValueOnce(reply(running));
     render(<BridgeNetworkSettings />);
     const domain = await screen.findByLabelText('ROS_DOMAIN_ID');
-    expect(screen.getByText('foxglove_bridge running')).toBeInTheDocument();
+    expect(screen.getByText('Bridge running')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Apply and restart bridge' })).toBeDisabled();
 
     fireEvent.change(domain, { target: { value: '5' } });
@@ -55,14 +55,14 @@ describe('BridgeNetworkSettings', () => {
       const [, init] = fetchMock.mock.calls[1];
       expect(init.method).toBe('PUT');
       expect(JSON.parse(init.body)).toEqual({ domainId: '5', peers: '192.168.10.27' });
-      expect(screen.getByText('Starting foxglove_bridge…')).toBeInTheDocument();
+      expect(screen.getByText('Starting the bridge…')).toBeInTheDocument();
       await act(async () => {
         jest.advanceTimersByTime(1000);
       });
     } finally {
       jest.useRealTimers();
     }
-    await waitFor(() => expect(screen.getByText('foxglove_bridge running')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Bridge running')).toBeInTheDocument());
   });
 
   test('shows why the launcher refused the settings', async () => {

@@ -2,11 +2,11 @@
 
 The messages the State Machine panel reads, and how to publish them from the robot. To set up the panel, see [Monitor a state machine](../how-to-guides/monitor-a-state-machine.md).
 
-Each tab of the panel subscribes to one topic through foxglove_bridge. MITI does not read SMACC2's or BehaviorTree.CPP's own topics directly: a node on the robot publishes a status message with the fields described below.
+Each tab of the panel subscribes to one topic through the bridge. MITI does not read SMACC2's or BehaviorTree.CPP's own topics directly: a node on the robot publishes a status message with the fields described below.
 
 ## Message format
 
-MITI decodes messages with the definitions foxglove_bridge advertises, so the status topics need a ROS 2 message type that the bridge can load. When foxglove_bridge runs beside MITI (pixi or Docker), add the package to `ros/overlay/src`; see [Add the robot's message types](../how-to-guides/add-the-robots-message-types.md). MITI reads fields by name, so the package and type names are up to you.
+MITI decodes messages with the definitions the bridge advertises, so the status topics need a ROS 2 message type that the bridge can load. When the bridge runs beside MITI (pixi or Docker), add the package to `ros/overlay/src`; see [Add the robot's message types](../how-to-guides/add-the-robots-message-types.md). MITI reads fields by name, so the package and type names are up to you.
 
 Use `float64` for timestamps and 32-bit integers for counts: 64-bit integers (`int64`, `uint64`) arrive in the browser as `BigInt`, which the panel does not convert.
 
@@ -109,7 +109,7 @@ A behavior tree publisher works the same way: build the `BehaviorTreeStatus` mes
 
 ### The panel shows "Not connected to ROS"
 
-MITI is not connected to foxglove_bridge. Check the connection box in the status bar and the bridge address in **Connection settings**.
+MITI is not connected to the bridge. Check the connection box in the status bar and the bridge address in **Connection settings**.
 
 ### The panel shows "Waiting for data..."
 
@@ -118,7 +118,7 @@ MITI is not connected to foxglove_bridge. Check the connection box in the status
    ```bash
    ros2 topic echo /smacc2/status
    ```
-3. Check that the topic appears in the **Topics** view of the activity bar. If it is missing, foxglove_bridge cannot load the message type (install the message package beside the bridge) or its topic whitelist excludes it; the bridge's log says which.
+3. Check that the topic appears in the **Topics** view of the activity bar. If it is missing, the bridge cannot load the message type (install the message package beside the bridge) or its topic whitelist excludes it; the bridge's log says which.
 
 ### The panel shows data but fields are empty
 
