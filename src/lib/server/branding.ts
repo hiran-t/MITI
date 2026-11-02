@@ -5,8 +5,8 @@ import path from 'path';
  * Another name, logo, browser icon and accent color for MITI, e.g. for a company that delivers
  * MITI to its customers. MITI_BRANDING_DIR names a folder with `branding.json`:
  *
- *   { "name": "MITI Pro", "title": "MITI Pro", "logo": "logo.svg", "icon": "icon.svg",
- *     "accent": "#e30613" }
+ *   { "name": "MITI Pro", "title": "MITI Pro", "logo": "logo.svg", "logoHeight": 36,
+ *     "icon": "icon.svg", "accent": "#e30613" }
  *
  * and the image files it names. Every field is optional; the page reads them on each request, so
  * a change shows on the next reload without rebuilding MITI.
@@ -20,6 +20,11 @@ export interface Branding {
   title: string;
   /** File names inside the folder, or null for MITI's own. */
   logo: string | null;
+  /**
+   * The logo's height in the title bar, in pixels, its width following the image; null fits it
+   * into MITI's own logo box (106 × 42).
+   */
+  logoHeight: number | null;
   icon: string | null;
   /** `#rrggbb`, or null for MITI's teal. */
   accent: string | null;
@@ -34,6 +39,8 @@ const IMAGE_TYPES: Record<string, string> = {
 };
 const FILE_NAME = /^[\w][\w.-]*$/;
 const ACCENT = /^#[0-9a-f]{6}$/i;
+/** The title bar is 50 px high. */
+export const LOGO_HEIGHT = { min: 16, max: 40 };
 
 /** Each problem is logged once, not on every page load. */
 const reported = new Set<string>();
@@ -84,10 +91,18 @@ export function readBranding(env: Env = process.env): Branding | null {
       accent = raw.accent.toLowerCase();
     else report('"accent" must be a color like #2fb4c4; it is left out');
   }
+  let logoHeight: number | null = null;
+  if (raw.logoHeight !== undefined) {
+    const { min, max } = LOGO_HEIGHT;
+    if (typeof raw.logoHeight === 'number' && raw.logoHeight >= min && raw.logoHeight <= max)
+      logoHeight = Math.round(raw.logoHeight);
+    else report(`"logoHeight" must be a number of pixels from ${min} to ${max}; it is left out`);
+  }
   return {
     name,
     title: text(raw.title, 'title', 80) ?? name,
     logo: image(dir, raw.logo, 'logo'),
+    logoHeight,
     icon: image(dir, raw.icon, 'icon'),
     accent,
     dir,

@@ -155,7 +155,18 @@ export default function Dashboard() {
       <div className="miti-workspace">
         <header className="workspace-titlebar">
           <div className="workspace-brand">
-            {branding?.logo ? (
+            {branding?.logo && branding.logoHeight ? (
+              // As high as asked, as wide as the image is at that height, within reason.
+              <Image
+                src={branding.logo}
+                alt={branding.name}
+                width={branding.logoHeight * 4}
+                height={branding.logoHeight}
+                unoptimized
+                priority
+                style={{ height: branding.logoHeight, width: 'auto', maxWidth: 320 }}
+              />
+            ) : branding?.logo ? (
               // Any size of logo fits the title bar's height.
               <Image
                 src={branding.logo}

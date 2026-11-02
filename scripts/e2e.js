@@ -286,6 +286,10 @@ async function branding(page) {
   const look = await page.evaluate(`({
     title: document.title,
     logo: document.querySelector('.workspace-brand img')?.getAttribute('src'),
+    logoSize: (() => {
+      const box = document.querySelector('.workspace-brand img')?.getBoundingClientRect();
+      return box && [Math.round(box.width), Math.round(box.height)];
+    })(),
     alt: document.querySelector('.workspace-brand img')?.getAttribute('alt'),
     icon: document.querySelector('link[rel="icon"]')?.getAttribute('href'),
     accent: getComputedStyle(document.documentElement).getPropertyValue('--miti-accent').trim(),
@@ -348,6 +352,7 @@ async function main() {
         name: 'Acme Robots',
         title: 'Acme Console',
         logo: 'logo.svg',
+        logoHeight: 30,
         icon: 'icon.svg',
         accent: '#e30613',
       })
@@ -374,6 +379,12 @@ async function main() {
         branded.icon?.startsWith('/api/branding/icon') &&
         branded.accent === '#e30613',
       JSON.stringify(branded)
+    );
+    // The test logo is 120 × 40, so 30 px high is 90 px wide.
+    check(
+      'logoHeight sets the logo’s height, and its width follows the image',
+      branded.logoSize?.[0] === 90 && branded.logoSize?.[1] === 30,
+      JSON.stringify(branded.logoSize)
     );
     const logo = await fetch(`${APP}/api/branding/logo`);
     check(
