@@ -389,7 +389,7 @@ Panel types live in a registry (`panels/registry.ts`). The seven built-in ones a
   (`panels/loader.ts`); its default export lists its panels, whose types start with the widget id.
 - Widgets are made in their own repositories, from the template
   [MITI-widget-dev](https://github.com/hiran-t/MITI-widget-dev), against `@miti/sdk` from
-  [MITI-sdk](https://github.com/hiran-t/MITI-sdk): its `index.d.ts` declares the API that `src/sdk`
+  [MITI-widget-sdk](https://github.com/hiran-t/MITI-widget-sdk): its `index.d.ts` declares the API that `src/sdk`
   provides, and its CI checks that MITI still does. Its `miti-widget build` turns a widget's imports
   of React and `@miti/sdk` into reads of `window.__MITI_MODULES__` (`sdk/runtime.ts`), so a widget
   shares MITI's React, contexts and components.

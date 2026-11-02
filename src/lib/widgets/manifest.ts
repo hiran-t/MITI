@@ -1,6 +1,6 @@
 /**
  * The manifest of a widget package (`<id>-<version>.miti-widget`, a zip with `manifest.json` at
- * its root), checked by the browser and the server. `miti-widget build` (hiran-t/MITI-sdk,
+ * its root), checked by the browser and the server. `miti-widget build` (hiran-t/MITI-widget-sdk,
  * lib/manifest.mjs) checks the same, so a package that builds is a package that installs.
  */
 

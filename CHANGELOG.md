@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- The widget SDK moved to [MITI-widget-sdk](https://github.com/hiran-t/MITI-widget-sdk): install `@miti/sdk` from `git+https://github.com/hiran-t/MITI-widget-sdk.git#semver:^1.0.0`. The package name and widget API 1 are unchanged. [MITI-sdk](https://github.com/hiran-t/MITI-sdk) is now the robot side, where miti_bridge is being designed.
+
 ## [3.4.2] - 2026-11-02
 
 ### Changed
@@ -18,7 +22,7 @@
 
 ### Added
 
-- Widgets: panels that come in a `.miti-widget` file and are imported under **Widgets** in the sidebar, without rebuilding MITI. The server keeps them under `MITI_STATE_DIR/widgets` (`.miti/widgets` with pixi, `/var/lib/miti/widgets` for the apt service, `/data/widgets` in Docker, kept in the `miti-data` volume), so every browser that opens MITI gets them; `MITI_WIDGET_IMPORT=off` stops importing and removing them from the browser. A widget is made in its own repository, started from the template [MITI-widget-dev](https://github.com/hiran-t/MITI-widget-dev), against `@miti/sdk` from [MITI-sdk](https://github.com/hiran-t/MITI-sdk): panel definitions, `useTopic`, `useTF`, `ImageCanvas`, and the settings fields and portals MITI's panels use. Its `miti-widget build` makes the `.miti-widget` file and lets the widget share MITI's React; `miti-widget dev` keeps it imported into a running MITI while it changes. New pages: Write a Widget, Install a Widget and Widget SDK
+- Widgets: panels that come in a `.miti-widget` file and are imported under **Widgets** in the sidebar, without rebuilding MITI. The server keeps them under `MITI_STATE_DIR/widgets` (`.miti/widgets` with pixi, `/var/lib/miti/widgets` for the apt service, `/data/widgets` in Docker, kept in the `miti-data` volume), so every browser that opens MITI gets them; `MITI_WIDGET_IMPORT=off` stops importing and removing them from the browser. A widget is made in its own repository, started from the template [MITI-widget-dev](https://github.com/hiran-t/MITI-widget-dev), against `@miti/sdk` from [MITI-widget-sdk](https://github.com/hiran-t/MITI-widget-sdk): panel definitions, `useTopic`, `useTF`, `ImageCanvas`, and the settings fields and portals MITI's panels use. Its `miti-widget build` makes the `.miti-widget` file and lets the widget share MITI's React; `miti-widget dev` keeps it imported into a running MITI while it changes. New pages: Write a Widget, Install a Widget and Widget SDK
 - Each panel has an error boundary: a panel that throws shows its error and a **Reload panel** button, and the other panels keep running
 - Widgets that fail to load are listed under Problems
 - Import a widget from its address: paste a `https` link to a `.miti-widget` file, such as one in a GitHub release, under **Import widget…**; MITI's server downloads it and shows what it is before importing. Only addresses on the public internet are downloaded, never machines on MITI's own network

@@ -4,9 +4,10 @@ import * as jsxRuntime from 'react/jsx-runtime';
 import * as sdk from './index';
 
 /**
- * The modules a widget may import by name. Its build (`miti-widget build`, hiran-t/MITI-sdk)
- * turns each import of these into a read of `window.__MITI_MODULES__`, so widgets use the copies
- * MITI runs: one React, whose hooks and contexts work across MITI's panels and the widget's.
+ * The modules a widget may import by name. Its build (`miti-widget build`,
+ * hiran-t/MITI-widget-sdk) turns each import of these into a read of `window.__MITI_MODULES__`, so
+ * widgets use the copies MITI runs: one React, whose hooks and contexts work across MITI's panels
+ * and the widget's.
  */
 export const WIDGET_MODULES = {
   react: React,
