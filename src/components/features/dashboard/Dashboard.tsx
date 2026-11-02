@@ -24,6 +24,7 @@ import ConnectionStatus from '../connection/ConnectionStatus';
 import AddWidgetButton from '../layout/AddWidgetButton';
 import LayoutFileActions from '../layout/LayoutFileActions';
 import ConnectionSettings from '../connection/ConnectionSettings';
+import { LinkStatsRows, LinkStatusItem } from '../connection/LinkStats';
 import { SettingsSearchContext } from '../layout/WidgetSettingsPortal';
 import ActivityBar, { sidebarViewLabel } from './ActivityBar';
 import type { SidebarTab } from './ActivityBar';
@@ -59,6 +60,12 @@ export default function Dashboard() {
     'synchronized'
   );
   const { client, connected, error } = useBridge(bridgeUrl, streamMode);
+  const bridgeName = connected ? client?.getBridgeName() : null;
+  const protocolName = !connected
+    ? 'WebSocket'
+    : client?.usesMitiProtocol()
+      ? 'MITI protocol (miti.bridge.v1)'
+      : 'Foxglove WebSocket protocol';
   // The client object is created before it connects; gating it makes the list load on (re)connect.
   const { topics, loading, refreshTopics } = useTopicList(connected ? client : null);
   const {
@@ -401,11 +408,12 @@ export default function Dashboard() {
                 </summary>
                 <dl>
                   <dt>Protocol</dt>
-                  <dd>foxglove_bridge (WebSocket)</dd>
+                  <dd>{protocolName}</dd>
                   <dt>Status</dt>
                   <dd>{connected ? 'Connected' : 'Disconnected'}</dd>
                   <dt>Topics</dt>
                   <dd>{connected ? topics.length : 'Unavailable'}</dd>
+                  <LinkStatsRows client={connected ? client : null} />
                 </dl>
                 <div className="source-settings">
                   <span>Connection settings</span>
@@ -482,7 +490,10 @@ export default function Dashboard() {
             streamMode={streamMode}
             onStreamModeChange={setStreamMode}
           />
-          <span className="status-item is-optional">ROS 2 · foxglove_bridge</span>
+          <span className="status-item is-optional">
+            ROS 2{bridgeName ? ` · ${bridgeName}` : ''}
+          </span>
+          <LinkStatusItem client={connected ? client : null} />
           <span className={`status-item ${problemCount ? 'has-error' : ''}`} title="Problems">
             <XCircle size={14} aria-hidden="true" />
             {problemCount}

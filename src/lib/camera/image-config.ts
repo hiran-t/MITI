@@ -2,6 +2,7 @@
  * Image panel settings, named after Foxglove's Image panel. Stored as the `camera-viewer` widget's
  * props; MITI ≤ 3.0 props (`{ topic, maxFps? }`) are read through `normalizeImageConfig`.
  */
+import type { Transform } from '@/lib/bridge/types';
 import type { ColorMapName } from '@/lib/scene/colors';
 import {
   DEFAULT_SCENE_CONFIG,
@@ -18,6 +19,8 @@ export interface ImagePanelConfig {
   calibrationTopic?: string;
   /** Frames per second requested from the bridge; 0 receives every frame. */
   maxFps: number;
+  /** `jpeg`: miti_bridge sends raw color images as JPEG. foxglove_bridge always sends them raw. */
+  compression: 'jpeg' | 'none';
   rectify: boolean;
   /** Place the camera with TF at the image's stamp instead of the latest transform. */
   syncTimestamps: boolean;
@@ -37,12 +40,18 @@ export interface ImagePanelConfig {
 
 /** Frames decoded per second unless the user picks another rate. */
 export const DEFAULT_CAMERA_MAX_FPS = 15;
+/**
+ * What image views ask miti_bridge for. One value everywhere: a topic is compressed only when
+ * every view of it asks for the same transform.
+ */
+export const JPEG_TRANSFORM: Transform = { kind: 'jpeg' };
 export const ROTATIONS: ImageRotation[] = [0, 90, 180, 270];
 
 export const DEFAULT_IMAGE_CONFIG: ImagePanelConfig = {
   version: 2,
   topic: '',
   maxFps: DEFAULT_CAMERA_MAX_FPS,
+  compression: 'jpeg',
   rectify: false,
   syncTimestamps: true,
   flipHorizontal: false,
@@ -94,6 +103,7 @@ export function normalizeImageConfig(props: unknown, fallbackTopic = ''): ImageP
     calibrationTopic:
       typeof stored.calibrationTopic === 'string' ? stored.calibrationTopic : undefined,
     maxFps: maxFps !== undefined && maxFps >= 0 ? maxFps : d.maxFps,
+    compression: stored.compression === 'none' ? 'none' : d.compression,
     rectify: pick(stored.rectify, d.rectify),
     syncTimestamps: pick(stored.syncTimestamps, d.syncTimestamps),
     flipHorizontal: pick(stored.flipHorizontal, d.flipHorizontal),

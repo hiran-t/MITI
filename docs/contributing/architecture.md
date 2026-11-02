@@ -179,7 +179,7 @@ src/
 │   ├── useTopic.ts
 │   └── useTopicList.ts
 ├── lib/
-│   ├── bridge/                           # foxglove_bridge client
+│   ├── bridge/                           # Bridge client (miti_bridge, foxglove_bridge)
 │   │   ├── __tests__/
 │   │   ├── asset-cache.ts                # Robot assets in Cache Storage
 │   │   ├── client.ts                     # BridgeClient
@@ -188,6 +188,7 @@ src/
 │   │   ├── decode-pool.ts                # Web Workers that decode heavy topics
 │   │   ├── decode-worker-factory.ts
 │   │   ├── decode.worker.ts              # Worker entry point
+│   │   ├── protocol.ts                   # The wire protocol: miti.bridge.v1 and foxglove_bridge's
 │   │   ├── topics.ts                     # Topic name and type helpers
 │   │   └── types.ts
 │   ├── camera/                           # Image panel math
@@ -341,7 +342,12 @@ like an IDE:
 
 ### 2. BridgeClient
 
-`BridgeClient` (`lib/bridge/client.ts`) is the foxglove_bridge client:
+`BridgeClient` (`lib/bridge/client.ts`) connects to the robot's bridge:
+
+- **Bridges and protocol.** It talks to the bridge through `ProtocolClient` (`lib/bridge/protocol.ts`).
+  - MITI offers the subprotocols `miti.bridge.v1`, `foxglove.sdk.v1` and `foxglove.websocket.v1`, in that order.
+  - miti_bridge (MITI-sdk) selects the first. Its framing is foxglove_bridge's, with `miti.*` operations added, which are sent only to it.
+  - The protocol is specified in MITI-sdk's `docs/protocol.md`.
 
 - **Lanes.** Each WebSocket to the bridge is a lane that reconnects on its own (every 3 s). The
   control lane carries the topic list, services, parameters and, in synchronized mode, every
@@ -356,6 +362,16 @@ like an IDE:
   subscriber's cap, and `throttleMs` keeps only the newest message within a window; both act
   before decoding. Subscriptions are never paused to throttle the robot: measured on a real robot,
   resubscribing between frames lost frames (a 10 Hz camera dropped to 2.7 fps).
+  - With miti_bridge, the limit goes to the bridge instead (`miti.subscriptionOptions`): the
+    highest of the subscribers' limits, each the lower of its `maxRate` and one message per
+    throttle window. The bridge drops the rest before sending, and the client's own `maxRate`
+    gate is then skipped.
+- **Transforms** (miti_bridge). A topic's subscribers may ask the bridge to send camera images as
+  JPEG or to reduce point clouds. The transform is sent only when they all ask for the same one.
+  `miti.subscriptionFormat` tells a lane the subscription's new format, which the lane decodes
+  with from then on. Decoders are keyed by channel object, so each format gets its own.
+- **Link stats** (miti_bridge). Each lane asks the bridge for `miti.stats` every second. The client
+  sums the reports into `LinkStats`, which the status bar and the source details show.
 - **Decoding** with the advertised schemas, heavy types in Web Workers.
 - **Static transform retention** for late subscribers.
 - **Publishing** (JSON, requires the bridge's `clientPublish` capability), **service calls**,

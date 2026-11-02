@@ -8,6 +8,7 @@ import type { sensor_msgs } from '@/types/ros-messages';
 import type { BridgeClient } from '@/lib/bridge/client';
 import { useTopic } from '@/hooks/useTopic';
 import { drawImageMessage } from '@/lib/parsers/image-parser';
+import { JPEG_TRANSFORM } from '@/lib/camera/image-config';
 import { frameName } from '@/lib/scene/transforms';
 import type { CameraInfo } from '@/lib/camera/projection';
 
@@ -61,7 +62,12 @@ export default function CameraLayer({
     client,
     layer.imageTopic ?? '',
     layer.imageMode === 'compressed' ? 'sensor_msgs/msg/CompressedImage' : 'sensor_msgs/msg/Image',
-    { ...IMAGE_OPTIONS, maxRate: layer.maxRate || undefined }
+    {
+      ...IMAGE_OPTIONS,
+      maxRate: layer.maxRate || undefined,
+      // Shared with Image panels of the same camera, which may switch it off.
+      transform: layer.imageMode === 'compressed' ? undefined : JPEG_TRANSFORM,
+    }
   );
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
   const corners = useMemo(() => cameraCorners(info, layer.size ?? 1), [info, layer.size]);

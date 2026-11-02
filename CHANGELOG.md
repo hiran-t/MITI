@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+### Added
+
+- MITI connects to [miti_bridge](https://github.com/hiran-t/MITI-sdk), the robot-side bridge that replaces foxglove_bridge, over its MITI protocol (`miti.bridge.v1`). MITI offers that protocol first and still connects to foxglove_bridge as before.
+- With miti_bridge:
+  - Publishing sends CDR. A message type that no topic advertises is looked up from the bridge once, before its first message is sent.
+  - The bridge applies each topic's rate limits (`maxRate` and throttle windows), so messages no panel shows do not cross the network.
+  - Camera images cross the network as JPEG. The Image panel's new Compression setting (JPEG on robot, the default, or Off) chooses it, and the 3D Scene's camera images follow. Depth images stay raw. Over a 20 Mbit/s link, a 1280×720 camera now arrives at 14 fps, and TF stays within 62 ms.
+  - Point clouds are reduced on the robot to the 3D Scene's Point limit, so points over the limit no longer cross the network.
+  - The status bar shows how much the bridge sends per second, and turns amber when messages wait on the robot for more than half a second. The source details list the link's drops and backlog, and the busiest topics.
+- The status bar and the source details show which bridge MITI is connected to.
+
 ### Changed
 
 - The widget SDK moved to [MITI-widget-sdk](https://github.com/hiran-t/MITI-widget-sdk): install `@miti/sdk` from `git+https://github.com/hiran-t/MITI-widget-sdk.git#semver:^1.0.0`. The package name and widget API 1 are unchanged. [MITI-sdk](https://github.com/hiran-t/MITI-sdk) is now the robot side, where miti_bridge is being designed.

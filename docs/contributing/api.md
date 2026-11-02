@@ -625,6 +625,27 @@ export interface SubscribeOptions {
    * window closes.
    */
   throttleMs?: number;
+  /** Over miti_bridge, transform the messages on the robot (see "Transforms" below). */
+  transform?: Transform;
+}
+
+// lib/bridge/protocol.ts
+export type Transform =
+  | { kind: 'jpeg'; quality?: number; maxWidth?: number }
+  | { kind: 'reduce'; fields?: string[]; voxel?: number; stride?: number; maxPoints?: number };
+
+/** miti_bridge's reports on the link, summed over its connections. */
+export interface LinkStats {
+  bytesPerSecond: number;
+  droppedPerSecond: number;
+  bufferedBytes: number;
+  oldestQueuedMs: number;
+  topics: {
+    topic: string;
+    bytesPerSecond: number;
+    sentPerSecond: number;
+    droppedPerSecond: number;
+  }[];
 }
 
 // lib/bridge/client.ts
@@ -1133,7 +1154,25 @@ connection of their own in both modes.
   its newest frames. Where workers are unavailable, or after they fail, decoding happens on the
   main thread.
 - Subscriptions are never paused to throttle the robot. foxglove_bridge has no per-client
-  throttling, so the robot still sends every message.
+  throttling, so the robot still sends every message. miti_bridge applies the limits itself
+  (`miti.subscriptionOptions`), and the client's own `maxRate` gate is then skipped.
+
+### Transforms
+
+Over miti_bridge, `options.transform` has the bridge transform a topic's messages on the robot,
+before they cross the network. foxglove_bridge ignores it.
+
+- **Agreement.** A transform applies only when every subscriber of the topic asks for the same one,
+  since they all receive its output. Otherwise the topic stays as it is.
+- **`jpeg`** applies to `sensor_msgs/Image` topics. Subscribers then receive
+  `sensor_msgs/CompressedImage` messages, so they must handle both. The client asks for it only
+  once a raw frame shows an encoding JPEG can hold (`rgb8`, `bgr8`, `rgba8`, `bgra8`, `mono8`), so
+  depth and Bayer images stay raw. The Image panel (Compression: JPEG on robot, the default) and
+  the 3D Scene's camera images ask for `{ kind: 'jpeg' }`.
+- **`reduce`** applies to `sensor_msgs/PointCloud2` topics, whose subscribers receive smaller clouds
+  of the same type. The 3D Scene asks for `{ kind: 'reduce', maxPoints }` with its Point limit.
+- **Decoding.** The bridge announces a subscription's new format (`miti.subscriptionFormat`) before
+  its first message in it, and the client decodes with that format from then on.
 
 ### Connection
 
@@ -1159,6 +1198,20 @@ getServerTime(): number | null
 `hasCapability` checks a capability the bridge advertises, e.g. `clientPublish`, `parameters`,
 `services` or `assets`. `getServerTime` returns the robot's clock in seconds (simulation time
 when the robot runs on sim time) if the bridge sends it, else `null`.
+
+```typescript
+usesMitiProtocol(): boolean
+getBridgeName(): string | null
+getLinkStats(): LinkStats | null
+onLinkStats(callback: (stats: LinkStats | null) => void): () => void
+```
+
+`usesMitiProtocol` is true when the bridge selected `miti.bridge.v1` (miti_bridge).
+`getBridgeName` names the bridge, or returns `null` while disconnected. `getLinkStats` returns
+miti_bridge's latest report on the link (every second, from each connection): what it sends, what
+it drops, and what waits to be sent. It is `null` with foxglove_bridge, while disconnected, and
+before the first report. `onLinkStats` is called with each report and returns an unregister
+function.
 
 ### Topics
 
@@ -1199,10 +1252,19 @@ advertise(topic: string, type: string): void
 publish(topic: string, message: unknown): void
 ```
 
-`advertise` declares a topic to publish on; repeated calls are free and the advertisement
-survives reconnects. `publish` sends a JSON-encoded message on an advertised topic. It throws when
-not connected, when the topic was not advertised, when the bridge lacks the `clientPublish`
-capability, or when it does not accept JSON.
+`advertise` declares a topic to publish on. Repeated calls are free, and the advertisement
+survives reconnects.
+
+`publish` sends a message on an advertised topic. It throws when MITI is not connected, when the
+topic was not advertised, or when the bridge lacks the `clientPublish` capability.
+
+- **foxglove_bridge:** the message is JSON-encoded. `publish` also throws when the bridge does not
+  accept JSON.
+- **miti_bridge:** the message is CDR-encoded with the type's schema.
+  - The schema comes from the topic's channel, or, for a type no topic advertises, from the bridge
+    (`miti.getSchema`).
+  - The first message of such a type waits for that reply.
+  - A type the bridge does not know is reported to the error callbacks (`onError`).
 
 ### Services, parameters and assets
 

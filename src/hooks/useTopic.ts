@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import type { BridgeClient } from '@/lib/bridge/client';
+import type { Transform } from '@/lib/bridge/types';
 import { usePanelVisibleRef } from './usePanelVisible';
 
 export interface TopicOptions {
@@ -9,9 +10,11 @@ export interface TopicOptions {
   throttleRate?: number;
   /**
    * Deliver at most this many messages per second (Hz), dropping extras before they are decoded.
-   * The robot still sends every message; foxglove_bridge cannot throttle per client.
+   * miti_bridge sends only these; foxglove_bridge still sends every message.
    */
   maxRate?: number;
+  /** Over miti_bridge, transform the messages on the robot (see `SubscribeOptions.transform`). */
+  transform?: Transform;
 }
 
 export function useTopic<T = unknown>(
@@ -24,6 +27,8 @@ export function useTopic<T = unknown>(
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const throttleRate = options?.throttleRate ?? 0;
   const maxRate = options?.maxRate;
+  // Compared by value: callers may build the object on every render.
+  const transformKey = options?.transform ? JSON.stringify(options.transform) : '';
   // A hidden panel keeps only the newest message and shows it when it is visible again.
   const showHeld = useRef<() => void>();
   const visible = usePanelVisibleRef(() => showHeld.current?.());
@@ -66,13 +71,14 @@ export function useTopic<T = unknown>(
     client.subscribe(topic, callback, messageType, {
       maxRate,
       throttleMs: throttleRate || undefined,
+      transform: transformKey ? (JSON.parse(transformKey) as Transform) : undefined,
     });
 
     return () => {
       if (timer) clearTimeout(timer);
       client.unsubscribe(topic, callback);
     };
-  }, [client, topic, messageType, throttleRate, maxRate, visible]);
+  }, [client, topic, messageType, throttleRate, maxRate, transformKey, visible]);
 
   return {
     data,
