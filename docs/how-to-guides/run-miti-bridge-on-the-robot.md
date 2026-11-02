@@ -24,7 +24,7 @@ echo "deb [signed-by=/usr/share/keyrings/miti-sdk.gpg] https://hiran-t.github.io
 sudo apt update && sudo apt install ros-$ROS_DISTRO-miti-bridge
 ```
 
-The apt repository goes online with the MITI SDK's first release (v0.1.0). Until then, or on another setup, [build miti_bridge from source](https://github.com/hiran-t/MITI-sdk#build-from-source).
+On another setup, [build miti_bridge from source](https://github.com/hiran-t/MITI-sdk#build-from-source).
 
 ## Start the bridge
 
