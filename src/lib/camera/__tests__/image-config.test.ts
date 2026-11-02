@@ -13,6 +13,7 @@ test('MITI 3.0 camera props keep their topic; an unset Max FPS takes the new def
   expect(config.maxFps).toBe(15);
   expect(config.rectify).toBe(false);
   expect(config.rotation).toBe(0);
+  expect(config.compression).toBe('jpeg');
   expect(config.topics).toEqual({});
 });
 
@@ -29,6 +30,7 @@ test('saved image panels round-trip; invalid values fall back', () => {
     colorMode: 'colormap',
     colorMap: 'rainbow',
     valueMax: 4000,
+    compression: 'none',
     calibrationTopic: '',
     topics: { '/livox/lidar': { visible: true, type: 'pointcloud' } },
   });

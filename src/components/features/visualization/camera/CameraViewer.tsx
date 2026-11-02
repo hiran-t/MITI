@@ -19,6 +19,7 @@ import {
 import { colorLut, valueRange } from '@/lib/camera/image-colors';
 import {
   calibrationTopicOf,
+  JPEG_TRANSFORM,
   normalizeImageConfig,
   type ImagePanelConfig,
 } from '@/lib/camera/image-config';
@@ -126,11 +127,16 @@ export default function CameraViewer({
   const [lag, setLag] = useState<number | null>(null);
   const [meshEpoch, setMeshEpoch] = useState(0);
 
+  const compressedTopic = isCompressedTopic(selectedTopic, topics);
   const { data: imageData, lastUpdate } = useTopic<ImageMessage>(
     client,
     selectedTopic,
-    isCompressedTopic(selectedTopic, topics) ? COMPRESSED_IMAGE_TYPE : IMAGE_TYPE,
-    { throttleRate: RENDER_THROTTLE_MS, maxRate: config.maxFps || undefined }
+    compressedTopic ? COMPRESSED_IMAGE_TYPE : IMAGE_TYPE,
+    {
+      throttleRate: RENDER_THROTTLE_MS,
+      maxRate: config.maxFps || undefined,
+      transform: config.compression === 'jpeg' && !compressedTopic ? JPEG_TRANSFORM : undefined,
+    }
   );
   const fps = useReceivedFps(lastUpdate);
   // Shown next to the rate: on a slow link, frame size explains a low frame rate.

@@ -16,7 +16,7 @@ A widget published on the web, such as a file in a GitHub release, can be import
 Only `https` addresses on the public internet are downloaded, never machines on MITI's own network; for a widget kept on a local server, download the file and import it as above.
 
 :::{warning}
-A widget runs inside MITI with the same access as MITI: it reads any topic and, when foxglove_bridge allows it, publishes messages and calls services on the robot. Import widgets only from sources you trust.
+A widget runs inside MITI with the same access as MITI: it reads any topic and, when the bridge allows it, publishes messages and calls services on the robot. Import widgets only from sources you trust.
 :::
 
 ## Update a widget

@@ -127,7 +127,7 @@ export default function ConnectionSettings({
         <div className={connectionStyles.modal.content}>
           <div>
             <label htmlFor="bridge-url" className={connectionStyles.form.label}>
-              foxglove_bridge URL
+              Bridge URL
             </label>
             <input
               id="bridge-url"
@@ -138,7 +138,7 @@ export default function ConnectionSettings({
               className={connectionStyles.form.input}
             />
             <p className={connectionStyles.form.hint}>
-              WebSocket address of foxglove_bridge on the robot (default port 8765)
+              WebSocket address of miti_bridge on the robot (default port 8765)
             </p>
           </div>
 

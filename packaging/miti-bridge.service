@@ -1,9 +1,9 @@
-# foxglove_bridge beside MITI, from the ROS 2 installed in /opt/ros. Not started by default:
-#   sudo apt install ros-<distro>-foxglove-bridge
+# miti_bridge beside MITI, from the ROS 2 installed in /opt/ros. Not started by default:
+#   sudo apt install ros-<distro>-miti-bridge   (MITI-sdk's apt repository)
 #   sudo systemctl enable --now miti-bridge
 # Settings: /etc/miti/bridge.env (and BRIDGE_PORT in /etc/miti/miti.env)
 [Unit]
-Description=foxglove_bridge for MITI
+Description=miti_bridge for MITI
 Documentation=https://github.com/hiran-t/MITI/blob/main/docs/DEPLOYMENT.md
 After=network-online.target
 Wants=network-online.target
@@ -17,8 +17,8 @@ Environment=HOME=/var/lib/miti
 Environment=BRIDGE_PORT_FIXED=1
 EnvironmentFile=/etc/miti/miti.env
 EnvironmentFile=/etc/miti/bridge.env
-ExecStart=/bin/bash /usr/lib/miti/ros/foxglove-bridge.sh
-# Exit 3: a foxglove_bridge already runs on the port, so there is nothing to do.
+ExecStart=/bin/bash /usr/lib/miti/ros/miti-bridge.sh
+# Exit 3: a bridge already runs on the port, so there is nothing to do.
 SuccessExitStatus=3
 RestartPreventExitStatus=3
 Restart=on-failure

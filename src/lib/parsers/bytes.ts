@@ -1,5 +1,5 @@
 /**
- * `uint8[]` fields arrive as a Uint8Array from CDR (foxglove_bridge); base64 strings and number
+ * `uint8[]` fields arrive as a Uint8Array from CDR; base64 strings and number
  * arrays are still accepted. A plain loop is several times faster than `Uint8Array.from(atob(s),
  * mapFn)` on camera frames.
  */

@@ -2,8 +2,27 @@
 
 ## [Unreleased]
 
+### Added
+
+- MITI connects to [miti_bridge](https://github.com/hiran-t/MITI-sdk), the robot-side bridge that replaces foxglove_bridge, over its MITI protocol (`miti.bridge.v1`). MITI offers that protocol first and still connects to foxglove_bridge as before.
+- With miti_bridge:
+  - Publishing sends CDR. A message type that no topic advertises is looked up from the bridge once, before its first message is sent.
+  - The bridge applies each topic's rate limits (`maxRate` and throttle windows), so messages no panel shows do not cross the network.
+  - Camera images cross the network as JPEG. The Image panel's new Compression setting (JPEG on robot, the default, or Off) chooses it, and the 3D Scene's camera images follow. Depth images stay raw. Over a 20 Mbit/s link, a 1280×720 camera now arrives at 14 fps, and TF stays within 62 ms.
+  - Point clouds are reduced on the robot to the 3D Scene's Point limit, so points over the limit no longer cross the network.
+  - The status bar shows how much the bridge sends per second, and turns amber when messages wait on the robot for more than half a second. The source details list the link's drops and backlog, and the busiest topics.
+- The status bar and the source details show which bridge MITI is connected to.
+
 ### Changed
 
+- The bridge beside MITI is now miti_bridge, on Linux and macOS:
+  - `pixi run -e <distro> miti-bridge` and `pixi run -e <distro> bridge` build miti_bridge from the MITI SDK's source on their first run (`pixi run -e <distro> build-bridge` builds it alone). On Windows the bridge beside MITI is still foxglove_bridge, until miti_bridge supports Windows.
+  - `miti run --bridge` and the `miti-bridge` service of the apt package run `ros-<distro>-miti-bridge`, from the MITI SDK's apt repository. The package now recommends it instead of foxglove_bridge.
+  - Docker Compose's `bridge` profile runs the `miti-bridge` service, whose image builds miti_bridge.
+  - `BRIDGE_SEND_BUFFER_LIMIT` is gone: miti_bridge keeps a queue per subscription instead.
+  - A bridge already listening on the bridge port, miti_bridge or foxglove_bridge, is used as before.
+- The connection settings ask for the **Bridge URL**, and messages name the bridge without assuming foxglove_bridge.
+- The manual describes miti*bridge, on the robot and beside MITI. The guides moved to \_Run miti_bridge on the robot* and _Run miti_bridge beside MITI_; the old addresses link to them.
 - The widget SDK moved to [MITI-widget-sdk](https://github.com/hiran-t/MITI-widget-sdk): install `@miti/sdk` from `git+https://github.com/hiran-t/MITI-widget-sdk.git#semver:^1.0.0`. The package name and widget API 1 are unchanged. [MITI-sdk](https://github.com/hiran-t/MITI-sdk) is now the robot side, where miti_bridge is being designed.
 
 ## [3.4.2] - 2026-11-02

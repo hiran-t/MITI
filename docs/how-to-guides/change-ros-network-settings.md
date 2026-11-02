@@ -1,6 +1,6 @@
 # Change the ROS Network Settings
 
-On site you often don't know a robot's `ROS_DOMAIN_ID` or whether multicast works. When MITI started foxglove_bridge itself (`miti run --bridge`, or `pixi run -e <distro> miti-bridge`), you can change the bridge's ROS settings from the browser and try them right away, without a terminal.
+On site you often don't know a robot's `ROS_DOMAIN_ID` or whether multicast works. When MITI started miti_bridge itself (`miti run --bridge`, or `pixi run -e <distro> miti-bridge`), you can change the bridge's ROS settings from the browser and try them right away, without a terminal.
 
 ## Change the settings
 
@@ -16,12 +16,12 @@ On site you often don't know a robot's `ROS_DOMAIN_ID` or whether multicast work
 3. Click **Apply and restart bridge**.
 
 ```{figure} ../images/ros-network.webp
-:alt: The connection settings with the ROS network section of the bridge beside MITI: Jazzy and Fast DDS, ROS_DOMAIN_ID 0, the robot IP address 192.168.10.27, foxglove_bridge running and the Apply and restart bridge button
+:alt: The connection settings with the ROS network section of the bridge beside MITI: Jazzy and Fast DDS, ROS_DOMAIN_ID 0, the robot IP address 192.168.10.27, Bridge running and the Apply and restart bridge button
 
 The ROS network section, when MITI started the bridge.
 ```
 
-MITI restarts foxglove_bridge with the new settings and reconnects by itself. The status line shows when the bridge runs again; if it stops, the line shows its last log message, and MITI keeps running so you can try other values.
+MITI restarts the bridge with the new settings and reconnects by itself. The status line shows when the bridge runs again; if it stops, the line shows its last log message, and MITI keeps running so you can try other values.
 
 ## Where the settings are kept
 

@@ -14,7 +14,7 @@
 
 </div>
 
-MITI shows a robot's 3D scene, cameras, logs and state machines in tiled panels, in any browser on the network, with nothing to install on the computers that view it. It reads the robot's topics through [foxglove_bridge](https://github.com/foxglove/foxglove-sdk), which can run on the robot, or on the MITI machine, where it subscribes over DDS and keeps the work off the robot.
+MITI shows a robot's 3D scene, cameras, logs and state machines in tiled panels, in any browser on the network, with nothing to install on the computers that view it. It reads the robot's topics through [miti_bridge](https://github.com/hiran-t/MITI-sdk), which can run on the robot, or on the MITI machine, where it subscribes over DDS and keeps the work off the robot. The bridge sends camera images as JPEG and limits what crosses the network on the robot, so slow Wi-Fi and VPN links keep up.
 
 ![MITI connected to a robot: the topic list, a 3D scene with the robot model, lidar points and costmap, a camera image with the lidar drawn over it, and the log](https://raw.githubusercontent.com/hiran-t/MITI/docs-images/images/overview.webp)
 
@@ -36,7 +36,9 @@ With Docker:
 docker run -d --restart unless-stopped -p 3000:3000 --name miti ghcr.io/hiran-t/miti:latest
 ```
 
-On macOS and Windows, or to run foxglove_bridge beside MITI, see the [How-To Guides](https://miti.readthedocs.io/en/latest/how-to-guides/index.html).
+Then [install miti_bridge on the robot](https://github.com/hiran-t/MITI-sdk#install-miti_bridge), start it with `ros2 launch miti_bridge miti_start`, and enter `ws://<robot-ip>:8765` in MITI's connection settings (the gear in the status bar); see [Connect to a robot](https://miti.readthedocs.io/en/latest/tutorials/connect-to-a-robot.html).
+
+On macOS and Windows, or to run miti_bridge beside MITI, see the [How-To Guides](https://miti.readthedocs.io/en/latest/how-to-guides/index.html).
 
 ## Documentation
 
@@ -48,4 +50,4 @@ Questions, ideas and setups using MITI are welcome in [Discussions](https://gith
 
 ## License
 
-[MIT](LICENSE). MITI builds on [ROS 2](https://docs.ros.org/), [foxglove_bridge](https://github.com/foxglove/foxglove-sdk), [three.js](https://threejs.org/), [React Three Fiber](https://docs.pmnd.rs/react-three-fiber/), [Next.js](https://nextjs.org/), [Tailwind CSS](https://tailwindcss.com/), [react-mosaic](https://github.com/nomcopter/react-mosaic) and [urdf-loader](https://github.com/gkjohnson/urdf-loaders).
+[MIT](LICENSE). MITI builds on [ROS 2](https://docs.ros.org/), [miti_bridge](https://github.com/hiran-t/MITI-sdk), Foxglove's [ROS message libraries](https://github.com/foxglove/rosmsg), [three.js](https://threejs.org/), [React Three Fiber](https://docs.pmnd.rs/react-three-fiber/), [Next.js](https://nextjs.org/), [Tailwind CSS](https://tailwindcss.com/), [react-mosaic](https://github.com/nomcopter/react-mosaic) and [urdf-loader](https://github.com/gkjohnson/urdf-loaders).

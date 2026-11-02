@@ -1,5 +1,5 @@
 import { parse } from '@foxglove/rosmsg';
-import { MessageWriter } from '@foxglove/rosmsg2-serialization';
+import { MessageReader, MessageWriter } from '@foxglove/rosmsg2-serialization';
 import { BridgeClient } from '../client';
 import { createDecodeHandler, type DecodeReply, type DecodeRequest } from '../decode-core';
 
@@ -7,6 +7,8 @@ import { createDecodeHandler, type DecodeReply, type DecodeRequest } from '../de
 class Socket {
   static instances: Socket[] = [];
   binaryType = '';
+  /** The subprotocol the server selected. */
+  protocol = '';
   onopen: (() => void) | null = null;
   onmessage: ((event: { data: unknown }) => void) | null = null;
   onclose: ((event: unknown) => void) | null = null;
@@ -80,12 +82,14 @@ const serverInfo = (capabilities: string[]) => ({
  */
 async function connect(
   capabilities: string[] = [],
-  streamMode: 'synchronized' | 'separate' = 'separate'
+  streamMode: 'synchronized' | 'separate' = 'separate',
+  protocol = 'foxglove.sdk.v1'
 ) {
   Socket.instances = [];
   const client = new BridgeClient('ws://robot:8765', { streamMode });
   const connected = client.connect();
   const [control] = Socket.instances;
+  control.protocol = protocol;
   control.json(serverInfo(capabilities));
   await connected;
   const advertise = (channels: object[]) => control.json({ op: 'advertise', channels });
@@ -116,10 +120,10 @@ afterAll(() => {
   global.WebSocket = original;
 });
 
-test('connects with the Foxglove SDK subprotocol, opening one connection up front', async () => {
+test('offers miti.bridge.v1, then the Foxglove subprotocols, opening one connection up front', async () => {
   const { client, control } = await connect(['assets']);
   expect(Socket.instances).toHaveLength(1);
-  expect(control.protocols).toEqual(['foxglove.sdk.v1', 'foxglove.websocket.v1']);
+  expect(control.protocols).toEqual(['miti.bridge.v1', 'foxglove.sdk.v1', 'foxglove.websocket.v1']);
   expect(client.isConnected()).toBe(true);
   expect(client.hasCapability('assets')).toBe(true);
   client.disconnect();
@@ -268,6 +272,8 @@ test('a rate cap drops messages that come too soon, without ever unsubscribing',
     send(3, 400); // 500 ms after seq 1
     send(4, 600); // a slow link: delivered as soon as it arrives
     expect(onImage.mock.calls.map(([m]) => m.seq)).toEqual([1, 3, 4]);
+    // foxglove_bridge does not take the miti.* operations.
+    expect(lane.ops('miti.subscriptionOptions')).toHaveLength(0);
     expect(lane.ops('unsubscribe')).toHaveLength(0);
     expect(lane.ops('subscribe')).toHaveLength(1);
     // A subscriber without a cap receives everything.
@@ -279,6 +285,266 @@ test('a rate cap drops messages that come too soon, without ever unsubscribing',
     jest.useRealTimers();
     client.disconnect();
   }
+});
+
+test('over miti.bridge.v1 the bridge applies rate limits, and the client does not drop again', async () => {
+  const { client, control, advertise } = await connect([], 'synchronized', 'miti.bridge.v1');
+  advertise([jsonChannel(3, '/chatter', 'std_msgs/msg/String')]);
+  const capped = jest.fn();
+  client.subscribe('/chatter', capped, undefined, { maxRate: 5 });
+  const id = control.lastSubscriptionId();
+  const options = () => control.ops('miti.subscriptionOptions');
+  expect(options()).toEqual([{ op: 'miti.subscriptionOptions', subscriptionId: id, maxRate: 5 }]);
+
+  // The bridge spaces the messages; two close together both reach the subscriber.
+  control.binary(jsonFrame(id, { seq: 1 }));
+  control.binary(jsonFrame(id, { seq: 2 }));
+  expect(capped).toHaveBeenCalledTimes(2);
+
+  // The highest subscriber limit applies; one that wants everything lifts it, until it leaves.
+  const throttled = jest.fn();
+  client.subscribe('/chatter', throttled, undefined, { throttleMs: 100 });
+  expect(options()[1]).toMatchObject({ maxRate: 10 });
+  const everything = jest.fn();
+  client.subscribe('/chatter', everything);
+  expect(options()[2]).toMatchObject({ maxRate: null });
+  client.unsubscribe('/chatter', everything);
+  expect(options()[3]).toMatchObject({ maxRate: 10 });
+  expect(options()).toHaveLength(4);
+  client.disconnect();
+});
+
+// The client does not read these schemas' meaning, only decodes with them.
+const IMAGE_SCHEMA = 'uint32 width\nstring encoding\nuint8[] data';
+const COMPRESSED_SCHEMA = 'string format\nuint8[] data';
+const cdrChannel = (id: number, topic: string, schemaName: string, schema: string) => ({
+  id,
+  topic,
+  encoding: 'cdr',
+  schemaName,
+  schemaEncoding: 'ros2msg',
+  schema,
+});
+const format = (subscriptionId: number, schemaName: string, schema: string) => ({
+  op: 'miti.subscriptionFormat',
+  subscriptionId,
+  encoding: 'cdr',
+  schemaName,
+  schemaEncoding: 'ros2msg',
+  schema,
+});
+
+test('over miti.bridge.v1 a color image topic is sent as JPEG when every subscriber asks', async () => {
+  const { client, control, advertise } = await connect(
+    ['miti.transforms'],
+    'synchronized',
+    'miti.bridge.v1'
+  );
+  advertise([cdrChannel(4, '/camera/image_raw', 'sensor_msgs/msg/Image', IMAGE_SCHEMA)]);
+  const view = jest.fn();
+  client.subscribe('/camera/image_raw', view, undefined, { transform: { kind: 'jpeg' } });
+  const id = control.lastSubscriptionId();
+  const options = () => control.ops('miti.subscriptionOptions');
+  // Not before a frame shows an encoding JPEG can hold.
+  expect(options()).toHaveLength(0);
+  const raw = cdr(IMAGE_SCHEMA, { width: 2, encoding: 'rgb8', data: new Uint8Array(6) });
+  control.binary(messageFrame(id, raw));
+  expect(view).toHaveBeenLastCalledWith(expect.objectContaining({ encoding: 'rgb8' }));
+  expect(options()).toEqual([
+    { op: 'miti.subscriptionOptions', subscriptionId: id, transform: { kind: 'jpeg' } },
+  ]);
+
+  // Messages after the format message are decoded with it.
+  control.json(format(id, 'sensor_msgs/msg/CompressedImage', COMPRESSED_SCHEMA));
+  const jpeg = cdr(COMPRESSED_SCHEMA, { format: 'jpeg', data: new Uint8Array([0xff, 0xd8]) });
+  control.binary(messageFrame(id, jpeg));
+  expect(view).toHaveBeenLastCalledWith(expect.objectContaining({ format: 'jpeg' }));
+
+  // A subscriber that wants raw images takes the transform off for everyone, until it leaves.
+  const rawView = jest.fn();
+  client.subscribe('/camera/image_raw', rawView);
+  expect(options()[1]).toEqual({
+    op: 'miti.subscriptionOptions',
+    subscriptionId: id,
+    transform: null,
+  });
+  control.json(format(id, 'sensor_msgs/msg/Image', IMAGE_SCHEMA));
+  control.binary(messageFrame(id, raw));
+  expect(rawView).toHaveBeenLastCalledWith(expect.objectContaining({ encoding: 'rgb8' }));
+  client.unsubscribe('/camera/image_raw', rawView);
+  expect(options()[2]).toMatchObject({ transform: { kind: 'jpeg' } });
+  expect(options()).toHaveLength(3);
+  client.disconnect();
+});
+
+test('depth images, other message types and foxglove_bridge are never sent a transform', async () => {
+  const { client, control, advertise } = await connect(
+    ['miti.transforms'],
+    'synchronized',
+    'miti.bridge.v1'
+  );
+  advertise([
+    cdrChannel(4, '/camera/depth', 'sensor_msgs/msg/Image', IMAGE_SCHEMA),
+    jsonChannel(5, '/chatter', 'std_msgs/msg/String'),
+  ]);
+  const jpeg = { transform: { kind: 'jpeg' } as const };
+  client.subscribe('/camera/depth', jest.fn(), undefined, jpeg);
+  const depth = control.lastSubscriptionId();
+  control.binary(
+    messageFrame(depth, cdr(IMAGE_SCHEMA, { width: 2, encoding: '16UC1', data: new Uint8Array(4) }))
+  );
+  client.subscribe('/chatter', jest.fn(), undefined, jpeg);
+  control.binary(jsonFrame(control.lastSubscriptionId(), { data: 'hi', encoding: 'rgb8' }));
+  expect(control.ops('miti.subscriptionOptions')).toHaveLength(0);
+  client.disconnect();
+
+  const foxglove = await connect(['miti.transforms'], 'synchronized');
+  foxglove.advertise([cdrChannel(4, '/camera/image_raw', 'sensor_msgs/msg/Image', IMAGE_SCHEMA)]);
+  const view = jest.fn();
+  foxglove.client.subscribe('/camera/image_raw', view, undefined, jpeg);
+  foxglove.control.binary(
+    messageFrame(
+      foxglove.control.lastSubscriptionId(),
+      cdr(IMAGE_SCHEMA, { width: 2, encoding: 'rgb8', data: new Uint8Array(6) })
+    )
+  );
+  expect(view).toHaveBeenCalledTimes(1);
+  expect(foxglove.control.ops('miti.subscriptionOptions')).toHaveLength(0);
+  foxglove.client.disconnect();
+});
+
+test('point clouds are reduced on the robot when every subscriber asks for the same', async () => {
+  const { client, control, advertise } = await connect(
+    ['miti.transforms'],
+    'synchronized',
+    'miti.bridge.v1'
+  );
+  advertise([jsonChannel(6, '/points', 'sensor_msgs/msg/PointCloud2')]);
+  const reduce = (maxPoints: number) => ({ transform: { kind: 'reduce', maxPoints } as const });
+  const first = jest.fn();
+  client.subscribe('/points', first, undefined, reduce(1000));
+  const options = () => control.ops('miti.subscriptionOptions');
+  expect(options()).toEqual([
+    {
+      op: 'miti.subscriptionOptions',
+      subscriptionId: control.lastSubscriptionId(),
+      transform: { kind: 'reduce', maxPoints: 1000 },
+    },
+  ]);
+  // The same transform again changes nothing; another one leaves the cloud as it is.
+  client.subscribe('/points', jest.fn(), undefined, reduce(1000));
+  expect(options()).toHaveLength(1);
+  client.subscribe('/points', jest.fn(), undefined, reduce(500));
+  expect(options()[1]).toMatchObject({ transform: null });
+  client.disconnect();
+});
+
+test('over miti.bridge.v1 the link stats sum what each connection reports', async () => {
+  const { client, control, advertise } = await connect(
+    ['miti.stats'],
+    'synchronized',
+    'miti.bridge.v1'
+  );
+  expect(control.ops('miti.subscribeStats')).toEqual([
+    { op: 'miti.subscribeStats', intervalMs: 1000 },
+  ]);
+  advertise([jsonChannel(3, '/chatter', 'std_msgs/msg/String')]);
+  client.subscribe('/chatter', jest.fn());
+  const id = control.lastSubscriptionId();
+  const seen = jest.fn();
+  client.onLinkStats(seen);
+  expect(client.getLinkStats()).toBeNull();
+  control.json({
+    op: 'miti.stats',
+    timestamp: 1730530000000,
+    bufferedBytes: 2048,
+    subscriptions: [
+      { subscriptionId: id, bytesPerSecond: 5000, sent: 10, dropped: 2, oldestQueuedMs: 30 },
+      { subscriptionId: 99, bytesPerSecond: 100, sent: 1, dropped: 0, oldestQueuedMs: 0 },
+    ],
+  });
+  expect(client.getLinkStats()).toEqual({
+    bytesPerSecond: 5100,
+    droppedPerSecond: 2,
+    bufferedBytes: 2048,
+    oldestQueuedMs: 30,
+    topics: [{ topic: '/chatter', bytesPerSecond: 5000, sentPerSecond: 10, droppedPerSecond: 2 }],
+  });
+  expect(seen).toHaveBeenCalledTimes(1);
+  control.close();
+  expect(client.getLinkStats()).toBeNull();
+  expect(seen).toHaveBeenLastCalledWith(null);
+  client.disconnect();
+
+  const foxglove = await connect(['miti.stats']);
+  expect(foxglove.control.ops('miti.subscribeStats')).toHaveLength(0);
+  foxglove.client.disconnect();
+});
+
+test('over miti.bridge.v1 publishing sends CDR, asking for an unknown schema once', async () => {
+  const { client, control, advertise } = await connect(
+    ['clientPublish', 'miti.schemas'],
+    'synchronized',
+    'miti.bridge.v1'
+  );
+  const errors = jest.fn();
+  client.onError(errors);
+  client.advertise('/flag', 'std_msgs/Bool');
+  client.publish('/flag', { data: true });
+  client.publish('/flag', { data: false });
+  const binaryFrames = () => control.sent.filter((m) => m instanceof Uint8Array) as Uint8Array[];
+  // Both wait for the schema, asked for once.
+  const asked = control.ops('miti.getSchema');
+  expect(asked).toEqual([{ op: 'miti.getSchema', type: 'std_msgs/msg/Bool', id: asked[0]?.id }]);
+  expect(binaryFrames()).toHaveLength(0);
+
+  control.json({
+    op: 'miti.schema',
+    id: asked[0].id,
+    type: 'std_msgs/msg/Bool',
+    schemaName: 'std_msgs/msg/Bool',
+    schemaEncoding: 'ros2msg',
+    schema: 'bool data',
+  });
+  expect(control.ops('advertise')).toEqual([
+    {
+      op: 'advertise',
+      channels: [{ id: 1, topic: '/flag', encoding: 'cdr', schemaName: 'std_msgs/msg/Bool' }],
+    },
+  ]);
+  const reader = new MessageReader(parse('bool data', { ros2: true }));
+  expect(binaryFrames().map((frame) => reader.readMessage(frame.subarray(5)))).toEqual([
+    { data: true },
+    { data: false },
+  ]);
+
+  // A topic the bridge advertises brings its schema: nothing to ask for.
+  advertise([
+    {
+      id: 9,
+      topic: '/chatter',
+      encoding: 'cdr',
+      schemaName: 'std_msgs/msg/String',
+      schema: STRING_SCHEMA,
+    },
+  ]);
+  client.advertise('/chatter', 'std_msgs/msg/String');
+  client.publish('/chatter', { data: 'hi' });
+  expect(control.ops('miti.getSchema')).toHaveLength(1);
+  expect(binaryFrames()).toHaveLength(3);
+
+  // A type the bridge does not know reaches the error callbacks.
+  client.advertise('/odd', 'odd_msgs/Thing');
+  client.publish('/odd', {});
+  const odd = control.ops('miti.getSchema')[1];
+  control.json({
+    op: 'miti.schema',
+    id: odd.id,
+    type: 'odd_msgs/msg/Thing',
+    error: 'Unknown type',
+  });
+  expect(errors).toHaveBeenCalledWith(new Error('Cannot publish odd_msgs/msg/Thing: Unknown type'));
+  client.disconnect();
 });
 
 test('a restarted publisher is rebound and a topic of another type is not subscribed', async () => {

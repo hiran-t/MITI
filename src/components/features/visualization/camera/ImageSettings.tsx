@@ -28,6 +28,10 @@ import { TopicsSection, TransformsSection, type TopicRow } from '../scene/SceneS
 const IMAGE_TYPES = ['sensor_msgs/msg/Image', 'sensor_msgs/msg/CompressedImage'];
 const CAMERA_INFO = 'sensor_msgs/CameraInfo';
 const MAX_FPS_CHOICES = [1, 2, 5, 10, 15, 30, 0];
+const COMPRESSION_CHOICES: { value: ImagePanelConfig['compression']; label: string }[] = [
+  { value: 'jpeg', label: 'JPEG on robot' },
+  { value: 'none', label: 'Off' },
+];
 const AUTO = '__auto__';
 const COLOR_MODES: { value: ImageColorMode; label: string }[] = [
   { value: 'gradient', label: 'Gradient' },
@@ -193,9 +197,16 @@ export default function ImageSettings({
           }))}
           onChange={(maxFps) => set({ maxFps: Number(maxFps) })}
         />
+        <SelectField
+          label="Compression"
+          value={config.compression}
+          options={COMPRESSION_CHOICES}
+          onChange={(compression) => set({ compression })}
+        />
         <p className="px-4 py-2 text-xs text-gray-400">
           Color mode applies to depth and mono images. Max FPS limits how often this panel decodes
-          and draws frames; the robot still sends every frame.
+          and draws frames; miti_bridge sends only those, foxglove_bridge every frame. Compression
+          has miti_bridge send raw color images as JPEG; depth images and foxglove_bridge stay raw.
         </p>
       </TreeSection>
 

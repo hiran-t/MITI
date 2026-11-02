@@ -24,6 +24,7 @@ import ConnectionStatus from '../connection/ConnectionStatus';
 import AddWidgetButton from '../layout/AddWidgetButton';
 import LayoutFileActions from '../layout/LayoutFileActions';
 import ConnectionSettings from '../connection/ConnectionSettings';
+import { LinkStatsRows, LinkStatusItem } from '../connection/LinkStats';
 import { SettingsSearchContext } from '../layout/WidgetSettingsPortal';
 import ActivityBar, { sidebarViewLabel } from './ActivityBar';
 import type { SidebarTab } from './ActivityBar';
@@ -40,7 +41,7 @@ const SIDEBAR_DEFAULT_WIDTH = 380;
 const STORAGE_KEY_BRIDGE_URL = 'miti_bridge_url';
 const STORAGE_KEY_STREAM_MODE = 'miti_stream_mode';
 
-/** Carry a saved rosbridge address over to foxglove_bridge's default port on the same host. */
+/** Carry a saved rosbridge address over to the bridge's default port on the same host. */
 function initialBridgeUrl(): string {
   try {
     const legacy = JSON.parse(localStorage.getItem('miti_rosbridge_url') ?? 'null');
@@ -59,6 +60,12 @@ export default function Dashboard() {
     'synchronized'
   );
   const { client, connected, error } = useBridge(bridgeUrl, streamMode);
+  const bridgeName = connected ? client?.getBridgeName() : null;
+  const protocolName = !connected
+    ? 'WebSocket'
+    : client?.usesMitiProtocol()
+      ? 'MITI protocol (miti.bridge.v1)'
+      : 'Foxglove WebSocket protocol';
   // The client object is created before it connects; gating it makes the list load on (re)connect.
   const { topics, loading, refreshTopics } = useTopicList(connected ? client : null);
   const {
@@ -222,8 +229,9 @@ export default function Dashboard() {
           <div role="status" className="connection-notice">
             <Radio size={14} />
             <span>
-              No foxglove_bridge at <code>{bridgeUrl}</code>. Start it on the robot and enter the
-              robot&apos;s address with the gear in the status bar, or run{' '}
+              No bridge at <code>{bridgeUrl}</code>. Start miti_bridge on the robot (
+              <code>ros2 launch miti_bridge miti_start</code>) and enter the robot&apos;s address
+              with the gear in the status bar, or run{' '}
               {window.__MITI__?.bridgeHint ? (
                 <code>{window.__MITI__.bridgeHint}</code>
               ) : (
@@ -362,7 +370,7 @@ export default function Dashboard() {
                   </summary>
                   <p>{error.message}</p>
                   <p>
-                    Check that foxglove_bridge at <code>{bridgeUrl}</code> is reachable.
+                    Check that the bridge at <code>{bridgeUrl}</code> is reachable.
                   </p>
                 </details>
               )}
@@ -401,11 +409,12 @@ export default function Dashboard() {
                 </summary>
                 <dl>
                   <dt>Protocol</dt>
-                  <dd>foxglove_bridge (WebSocket)</dd>
+                  <dd>{protocolName}</dd>
                   <dt>Status</dt>
                   <dd>{connected ? 'Connected' : 'Disconnected'}</dd>
                   <dt>Topics</dt>
                   <dd>{connected ? topics.length : 'Unavailable'}</dd>
+                  <LinkStatsRows client={connected ? client : null} />
                 </dl>
                 <div className="source-settings">
                   <span>Connection settings</span>
@@ -482,7 +491,10 @@ export default function Dashboard() {
             streamMode={streamMode}
             onStreamModeChange={setStreamMode}
           />
-          <span className="status-item is-optional">ROS 2 · foxglove_bridge</span>
+          <span className="status-item is-optional">
+            ROS 2{bridgeName ? ` · ${bridgeName}` : ''}
+          </span>
+          <LinkStatusItem client={connected ? client : null} />
           <span className={`status-item ${problemCount ? 'has-error' : ''}`} title="Problems">
             <XCircle size={14} aria-hidden="true" />
             {problemCount}

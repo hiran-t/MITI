@@ -7,7 +7,7 @@ Find the symptom below. Each entry says what to check and links to the guide tha
 When something goes wrong, the **Problems** icon in the activity bar shows a count. Open it to see what failed and what to check.
 
 ```{figure} ../images/problems.webp
-:alt: The Problems view showing Connection failed, WebSocket error, with a hint to check that foxglove_bridge is reachable
+:alt: The Problems view showing Connection failed, WebSocket error, with a hint to check that the bridge is reachable
 
 A connection problem.
 ```
@@ -19,7 +19,7 @@ A connection problem.
 **Connection failed / WebSocket error**, red status bar
 : - Check the address in the status bar. MITI starts with the bridge on the host it was opened from; for a bridge on the robot, enter `ws://<robot-ip>:8765` in the connection settings.
 
-- Check that foxglove_bridge runs: on the robot, `ros2 launch foxglove_bridge foxglove_bridge_launch.xml`; beside MITI, `miti run --bridge`.
+- Check that miti_bridge runs: on the robot, `ros2 launch miti_bridge miti_start`; beside MITI, `miti run --bridge`.
 - Check that the computer can reach the robot on port 8765, and that no firewall blocks it (`sudo ufw allow 8765/tcp`).
 
 The page does not open from another computer
@@ -67,12 +67,14 @@ A layer is drawn in the wrong place over the camera
 
 ## MITI is slow or images lag
 
-Raw camera images are large: a 1280 × 720 image is 2.8 MB, and a few cameras can fill a Wi-Fi or VPN link. Then cameras drop to a few frames per second and other topics arrive late.
+Raw camera images are large: a 1280 × 720 image is 2.8 MB, and a few cameras can fill a Wi-Fi or VPN link. Then cameras drop to a few frames per second and other topics arrive late. The status bar shows how much the bridge sends per second, and turns amber when messages wait on the robot; **Sources** lists the topics that use the most.
 
-- Use compressed image topics (`.../compressed`) where the robot offers them.
+- Check that MITI is connected to miti_bridge (the status bar shows **ROS 2 · miti_bridge**). foxglove_bridge cannot compress images or limit rates on the robot.
+- Keep the Image panel's **Compression** at **JPEG on robot**, so color images cross the link as JPEG. Use compressed image topics (`.../compressed`) for depth cameras that offer them.
+- Lower **Max FPS** on camera panels and **Max rate** or **Point limit** on 3D Scene layers: miti_bridge then sends less.
 - Close or hide camera panels you are not watching; MITI only receives topics that a panel shows.
 - In the connection settings, choose **Prioritize robot motion** so the robot model and TF stay real-time while cameras lag.
-- Run foxglove_bridge beside MITI, so the robot does not encode and send every stream itself.
+- Run miti_bridge beside MITI, so the robot does not compress and send every stream itself.
 
 ## Installing and running MITI
 

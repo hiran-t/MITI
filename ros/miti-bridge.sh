@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
-# Runs foxglove_bridge on this machine. It joins the robot's ROS 2 network over DDS and serves
-# MITI over WebSocket, so the robot only publishes as usual and the bridge's work (subscribing,
-# encoding, WebSocket traffic to every browser) happens here instead of on the robot.
+# Runs miti_bridge (https://github.com/hiran-t/MITI-sdk) on this machine. It joins the robot's
+# ROS 2 network over DDS and serves MITI over WebSocket, so the robot only publishes as usual and
+# the bridge's work (subscribing, encoding, WebSocket traffic to every browser) happens here
+# instead of on the robot.
 #
-# Used by `pixi run bridge` / `pixi run miti-bridge` and by the foxglove-bridge Docker image.
+# Used by `pixi run bridge` / `pixi run miti-bridge`, `miti run --bridge` (apt package) and the
+# miti-bridge Docker image. miti_bridge comes from apt (ros-<distro>-miti-bridge) or from
+# ros/build-miti-bridge.sh, which pixi and the Docker image run.
 # Settings (environment variables, all optional):
 #   ROS_DOMAIN_ID            must match the robot (default 0)
 #   RMW_IMPLEMENTATION       rmw_fastrtps_cpp (ROS 2 default) or rmw_cyclonedds_cpp
@@ -11,9 +14,8 @@
 #   ROS_STATIC_PEERS         the robot's IP addresses (a;b), to find it where multicast is dropped
 #   BRIDGE_PORT              WebSocket port (default 8765)
 #   BRIDGE_ADDRESS           address to listen on (default 0.0.0.0)
-#   BRIDGE_TOPIC_WHITELIST   regexes of topics to offer, e.g. "['/tf.*','/camera/.*/compressed']"
-#   BRIDGE_SEND_BUFFER_LIMIT bytes queued per client before messages are dropped (default 10 MB)
-#   BRIDGE_MAX_QOS_DEPTH     subscription queue depth (default 10)
+#   BRIDGE_TOPIC_WHITELIST   regexes of topics to offer, e.g. "['/tf.*','/joint_states','/camera/.*']"
+#   BRIDGE_MAX_QOS_DEPTH     the deepest queue a ROS subscription keeps (default 10)
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -27,6 +29,13 @@ if ! command -v ros2 >/dev/null 2>&1; then
   [ -f "$setup" ] || { echo "ros2 not found: run through pixi (pixi run bridge) or source ROS 2" >&2; exit 1; }
   # shellcheck disable=SC1090
   source "$setup"
+fi
+
+# miti_bridge built from source by ros/build-miti-bridge.sh (pixi, the Docker image).
+built="$here/miti-sdk/install/${ROS_DISTRO:-}/setup.bash"
+if [ -n "${ROS_DISTRO:-}" ] && [ -f "$built" ]; then
+  # shellcheck disable=SC1090
+  source "$built"
 fi
 
 # The robot's own message packages, built by ros/build-msgs.sh.
@@ -47,17 +56,18 @@ fi
 port="${BRIDGE_PORT:-8765}"
 
 in_use() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
-# A foxglove_bridge answers the WebSocket handshake with its own subprotocol.
+# A bridge answers the WebSocket handshake with its subprotocol: miti_bridge with miti.bridge.v1,
+# a foxglove_bridge with foxglove.*. MITI connects to either.
 is_bridge() {
   local reply
   reply="$( (exec 3<>"/dev/tcp/127.0.0.1/$1" || exit 1
-    printf 'GET / HTTP/1.1\r\nHost: localhost\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Protocol: foxglove.sdk.v1, foxglove.websocket.v1\r\n\r\n' >&3
+    printf 'GET / HTTP/1.1\r\nHost: localhost\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Protocol: miti.bridge.v1, foxglove.sdk.v1, foxglove.websocket.v1\r\n\r\n' >&3
     while IFS= read -r -t 2 line <&3; do
       line="${line%$'\r'}"
       [ -z "$line" ] && break
       echo "$line"
     done) 2>/dev/null || true)"
-  [[ "$reply" == "HTTP/1.1 101"* ]] && grep -qi '^sec-websocket-protocol: *foxglove' <<<"$reply"
+  [[ "$reply" == "HTTP/1.1 101"* ]] && grep -qiE '^sec-websocket-protocol: *(miti|foxglove)' <<<"$reply"
 }
 owner_of() {
   local pid
@@ -69,7 +79,7 @@ owner_of() {
 # the port: move to the next free one.
 if in_use "$port"; then
   if is_bridge "$port"; then
-    echo "foxglove_bridge already runs on port $port; use that one." >&2
+    echo "A bridge already runs on port $port; use that one." >&2
     exit 3
   fi
   taken="$port"
@@ -88,7 +98,7 @@ if in_use "$port"; then
     echo "Port $taken is used by ${owner:-another program}, and no port up to $((taken + 20)) is free." >&2
     exit 1
   fi
-  echo "Port $taken is used by ${owner:-another program}; foxglove_bridge uses $port instead." \
+  echo "Port $taken is used by ${owner:-another program}; miti_bridge uses $port instead." \
     "pixi run miti finds it; otherwise enter ws://<this machine>:$port in MITI's connection settings." >&2
 fi
 
@@ -131,29 +141,34 @@ fi
 ROS_STATIC_PEERS="$(IFS=';'; echo "${peers[*]:-}")"
 export ROS_STATIC_PEERS
 
-echo "foxglove_bridge: ws://${BRIDGE_ADDRESS:-0.0.0.0}:$port," \
+echo "miti_bridge: ws://${BRIDGE_ADDRESS:-0.0.0.0}:$port," \
   "ROS_DOMAIN_ID=$ROS_DOMAIN_ID, $RMW_IMPLEMENTATION${peers[0]:+, robot ${peers[*]}}"
 
 settings=(
   port:="$port"
   address:="${BRIDGE_ADDRESS:-0.0.0.0}"
   topic_whitelist:="${BRIDGE_TOPIC_WHITELIST:-['.*']}"
-  send_buffer_limit:="${BRIDGE_SEND_BUFFER_LIMIT:-10000000}"
   max_qos_depth:="${BRIDGE_MAX_QOS_DEPTH:-10}"
 )
-if command -v ros2 >/dev/null 2>&1; then
-  exec ros2 launch foxglove_bridge foxglove_bridge_launch.xml "${settings[@]}"
-fi
-
-# ros-<distro>-foxglove-bridge on its own does not bring the ros2 command: start the node directly.
-params=()
-for setting in "${settings[@]}"; do params+=(-p "$setting"); done
+# The node itself, wherever ROS finds packages: /opt/ros, or the build above.
+node=""
 prefixes="${AMENT_PREFIX_PATH:-}"
 for prefix in ${prefixes//:/ }; do
-  node="$prefix/lib/foxglove_bridge/foxglove_bridge"
-  if [ -x "$node" ]; then
-    exec "$node" --ros-args "${params[@]}"
+  if [ -x "$prefix/lib/miti_bridge/miti_bridge" ]; then
+    node="$prefix/lib/miti_bridge/miti_bridge"
+    break
   fi
 done
-echo "foxglove_bridge not found: sudo apt install ros-${ROS_DISTRO:-humble}-foxglove-bridge" >&2
-exit 1
+if [ -z "$node" ]; then
+  echo "miti_bridge not found. Install it: sudo apt install ros-${ROS_DISTRO:-humble}-miti-bridge" \
+    "(from MITI-sdk's apt repository, https://github.com/hiran-t/MITI-sdk#install-miti_bridge)," \
+    "or build it: bash ros/build-miti-bridge.sh" >&2
+  exit 1
+fi
+if command -v ros2 >/dev/null 2>&1; then
+  exec ros2 launch miti_bridge miti_start "${settings[@]}"
+fi
+# Without the ros2 command, start the node directly.
+params=()
+for setting in "${settings[@]}"; do params+=(-p "$setting"); done
+exec "$node" --ros-args "${params[@]}"

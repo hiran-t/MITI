@@ -1,8 +1,10 @@
 # MITI without a system Node.js or ROS install:
 #   pixi run miti                  MITI web server on port 3000
-#   pixi run -e jazzy miti-bridge  MITI plus foxglove_bridge on this machine, joined to the robot
+#   pixi run -e jazzy miti-bridge  MITI plus miti_bridge on this machine, joined to the robot
 #                                  over DDS (use -e humble for a Humble robot)
-#   pixi run -e jazzy bridge       foxglove_bridge only
+#   pixi run -e jazzy bridge       miti_bridge only
+#   pixi run -e jazzy build-bridge build miti_bridge from MITI-sdk's source (the two above do it
+#                                  first, once)
 #   pixi run remove                delete everything generated (pixi run miti restores it)
 # See docs/DEPLOYMENT.md.
 
@@ -19,14 +21,15 @@ install = { cmd = "npm ci --no-audit --no-fund", inputs = ["package.json", "pack
 build = { cmd = "npm run build", env = { NEXT_TELEMETRY_DISABLED = "1" }, depends-on = ["install"], inputs = ["src/**", "public/**", "package.json", "next.config.js", "tailwind.config.ts", "postcss.config.js", "tsconfig.json", "eslint.config.mjs"], outputs = [".next/BUILD_ID"] }
 miti = { cmd = "node scripts/start-miti.mjs --port {{ port }}", args = [{ arg = "port", default = "3000" }], depends-on = ["build"], description = "Build if needed and serve MITI (port 3000, or the next free one)" }
 dev = { cmd = "npm run dev", depends-on = ["install"], description = "Development server with hot reload" }
-# Deletes everything generated (builds, npm packages, the robot message build, pixi environments);
-# `pixi run miti` brings it back. Source, .env and ros/overlay/src stay. pixi's task shell runs
-# `rm` itself, so this works on Windows too.
-remove = { cmd = "rm -rf .next node_modules coverage .miti ros/overlay/build ros/overlay/install ros/overlay/log && pixi clean", description = "Delete builds, npm packages, saved ROS settings and pixi environments" }
+# Deletes everything generated (builds, npm packages, the robot message build, the miti_bridge
+# build, pixi environments); `pixi run miti` brings it back. Source, .env and ros/overlay/src
+# stay. pixi's task shell runs `rm` itself, so this works on Windows too.
+remove = { cmd = "rm -rf .next node_modules coverage .miti ros/overlay/build ros/overlay/install ros/overlay/log ros/miti-sdk && pixi clean", description = "Delete builds, npm packages, saved ROS settings, the miti_bridge build and pixi environments" }
 
-# foxglove_bridge from RoboStack. It subscribes to the robot's topics over DDS, so the robot only
-# publishes as usual and the bridge's work happens on this machine. Pick the robot's ROS distro:
-# Humble and Jazzy nodes do not discover each other reliably.
+# miti_bridge, built from MITI-sdk's source on ROS 2 from RoboStack. It subscribes to the robot's
+# topics over DDS, so the robot only publishes as usual and the bridge's work happens on this
+# machine. Pick the robot's ROS distro: Humble and Jazzy nodes do not discover each other
+# reliably. miti_bridge does not support Windows yet; there the bridge is foxglove_bridge.
 [feature.bridge.system-requirements]
 macos = "14.0"
 
@@ -38,15 +41,25 @@ cmake = "<4"
 cxx-compiler = "*"
 ninja = "*"
 
+# What building miti_bridge needs, beside the compiler and colcon above.
+[feature.bridge.target.unix.dependencies]
+libboost-devel = "*"
+nlohmann_json = "*"
+libjpeg-turbo = "*"
+pkg-config = "*"
+
 [feature.bridge.tasks]
 build-msgs = { cmd = "bash ros/build-msgs.sh", description = "Build message packages in ros/overlay/src" }
-bridge = { cmd = "bash ros/foxglove-bridge.sh", description = "foxglove_bridge on this machine (port 8765)" }
-miti-bridge = { cmd = "node scripts/start-miti.mjs --port {{ port }} --bridge", args = [{ arg = "port", default = "3000" }], depends-on = ["build"], description = "MITI and foxglove_bridge together (ports move if taken)" }
+build-bridge = { cmd = "bash ros/build-miti-bridge.sh", description = "Build miti_bridge from MITI-sdk's source (once per distro)" }
+bridge = { cmd = "bash ros/miti-bridge.sh", depends-on = ["build-bridge"], description = "miti_bridge on this machine (port 8765)" }
+miti-bridge = { cmd = "node scripts/start-miti.mjs --port {{ port }} --bridge", args = [{ arg = "port", default = "3000" }], depends-on = ["build", "build-bridge"], description = "MITI and miti_bridge together (ports move if taken)" }
 
-# Windows runs the PowerShell versions of the same scripts (miti-bridge is plain Node.js).
+# Windows runs the PowerShell versions of the scripts (miti-bridge is plain Node.js), with
+# foxglove_bridge as the bridge.
 [feature.bridge.target.win-64.tasks]
 build-msgs = { cmd = "powershell -NoProfile -ExecutionPolicy Bypass -File ros/build-msgs.ps1", description = "Build message packages in ros/overlay/src" }
-bridge = { cmd = "powershell -NoProfile -ExecutionPolicy Bypass -File ros/foxglove-bridge.ps1", description = "foxglove_bridge on this machine (port 8765)" }
+build-bridge = { cmd = "echo 'On Windows the bridge is foxglove_bridge from RoboStack: nothing to build.'", description = "Nothing on Windows: the bridge there is foxglove_bridge" }
+bridge = { cmd = "powershell -NoProfile -ExecutionPolicy Bypass -File ros/foxglove-bridge.ps1", depends-on = ["build-bridge"], description = "foxglove_bridge on this machine (port 8765)" }
 
 # The bridge can only offer topics whose message definitions are installed beside it; add the
 # robot's own message packages as described in docs/DEPLOYMENT.md.
@@ -54,8 +67,13 @@ bridge = { cmd = "powershell -NoProfile -ExecutionPolicy Bypass -File ros/foxglo
 channels = [{ channel = "robostack-humble", priority = 1 }]
 
 [feature.humble.dependencies]
-ros-humble-foxglove-bridge = ">=3.6"
 ros-humble-ros2launch = "*"
+ros-humble-launch-ros = "*"
+ros-humble-rclcpp = "*"
+ros-humble-rcpputils = "*"
+ros-humble-ament-index-cpp = "*"
+ros-humble-rosidl-typesupport-introspection-cpp = "*"
+ros-humble-rosgraph-msgs = "*"
 ros-humble-ros2topic = "*"
 ros-humble-rmw-fastrtps-cpp = "*"
 ros-humble-rmw-cyclonedds-cpp = "*"
@@ -71,12 +89,20 @@ ros-humble-bond = "*"
 ros-humble-ament-cmake = "*"
 ros-humble-rosidl-default-generators = "*"
 
+[feature.humble.target.win-64.dependencies]
+ros-humble-foxglove-bridge = ">=3.6"
+
 [feature.jazzy]
 channels = [{ channel = "robostack-jazzy", priority = 1 }]
 
 [feature.jazzy.dependencies]
-ros-jazzy-foxglove-bridge = ">=3.6"
 ros-jazzy-ros2launch = "*"
+ros-jazzy-launch-ros = "*"
+ros-jazzy-rclcpp = "*"
+ros-jazzy-rcpputils = "*"
+ros-jazzy-ament-index-cpp = "*"
+ros-jazzy-rosidl-typesupport-introspection-cpp = "*"
+ros-jazzy-rosgraph-msgs = "*"
 ros-jazzy-ros2topic = "*"
 ros-jazzy-rmw-fastrtps-cpp = "*"
 ros-jazzy-rmw-cyclonedds-cpp = "*"
@@ -91,6 +117,9 @@ ros-jazzy-vision-msgs = "*"
 ros-jazzy-bond = "*"
 ros-jazzy-ament-cmake = "*"
 ros-jazzy-rosidl-default-generators = "*"
+
+[feature.jazzy.target.win-64.dependencies]
+ros-jazzy-foxglove-bridge = ">=3.6"
 
 [environments]
 humble = ["humble", "bridge"]

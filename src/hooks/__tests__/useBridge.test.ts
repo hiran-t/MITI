@@ -7,7 +7,7 @@ describe('defaultBridgeUrl', () => {
     else process.env.NEXT_PUBLIC_BRIDGE_URL = configured;
   });
 
-  test('points at foxglove_bridge on the host that served MITI', () => {
+  test('points at the bridge on the host that served MITI', () => {
     delete process.env.NEXT_PUBLIC_BRIDGE_URL;
     expect(defaultBridgeUrl({ protocol: 'http:', hostname: '192.168.1.40' })).toBe(
       'ws://192.168.1.40:8765'

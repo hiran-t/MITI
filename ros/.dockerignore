@@ -1,4 +1,5 @@
 overlay/build/
 overlay/install/
 overlay/log/
+miti-sdk/
 Dockerfile

@@ -77,7 +77,7 @@ function useRobotDescription(source: RobotSource, client: BridgeClient | null, e
       }
       if (source.source === 'filePath') {
         const uri = location.startsWith('/') ? `file://${location}` : location;
-        // foxglove_bridge reads the file on the robot; MITI's server is the fallback.
+        // The bridge reads the file on the robot; MITI's server is the fallback.
         if (client?.hasCapability('assets'))
           return new TextDecoder().decode(await client.fetchAsset(uri));
         return fetchText(resolveResourceUrl(uri), location);
@@ -132,7 +132,7 @@ export default function RobotLayer({
   tree: TFTree;
   fixedFrame: string;
   onStatus: (id: string, status: LayerStatus) => void;
-  /** foxglove_bridge does not advertise the topic source, so waiting will not help. */
+  /** The bridge does not advertise the topic source, so waiting will not help. */
   unlisted?: boolean;
   /** Changing it reloads the model, e.g. after the mesh cache was cleared. */
   reloadKey?: number;
@@ -303,7 +303,7 @@ export default function RobotLayer({
               message: !client
                 ? 'Disconnected'
                 : unlisted
-                  ? `${source.topic} is not published (foxglove_bridge does not advertise it). Check that robot_state_publisher is running and the topic name, or use a URDF layer with the Parameter source.`
+                  ? `${source.topic} is not published (the bridge does not advertise it). Check that robot_state_publisher is running and the topic name, or use a URDF layer with the Parameter source.`
                   : `Waiting for ${source.topic}. It is published once (latched); if it never arrives, use a URDF layer with the Parameter source.`,
             }
           : { level: 'waiting', message: `Loading ${label}` };

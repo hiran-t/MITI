@@ -73,16 +73,16 @@ definePanel<Config>({
 
 ### PanelProps
 
-| Prop            | Type                               | Meaning                                                             |
-| --------------- | ---------------------------------- | ------------------------------------------------------------------- |
-| `id`            | `string`                           | The panel's id in the layout                                        |
-| `config`        | `Config`                           | The panel's settings                                                |
-| `updateConfig`  | `(patch: Partial<Config>) => void` | Merge changes into the settings; they are saved with the layout     |
-| `setConfig`     | `(config: Config) => void`         | Replace the settings                                                |
-| `client`        | `MitiClient \| null`               | The connection to foxglove_bridge; null while MITI is not connected |
-| `topics`        | `TopicInfo[]`                      | The bridge's topics: `{ topic, type }`                              |
-| `topicsLoading` | `boolean`                          | Whether the topic list is being read                                |
-| `refreshTopics` | `() => void`                       | Read the topic list again                                           |
+| Prop            | Type                               | Meaning                                                         |
+| --------------- | ---------------------------------- | --------------------------------------------------------------- |
+| `id`            | `string`                           | The panel's id in the layout                                    |
+| `config`        | `Config`                           | The panel's settings                                            |
+| `updateConfig`  | `(patch: Partial<Config>) => void` | Merge changes into the settings; they are saved with the layout |
+| `setConfig`     | `(config: Config) => void`         | Replace the settings                                            |
+| `client`        | `MitiClient \| null`               | The connection to the bridge; null while MITI is not connected  |
+| `topics`        | `TopicInfo[]`                      | The bridge's topics: `{ topic, type }`                          |
+| `topicsLoading` | `boolean`                          | Whether the topic list is being read                            |
+| `refreshTopics` | `() => void`                       | Read the topic list again                                       |
 
 A panel that throws shows the error and a **Reload panel** button; the other panels keep running.
 

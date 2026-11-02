@@ -20,10 +20,10 @@ Installing starts nothing. To install a downloaded package without the repositor
 ```bash
 miti run                  # http://<this machine>:3000
 miti run --port 8080      # another port; a taken port moves to the next free one
-miti run --bridge         # also foxglove_bridge beside MITI
+miti run --bridge         # also miti_bridge beside MITI
 ```
 
-`--bridge` needs foxglove_bridge from ROS's apt repository; see [Run foxglove_bridge beside MITI](run-foxglove-bridge-beside-miti.md). All options are in the [command line reference](../reference/command-line.md).
+`--bridge` needs miti_bridge (`ros-humble-miti-bridge` or `ros-jazzy-miti-bridge`) from the MITI SDK's apt repository; see [Run miti_bridge beside MITI](run-miti-bridge-beside-miti.md). All options are in the [command line reference](../reference/command-line.md).
 
 ## Start MITI at boot
 
@@ -31,7 +31,7 @@ For a machine that serves MITI all the time, enable its service. The package ins
 
 ```bash
 sudo systemctl enable --now miti           # MITI
-sudo systemctl enable --now miti-bridge    # foxglove_bridge beside it, if wanted
+sudo systemctl enable --now miti-bridge    # miti_bridge beside it, if wanted
 systemctl status miti                      # state
 journalctl -u miti -f                      # logs
 sudo systemctl disable --now miti          # back to miti run

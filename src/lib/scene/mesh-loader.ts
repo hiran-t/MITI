@@ -89,20 +89,20 @@ export function disposeObject(object: THREE.Object3D): void {
 export function meshErrorMessage(uri: string, error: unknown): string {
   const text = error instanceof Error ? error.message : String(error);
   if (/asset timeout/i.test(text))
-    return `${uri}: no reply from foxglove_bridge. The connection is likely saturated by other topics (raw camera images); hide them or publish compressed images, then reload.`;
+    return `${uri}: no reply from the bridge. The connection is likely saturated by other topics (raw camera images); turn on the Image panel's Compression (miti_bridge), hide them or publish compressed images, then reload.`;
   if (uri.startsWith('package://') && /404/.test(text))
-    return `${uri} not found on the MITI server. Connect to a foxglove_bridge that serves assets, run MITI on the robot with the ROS workspace sourced, or set a mesh server URL.`;
+    return `${uri} not found on the MITI server. Connect to a bridge that serves assets, run MITI on the robot with the ROS workspace sourced, or set a mesh server URL.`;
   return `${uri}: ${text}`;
 }
 
 export interface ResourceSources extends ResourceOptions {
-  /** Reads package:// and file:// resources through foxglove_bridge, when it serves assets. */
+  /** Reads package:// and file:// resources through the bridge, when it serves assets. */
   fetchAsset?: (uri: string) => Promise<Uint8Array<ArrayBuffer>>;
 }
 
 /**
  * Load a mesh referenced by a URDF or marker, from (in order) an explicit mesh server or package
- * mapping, foxglove_bridge's asset service, or MITI's own server.
+ * mapping, the bridge's asset service, or MITI's own server.
  */
 export async function loadMeshResource(
   uri: string,

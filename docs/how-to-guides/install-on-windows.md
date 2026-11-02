@@ -1,6 +1,10 @@
 # Install on Windows
 
-pixi runs MITI and foxglove_bridge on Windows 10 and 11 (x86-64) with the same commands as on Linux; the bridge tasks run the PowerShell versions of the scripts in `ros/` (`*.ps1`). Windows support is new; please report problems.
+pixi runs MITI on Windows 10 and 11 (x86-64) with the same commands as on Linux. Windows support is new; please report problems.
+
+:::{note}
+miti_bridge does not support Windows yet. The bridge tasks on Windows run foxglove_bridge beside MITI instead, with the PowerShell versions of the scripts in `ros/` (`*.ps1`). MITI works with it, but without JPEG compression, point clouds reduced on the robot, rate limits applied by the bridge and the link statistics. For those, run miti_bridge on the robot, or beside MITI in WSL 2 (see below).
+:::
 
 ## Install and run
 
@@ -15,7 +19,7 @@ cd C:\MITI
 ```powershell
 pixi run miti                       # MITI on http://<this machine>:3000
 pixi run -e humble miti-bridge      # MITI and foxglove_bridge beside it (-e jazzy for Jazzy)
-pixi run -e humble bridge           # foxglove_bridge only
+pixi run -e humble bridge           # foxglove_bridge only (on Linux and macOS: miti_bridge)
 ```
 
 ## Change the settings
@@ -79,7 +83,7 @@ Then, depending on the machine:
 
 - **Smart App Control is On or Evaluation**: turn it off in Windows Security > App & browser control > Smart App Control. Windows can only turn it back on by resetting or reinstalling Windows.
 - **A company-managed PC**: ask IT to allow the MITI folder (its `.pixi` directory), or use one of the options below.
-- **Without changing Windows**: run the bridge in **WSL 2** (mirrored networking, as below) with `pixi run -e humble bridge` there, and MITI on Windows with `pixi run miti`; or run foxglove_bridge on the robot.
+- **Without changing Windows**: run the bridge in **WSL 2** (mirrored networking, as below) with `pixi run -e humble bridge` there, which runs miti_bridge, and MITI on Windows with `pixi run miti`; or run miti_bridge on the robot.
 
 ## Docker Desktop and WSL 2
 

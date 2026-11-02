@@ -70,6 +70,8 @@ const EMPTY_TOPICS: TopicInfo[] = [];
 // Sensor streams can exceed what the main thread can parse and render; ~10 Hz with the newest
 // message winning keeps the scene live. Markers must not be dropped.
 const HEAVY_TOPIC = { throttleRate: 100 };
+/** The points a layer draws at most: its Point limit, within what the renderer handles. */
+const pointLimit = (maxPoints?: number) => Math.max(1, Math.min(maxPoints ?? 100000, 1000000));
 /** What the latest messages hold, for the topic's settings. */
 export interface LayerInfo {
   /** Point cloud and laser scan fields. */
@@ -141,6 +143,11 @@ export default function SceneLayer({
     {
       ...(['pointcloud', 'scan'].includes(layer.type) ? HEAVY_TOPIC : {}),
       maxRate: layer.maxRate || undefined,
+      // miti_bridge drops the points over the limit on the robot, not after they crossed the link.
+      transform:
+        layer.type === 'pointcloud'
+          ? { kind: 'reduce', maxPoints: pointLimit(layer.maxPoints) }
+          : undefined,
     }
   );
   const actualType = topicTypeMismatch(topics, layer.topic, LAYER_TYPES[layer.type]?.message);
@@ -240,7 +247,7 @@ export default function SceneLayer({
   const decoded = useMemo((): { error: string; points?: PointData; pixels?: Uint8Array } => {
     try {
       if (!data) return { error: '' };
-      const max = Math.max(1, Math.min(layer.maxPoints ?? 100000, 1000000));
+      const max = pointLimit(layer.maxPoints);
       if (layer.type === 'pointcloud')
         return { error: '', points: readPointCloud(data as sensor_msgs.PointCloud2, max) };
       if (layer.type === 'scan')
@@ -273,7 +280,7 @@ export default function SceneLayer({
     const color = layer.color ?? MITI_CYAN,
       opacity = layer.opacity ?? 1,
       size = layer.size ?? 0.04,
-      max = Math.max(1, Math.min(layer.maxPoints ?? 100000, 1000000));
+      max = pointLimit(layer.maxPoints);
     try {
       if (decoded.error) throw new Error(decoded.error);
       if (layer.type === 'marker' || layer.type === 'markers') {

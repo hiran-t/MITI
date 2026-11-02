@@ -14,6 +14,7 @@ const config = [
       '.pixi/**',
       'coverage/**',
       'ros/overlay/**',
+      'ros/miti-sdk/**',
       'next-env.d.ts',
     ],
   },

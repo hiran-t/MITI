@@ -1,5 +1,5 @@
 /**
- * Persists robot assets (meshes, URDFs) fetched from foxglove_bridge in the browser's Cache
+ * Persists robot assets (meshes, URDFs) fetched from the bridge in the browser's Cache
  * Storage, so a robot only has to cross a slow link once. Unavailable outside secure contexts
  * (e.g. MITI opened over plain http from another host); then every call is a no-op.
  */

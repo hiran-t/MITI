@@ -16,7 +16,7 @@ export function generateMetadata(): Metadata {
 }
 
 // Read the server's environment on each request, so the launcher (scripts/start-miti.mjs) or
-// Docker can tell the page where foxglove_bridge listens without rebuilding MITI.
+// Docker can tell the page where the bridge listens without rebuilding MITI.
 export const dynamic = 'force-dynamic';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

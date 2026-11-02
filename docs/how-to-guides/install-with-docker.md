@@ -28,20 +28,20 @@ docker run -d --restart unless-stopped -p 3000:3000 --name miti ghcr.io/hiran-t/
 
 ## Run with Docker Compose
 
-From a clone of MITI, [docker-compose.yml](https://github.com/hiran-t/MITI/blob/main/docker-compose.yml) runs MITI as the `miti` service, and its `bridge` profile adds foxglove_bridge beside it:
+From a clone of MITI, [docker-compose.yml](https://github.com/hiran-t/MITI/blob/main/docker-compose.yml) runs MITI as the `miti` service, and its `bridge` profile adds miti_bridge beside it, as the `miti-bridge` service:
 
 ```bash
 git clone https://github.com/hiran-t/MITI.git
 cd MITI
 cp .env.example .env                    # optional settings
 docker compose up -d                    # MITI only
-docker compose --profile bridge up -d   # MITI and foxglove_bridge beside it
+docker compose --profile bridge up -d   # MITI and miti_bridge beside it
 docker compose logs -f                  # follow logs
 docker compose down                     # stop
 docker compose up -d --build            # rebuild after updating MITI
 ```
 
-The bridge container uses host networking, which DDS discovery needs, so the `bridge` profile runs on Linux only; Docker Desktop on macOS and Windows cannot join the robot's DDS network.
+The bridge's image builds miti_bridge from the MITI SDK's source, so its first build takes a few minutes. The bridge container uses host networking, which DDS discovery needs, so the `bridge` profile runs on Linux only; Docker Desktop on macOS and Windows cannot join the robot's DDS network.
 
 ## Build the image yourself
 

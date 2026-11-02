@@ -487,6 +487,9 @@ button:disabled {
 .status-item.has-error {
   color: var(--miti-error);
 }
+.status-item.is-behind {
+  color: var(--miti-warn);
+}
 .connection-status {
   display: flex;
   align-items: center;

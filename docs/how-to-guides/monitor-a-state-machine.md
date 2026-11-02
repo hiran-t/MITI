@@ -47,4 +47,4 @@ Click a node that has children to collapse or expand it.
 A patrol behavior tree in the Behavior Tree tab: the robot is following its path.
 ```
 
-Until a status arrives, the tab shows **Waiting for data...**. The status message package must be installed where foxglove_bridge runs, like the robot's other message packages.
+Until a status arrives, the tab shows **Waiting for data...**. The status message package must be installed where miti_bridge runs, like the robot's other message packages.

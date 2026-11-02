@@ -32,7 +32,7 @@ MITI prints the addresses to open:
 
 ```text
 MITI: http://localhost:3000  (other computers: http://192.168.1.20:3000)
-foxglove_bridge: ws://<this machine>:8765 (none running here: start one on the robot, or use miti run --bridge)
+Bridge: ws://<this machine>:8765 (none running here: start miti_bridge on the robot, or use miti run --bridge)
 ```
 
 MITI keeps running in this terminal. Press **Ctrl+C** to stop it.
@@ -47,7 +47,7 @@ Open `http://localhost:3000` in Chrome, Edge, Firefox or Safari on this machine,
 MITI before it is connected to a robot.
 ```
 
-The red status bar and the notice under the title bar say that MITI has not found a robot yet. That is expected: MITI shows a robot's data through foxglove_bridge, which you start in the next tutorial.
+The red status bar and the notice under the title bar say that MITI has not found a robot yet. That is expected: MITI shows a robot's data through miti_bridge, which you start in the next tutorial.
 
 :::{note}
 If the page does not open from another computer, allow the port through the firewall: `sudo ufw allow 3000/tcp`.
