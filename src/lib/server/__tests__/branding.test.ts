@@ -29,6 +29,7 @@ test('reads the name, title, images and accent of branding.json', async () => {
       name: 'MITI Pro',
       title: 'MITI Pro · Pacen',
       logo: 'logo.svg',
+      logoHeight: 36,
       icon: 'icon.png',
       accent: '#E30613',
     }),
@@ -40,6 +41,7 @@ test('reads the name, title, images and accent of branding.json', async () => {
     name: 'MITI Pro',
     title: 'MITI Pro · Pacen',
     logo: 'logo.svg',
+    logoHeight: 36,
     icon: 'icon.png',
     accent: '#e30613',
     dir,
@@ -58,6 +60,7 @@ test('leaves out what is wrong and keeps the rest', async () => {
       logo: '../outside.svg',
       icon: 'missing.svg',
       accent: 'red',
+      logoHeight: 120,
     }),
   });
   const branding = readBranding({ MITI_BRANDING_DIR: dir });
@@ -67,8 +70,10 @@ test('leaves out what is wrong and keeps the rest', async () => {
     logo: null,
     icon: null,
     accent: null,
+    logoHeight: null,
   });
   expect(readBrandingImage(branding, 'logo')).toBeNull();
+  expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('"logoHeight" must be'));
   expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('"logo" must name'));
 });
 

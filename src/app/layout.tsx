@@ -27,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     branding: branding && {
       name: branding.name,
       logo: branding.logo ? '/api/branding/logo' : null,
+      logoHeight: branding.logoHeight,
     },
   };
   // The accent replaces MITI's teal; `html:root` outranks the `:root` the theme is set on.

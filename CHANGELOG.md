@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [3.4.2] - 2026-11-02
+
+### Changed
+
+- Small improvements to the title bar
+
 ## [3.4.1] - 2026-11-01
 
 ### Changed

@@ -13,7 +13,7 @@ declare global {
       /** How to start foxglove_bridge beside MITI, e.g. `miti run --bridge` (apt package). */
       bridgeHint?: string | null;
       /** MITI_BRANDING_DIR's name and logo URL, when MITI is branded. */
-      branding?: { name: string; logo: string | null } | null;
+      branding?: { name: string; logo: string | null; logoHeight?: number | null } | null;
     };
   }
 }
