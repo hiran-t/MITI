@@ -6,18 +6,18 @@ Widgets are made outside MITI, in their own repositories:
 
 | Repository                                                    | Holds                                                                                                                                     |
 | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| [MITI-sdk](https://github.com/hiran-t/MITI-sdk)               | The `@miti/sdk` package: the types of this API (`index.d.ts`) and the `miti-widget` command that builds widgets                           |
+| [MITI-widget-sdk](https://github.com/hiran-t/MITI-widget-sdk) | The `@miti/sdk` package: the types of this API (`index.d.ts`) and the `miti-widget` command that builds widgets                           |
 | [MITI-widget-dev](https://github.com/hiran-t/MITI-widget-dev) | A template to start a widget from: the Gauge panel, `npm run build`, `npm run dev`, and a workflow that publishes the widget in a release |
 
 A widget's repository installs `@miti/sdk` from GitHub:
 
 ```bash
-npm install --save-dev "@miti/sdk@git+https://github.com/hiran-t/MITI-sdk.git" react @types/react typescript
+npm install --save-dev "@miti/sdk@git+https://github.com/hiran-t/MITI-widget-sdk.git" react @types/react typescript
 ```
 
 ## API version
 
-This MITI provides widget API **1**, which `@miti/sdk` 1.x describes. A widget declares the version it is written for in `manifest.json` as `miti.apiVersion`, and MITI imports only widgets of its own API version. Within one version, what this page lists keeps working; new things are only added. A change that would break widgets comes with a new API version. Anything in MITI that this page does not list may change in any release. MITI-sdk's CI checks that MITI provides everything its `index.d.ts` declares.
+This MITI provides widget API **1**, which `@miti/sdk` 1.x describes. A widget declares the version it is written for in `manifest.json` as `miti.apiVersion`, and MITI imports only widgets of its own API version. Within one version, what this page lists keeps working; new things are only added. A change that would break widgets comes with a new API version. Anything in MITI that this page does not list may change in any release. MITI-widget-sdk's CI checks that MITI provides everything its `index.d.ts` declares.
 
 ## Package
 

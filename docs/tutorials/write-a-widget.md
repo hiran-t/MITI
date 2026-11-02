@@ -14,7 +14,7 @@ cd <your-widget>
 npm install
 ```
 
-`npm install` brings `@miti/sdk` from [MITI-sdk](https://github.com/hiran-t/MITI-sdk): the types of what MITI gives widgets, and the `miti-widget` command that builds them. The folder holds:
+`npm install` brings `@miti/sdk` from [MITI-widget-sdk](https://github.com/hiran-t/MITI-widget-sdk): the types of what MITI gives widgets, and the `miti-widget` command that builds them. The folder holds:
 
 ```
 manifest.json                 the widget's id, name and version

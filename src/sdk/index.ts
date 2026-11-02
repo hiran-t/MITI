@@ -1,10 +1,10 @@
 /**
  * `@miti/sdk`: what widgets build their panels with. A widget imports it, and React, by name;
- * its build (`miti-widget build` from hiran-t/MITI-sdk) points those imports at the copies MITI
- * runs (see `runtime.ts`), so a widget shares MITI's React, hooks and components. MITI-sdk's
- * index.d.ts declares this API, and its CI checks that this file provides it. What this file
- * exports keeps working for every widget of the same API version; anything else in MITI may
- * change without notice.
+ * its build (`miti-widget build` from hiran-t/MITI-widget-sdk) points those imports at the copies
+ * MITI runs (see `runtime.ts`), so a widget shares MITI's React, hooks and components.
+ * MITI-widget-sdk's index.d.ts declares this API, and its CI checks that this file provides it.
+ * What this file exports keeps working for every widget of the same API version; anything else in
+ * MITI may change without notice.
  */
 
 /** Widgets declare it in `manifest.json` as `miti.apiVersion`. */
