@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [3.4.3] - 2026-11-03
+
 ### Added
 
 - MITI connects to [miti_bridge](https://github.com/hiran-t/MITI-sdk), the robot-side bridge that replaces foxglove_bridge, over its MITI protocol (`miti.bridge.v1`). MITI offers that protocol first and still connects to foxglove_bridge as before.
@@ -16,14 +18,14 @@
 ### Changed
 
 - The bridge beside MITI is now miti_bridge, on Linux and macOS:
-  - `pixi run -e <distro> miti-bridge` and `pixi run -e <distro> bridge` build miti_bridge from the MITI SDK's source on their first run (`pixi run -e <distro> build-bridge` builds it alone). On Windows the bridge beside MITI is still foxglove_bridge, until miti_bridge supports Windows.
+  - `pixi run -e <distro> miti-bridge` and `pixi run -e <distro> bridge` build miti_bridge (MITI SDK v0.1.1) from source on their first run (`pixi run -e <distro> build-bridge` builds it alone). On Windows the bridge beside MITI is still foxglove_bridge, until miti_bridge supports Windows.
   - `miti run --bridge` and the `miti-bridge` service of the apt package run `ros-<distro>-miti-bridge`, from the MITI SDK's apt repository. The package now recommends it instead of foxglove_bridge.
   - Docker Compose's `bridge` profile runs the `miti-bridge` service, whose image builds miti_bridge.
   - `BRIDGE_SEND_BUFFER_LIMIT` is gone: miti_bridge keeps a queue per subscription instead.
   - A bridge already listening on the bridge port, miti_bridge or foxglove_bridge, is used as before.
 - The connection settings ask for the **Bridge URL**, and messages name the bridge without assuming foxglove_bridge.
-- The manual describes miti*bridge, on the robot and beside MITI. The guides moved to \_Run miti_bridge on the robot* and _Run miti_bridge beside MITI_; the old addresses link to them.
-- The widget SDK moved to [MITI-widget-sdk](https://github.com/hiran-t/MITI-widget-sdk): install `@miti/sdk` from `git+https://github.com/hiran-t/MITI-widget-sdk.git#semver:^1.0.0`. The package name and widget API 1 are unchanged. [MITI-sdk](https://github.com/hiran-t/MITI-sdk) is now the robot side, where miti_bridge is being designed.
+- The manual describes miti_bridge, on the robot and beside MITI. The guides moved to "Run miti_bridge on the robot" and "Run miti_bridge beside MITI"; the old addresses link to them.
+- The widget SDK moved to [MITI-widget-sdk](https://github.com/hiran-t/MITI-widget-sdk): install `@miti/sdk` from `git+https://github.com/hiran-t/MITI-widget-sdk.git#semver:^1.0.0`. The package name and widget API 1 are unchanged. [MITI-sdk](https://github.com/hiran-t/MITI-sdk) is now the robot side, where miti_bridge lives.
 
 ## [3.4.2] - 2026-11-02
 
