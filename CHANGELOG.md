@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Added
+
+- The .deb and the Docker image carry `THIRD_PARTY_LICENSES`: the version, license and license text of each npm package they ship (`scripts/third-party-licenses.mjs`).
+
+### Changed
+
+- `@foxglove/ws-protocol` is a dev dependency: only the stand-in bridge `scripts/heavy-bridge.js` uses it.
+
 ## [3.4.5] - 2026-11-03
 
 ### Changed

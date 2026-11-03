@@ -14,7 +14,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Leave empty to connect to foxglove_bridge on the host MITI is served from (port 8765);
+# Leave empty to connect to the bridge on the host MITI is served from (port 8765);
 # Next.js builds NEXT_PUBLIC_* values into the app, so this is a build argument.
 ARG NEXT_PUBLIC_BRIDGE_URL=
 ENV NEXT_PUBLIC_BRIDGE_URL=${NEXT_PUBLIC_BRIDGE_URL}
@@ -24,8 +24,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 ENV STANDALONE_BUILD=true
 
-# Build the application (standalone output via STANDALONE_BUILD=true)
-RUN npm run build
+# Build the application (standalone output via STANDALONE_BUILD=true), with the licenses of the
+# npm packages it ships
+RUN npm run build && node scripts/third-party-licenses.mjs .next/standalone/THIRD_PARTY_LICENSES
 
 # Stage 3: Runner
 FROM node:22-alpine AS runner
