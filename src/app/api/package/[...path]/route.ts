@@ -6,8 +6,8 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 /** Serves `package://<pkg>/<path>` meshes, textures and URDFs from the local ROS workspace. */
-export async function GET(_request: Request, { params }: { params: { path: string[] } }) {
-  const [pkg, ...rest] = params.path;
+export async function GET(_request: Request, { params }: { params: Promise<{ path: string[] }> }) {
+  const [pkg, ...rest] = (await params).path;
   const relativePath = rest.join('/');
   const contentType = contentTypeFor(relativePath);
   if (!pkg || !relativePath || !contentType)

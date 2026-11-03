@@ -28,8 +28,10 @@ export interface InstalledWidget extends WidgetManifest {
   installedAt: number;
 }
 
+// The state folder is found at run time, so the build must not trace it (turbopackIgnore), or
+// Turbopack copies the whole project into the standalone output.
 export const stateDir = (env: Env = process.env) =>
-  env.MITI_STATE_DIR || path.join(process.cwd(), '.miti');
+  env.MITI_STATE_DIR || path.join(/* turbopackIgnore: true */ process.cwd(), '.miti');
 export const widgetsDir = (env: Env = process.env) => path.join(stateDir(env), 'widgets');
 
 /** Whether widgets may be imported and removed from the browser (MITI_WIDGET_IMPORT=off stops it). */
@@ -160,7 +162,9 @@ export async function listWidgets(dir: string = widgetsDir()): Promise<{
   widgets: InstalledWidget[];
   problems: { id: string; error: string }[];
 }> {
-  const names = await fs.readdir(dir, { withFileTypes: true }).catch(() => []);
+  const names = await fs
+    .readdir(/* turbopackIgnore: true */ dir, { withFileTypes: true })
+    .catch(() => []);
   const widgets: InstalledWidget[] = [];
   const problems: { id: string; error: string }[] = [];
   for (const entry of names) {

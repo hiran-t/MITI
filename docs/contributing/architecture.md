@@ -40,9 +40,9 @@ connection settings change it per browser.
 
 ### Frontend
 
-- **Next.js 14** with the App Router. The dashboard is a client component loaded with
-  `ssr: false`.
-- **React 18** and **TypeScript 5.9**.
+- **Next.js 16** with the App Router, built with Turbopack. The page is a client component that
+  loads the dashboard with `ssr: false`.
+- **React 19** and **TypeScript 5.9**.
 - **Tailwind CSS 3**, with colors backed by `--miti-*` CSS variables from `lib/theme.ts`. Class
   strings are grouped in `styles/*.styles.ts` and combined with a local `cn()` helper.
 - **react-mosaic-component** for the tiled panel layout (the model Foxglove's layout uses).

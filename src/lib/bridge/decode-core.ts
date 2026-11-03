@@ -24,8 +24,7 @@ export interface DecodeRequest {
 }
 
 export type DecodeReply =
-  | { id: number; message: unknown; prepared?: PreparedMessage }
-  | { id: number; error: string };
+  { id: number; message: unknown; prepared?: PreparedMessage } | { id: number; error: string };
 
 /** Points read ahead of time per cloud; SceneLayer never asks for more. */
 const MAX_PREPARED_POINTS = 1000000;

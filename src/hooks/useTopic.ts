@@ -30,7 +30,7 @@ export function useTopic<T = unknown>(
   // Compared by value: callers may build the object on every render.
   const transformKey = options?.transform ? JSON.stringify(options.transform) : '';
   // A hidden panel keeps only the newest message and shows it when it is visible again.
-  const showHeld = useRef<() => void>();
+  const showHeld = useRef<(() => void) | undefined>(undefined);
   const visible = usePanelVisibleRef(() => showHeld.current?.());
 
   useEffect(() => {

@@ -13,9 +13,9 @@ By taking part in this project you agree to follow the [Code of Conduct](CODE_OF
 Check the existing issues first to avoid duplicates. Then open an issue with the **Bug report** template; it asks for what MITI needs to reproduce the problem:
 
 - MITI version, browser and operating system
-- ROS 2 distro, and how foxglove_bridge runs (on the robot, or beside MITI with pixi or Docker)
+- ROS 2 distro, which bridge (miti_bridge or foxglove_bridge) and where it runs (on the robot, or beside MITI with pixi or Docker)
 - Steps to reproduce, what you expected and what happened
-- Errors from the browser console and from the MITI or foxglove_bridge logs
+- Errors from the browser console and from the MITI or bridge logs
 
 Report security problems privately instead; see [SECURITY.md](SECURITY.md).
 
@@ -50,11 +50,13 @@ CI and the Docker image install with `npm ci` from `package-lock.json`; update i
 
 ### A robot or test data to connect to
 
-MITI talks to [foxglove_bridge](https://github.com/foxglove/foxglove-sdk) over the Foxglove WebSocket protocol (default port 8765). Enter the bridge address in the connection box in the status bar, or set `NEXT_PUBLIC_BRIDGE_URL` (see `.env.example`). Without it, MITI connects to `ws://<host MITI was served from>:8765`.
+MITI talks to the robot through a bridge over WebSocket (default port 8765): [miti_bridge](https://github.com/hiran-t/MITI-sdk), with the MITI protocol (`miti.bridge.v1`), or foxglove_bridge, with the Foxglove WebSocket protocol. Enter the bridge address as the **Bridge URL** with the gear in the status bar, or set `NEXT_PUBLIC_BRIDGE_URL` (see `.env.example`). Without it, MITI connects to `ws://<host MITI was served from>:8765`.
 
-- On a robot: `ros2 launch foxglove_bridge foxglove_bridge_launch.xml`
-- Beside MITI, joined to the robot over DDS: `pixi run -e humble bridge` (or `-e jazzy`); see [docs/how-to-guides/run-foxglove-bridge-beside-miti.md](docs/how-to-guides/run-foxglove-bridge-beside-miti.md)
-- Without a robot: `node scripts/heavy-bridge.js` streams robot-sized test data on `ws://localhost:8790`; see [docs/contributing/performance.md](docs/contributing/performance.md)
+- On a robot: install miti_bridge (see [docs/how-to-guides/run-miti-bridge-on-the-robot.md](docs/how-to-guides/run-miti-bridge-on-the-robot.md)), then `ros2 launch miti_bridge miti_start`
+- Beside MITI, joined to the robot over DDS: `pixi run -e humble bridge` (or `-e jazzy`), which builds miti_bridge the first time; see [docs/how-to-guides/run-miti-bridge-beside-miti.md](docs/how-to-guides/run-miti-bridge-beside-miti.md). On Windows this is foxglove_bridge.
+- Without a robot: `node scripts/heavy-bridge.js` streams robot-sized test data on `ws://localhost:8790`, as foxglove_bridge would; see [docs/contributing/performance.md](docs/contributing/performance.md)
+
+Changes to what MITI and the bridge say to each other start in the MITI SDK, where the protocol is specified and tested ([docs/protocol.md](https://github.com/hiran-t/MITI-sdk/blob/main/docs/protocol.md)).
 
 ### Checks
 
@@ -79,6 +81,7 @@ A Husky pre-commit hook runs lint-staged (ESLint with `--fix` and Prettier on st
 - Prefer `const`; do not use `var`.
 - Use `async`/`await` rather than chained promises.
 - Subscribe to topics through the hooks in `src/hooks/` (`useTopic`, `useTopicList`, `useTF`) instead of talking to the bridge client directly.
+- Keep foxglove_bridge working: use a `miti.*` feature of miti_bridge only when the bridge offers it, and hide or explain it otherwise.
 
 ### Component structure
 
@@ -140,8 +143,8 @@ Examples:
 
 ```
 feat: add color map options to the Point Cloud panel
-fix: keep TF frames after reconnecting to foxglove_bridge
-docs: describe running foxglove_bridge beside MITI
+fix: keep TF frames after reconnecting to the bridge
+docs: describe running miti_bridge beside MITI
 ```
 
 ## Project structure
@@ -156,7 +159,7 @@ src/
 ├── lib/                    # Bridge client, parsers, scene, camera, layout, logs, server helpers
 ├── styles/                 # Shared style modules
 └── types/                  # TypeScript types
-ros/                        # foxglove_bridge beside MITI (pixi and Docker)
+ros/                        # miti_bridge beside MITI (pixi and Docker; foxglove_bridge on Windows)
 scripts/                    # Deployment helpers and the performance harness
 docs/                       # Documentation and release notes
 ```
@@ -167,7 +170,7 @@ Unit tests use Jest and Testing Library and live in `__tests__` folders. Add tes
 
 Also test by hand:
 
-- With real ROS 2 topics through foxglove_bridge, when the change touches robot data
+- With real ROS 2 topics through miti_bridge when the change touches robot data, and through foxglove_bridge too when it touches the bridge client
 - Edge cases: no connection, empty or missing topics, large messages, missing transforms
 - Performance under heavy data, with `scripts/heavy-bridge.js` and `scripts/perf-run.js`
 - Current Chrome, Edge, Firefox or Safari

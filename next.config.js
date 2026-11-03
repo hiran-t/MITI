@@ -13,9 +13,13 @@ const nextConfig = {
   },
 
   // Server-side packages
-  experimental: {
-    serverComponentsExternalPackages: ['three'],
-  },
+  serverExternalPackages: ['three'],
+
+  // Standalone builds serve images unoptimized, so sharp's native binaries stay out of them: they
+  // would tie the .deb and the image to the build machine. Nor does the server read ros/ or docs/.
+  outputFileTracingExcludes: isStandalone
+    ? { '*': ['node_modules/sharp/**', 'node_modules/@img/**', 'ros/**', 'docs/**'] }
+    : undefined,
 
   // Standalone deployments serve images without an optimization service
   images: {

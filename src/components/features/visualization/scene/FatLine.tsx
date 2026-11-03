@@ -6,8 +6,7 @@ import { LineMaterial, LineSegments2, LineSegmentsGeometry } from 'three-stdlib'
 
 export type LinePoint = THREE.Vector3 | readonly [number, number, number];
 export type LineColor =
-  | readonly [number, number, number]
-  | readonly [number, number, number, number];
+  readonly [number, number, number] | readonly [number, number, number, number];
 
 /**
  * Segment endpoints, x y z each: consecutive points of a polyline, or with `segments` the points
