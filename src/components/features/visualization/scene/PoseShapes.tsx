@@ -1,6 +1,6 @@
 'use client';
 import { MITI_CYAN } from '@/lib/theme';
-import { useMemo } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { parseHex } from '@/lib/scene/colors';
 import FatLine from './FatLine';
@@ -24,35 +24,66 @@ export const DEFAULT_ARROW = { shaftLength: 1, shaftWidth: 0.05, headLength: 0.3
 export const DEFAULT_PATH_GRADIENT: [string, string] = ['#38bdf8', MITI_CYAN];
 export const DEFAULT_COVARIANCE_COLOR = `${MITI_CYAN}66`;
 
-const AXIS_COLORS = ['#ef4444', '#22c55e', '#3b82f6'];
-/** Rotations that turn a +Y cylinder onto +X, +Y and +Z. */
-const AXIS_ROTATIONS: [number, number, number][] = [
-  [0, 0, -Math.PI / 2],
-  [0, 0, 0],
-  [Math.PI / 2, 0, 0],
+export const AXIS_COLORS = ['#ef4444', '#22c55e', '#3b82f6'];
+/** Axis radius as a fraction of its length. */
+const AXIS_RADIUS = 0.04;
+/** A unit cylinder along +Y from the origin, shared by every set of axes. */
+const AXIS_GEOMETRY = new THREE.CylinderGeometry(1, 1, 1, 10).translate(0, 0.5, 0);
+/** Rotations that turn the +Y cylinder onto +X, +Y and +Z. */
+const AXIS_ROTATIONS = [
+  new THREE.Matrix4().makeRotationZ(-Math.PI / 2),
+  new THREE.Matrix4(),
+  new THREE.Matrix4().makeRotationX(Math.PI / 2),
 ];
+const axisColors = AXIS_COLORS.map((hex) => new THREE.Color(hex));
+const axisLocal = new THREE.Matrix4();
+const axisWorld = new THREE.Matrix4();
 
-/** Red, green and blue axes of length `scale`, like Foxglove's axis pose display. */
-export function PoseAxes({ scale, opacity = 1 }: { scale: number; opacity?: number }) {
-  const radius = scale * 0.04;
+/** Instances held for `count`, rounded up so a changing count rarely rebuilds the mesh. */
+export const axesCapacity = (count: number) => 2 ** Math.ceil(Math.log2(Math.max(count, 1) * 3));
+
+/**
+ * Writes red, green and blue axes of length `scale` at each pose into `mesh`, three instances per
+ * pose in X, Y, Z order.
+ */
+export function writeAxes(mesh: THREE.InstancedMesh, matrices: THREE.Matrix4[], scale: number) {
+  const radius = scale * AXIS_RADIUS;
+  matrices.forEach((matrix, i) => {
+    AXIS_ROTATIONS.forEach((rotation, axis) => {
+      axisLocal.makeScale(radius, scale, radius).premultiply(rotation);
+      mesh.setMatrixAt(i * 3 + axis, axisWorld.multiplyMatrices(matrix, axisLocal));
+      mesh.setColorAt(i * 3 + axis, axisColors[axis]);
+    });
+  });
+  mesh.count = matrices.length * 3;
+  mesh.instanceMatrix.needsUpdate = true;
+  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  mesh.computeBoundingSphere();
+}
+
+/**
+ * Red, green and blue axes of length `scale` at each pose, like Foxglove's axis pose display. All
+ * poses share one instanced mesh, so a robot's dozens of TF frames cost a single draw call.
+ */
+export function AxesInstances({
+  matrices,
+  scale,
+  opacity = 1,
+}: {
+  matrices: THREE.Matrix4[];
+  scale: number;
+  opacity?: number;
+}) {
+  const ref = useRef<THREE.InstancedMesh>(null);
+  const capacity = axesCapacity(matrices.length);
+  // Before the next frame, so a new mesh never draws its identity instances.
+  useLayoutEffect(() => {
+    if (ref.current) writeAxes(ref.current, matrices, scale);
+  }, [matrices, scale, capacity]);
   return (
-    <>
-      {AXIS_ROTATIONS.map((rotation, i) => (
-        <mesh
-          key={i}
-          rotation={rotation}
-          position={[i === 0 ? scale / 2 : 0, i === 1 ? scale / 2 : 0, i === 2 ? scale / 2 : 0]}
-        >
-          <cylinderGeometry args={[radius, radius, scale, 10]} />
-          <meshBasicMaterial
-            color={AXIS_COLORS[i]}
-            transparent={opacity < 1}
-            opacity={opacity}
-            toneMapped={false}
-          />
-        </mesh>
-      ))}
-    </>
+    <instancedMesh key={capacity} ref={ref} args={[AXIS_GEOMETRY, undefined, capacity]}>
+      <meshBasicMaterial transparent={opacity < 1} opacity={opacity} toneMapped={false} />
+    </instancedMesh>
   );
 }
 
@@ -116,15 +147,13 @@ export function PoseList({ matrices, style }: { matrices: THREE.Matrix4[]; style
         transparent
       />
     ) : null;
+  if (style.type === 'axis')
+    return <AxesInstances matrices={matrices} scale={style.axisScale} opacity={style.opacity} />;
   return (
     <>
       {matrices.map((matrix, i) => (
         <group key={i} matrix={matrix} matrixAutoUpdate={false}>
-          {style.type === 'axis' ? (
-            <PoseAxes scale={style.axisScale} opacity={style.opacity} />
-          ) : (
-            <PoseArrowShape style={style} />
-          )}
+          <PoseArrowShape style={style} />
         </group>
       ))}
     </>

@@ -6,6 +6,7 @@ import type { TFTree } from '@/types/tf-messages';
 import type { TransformSettings } from '@/types/scene-config';
 import { lookupTransform } from '@/lib/scene/transforms';
 import FatLine from '../scene/FatLine';
+import { AxesInstances } from '../scene/PoseShapes';
 
 const AXIS_LENGTH = 0.15;
 
@@ -50,29 +51,27 @@ export default function TFVisualizer({
     () => frames.flatMap((frame) => (frame.parent ? [frame.position, frame.parent] : [])),
     [frames]
   );
+  const matrices = useMemo(() => frames.map((frame) => frame.matrix), [frames]);
   const axisLength = AXIS_LENGTH * settings.axisScale;
   return (
     <>
-      {frames.map((frame) => (
-        <group key={frame.name}>
-          <group matrix={frame.matrix} matrixAutoUpdate={false}>
-            <axesHelper args={[axisLength]} />
-            {settings.showLabels && (
-              <Html
-                position={[0, 0, axisLength]}
-                style={{
-                  pointerEvents: 'none',
-                  fontSize: settings.labelSize * labelScale,
-                  color: '#e8eaf0',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {frame.name}
-              </Html>
-            )}
+      <AxesInstances matrices={matrices} scale={axisLength} />
+      {settings.showLabels &&
+        frames.map((frame) => (
+          <group key={frame.name} matrix={frame.matrix} matrixAutoUpdate={false}>
+            <Html
+              position={[0, 0, axisLength]}
+              style={{
+                pointerEvents: 'none',
+                fontSize: settings.labelSize * labelScale,
+                color: '#e8eaf0',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {frame.name}
+            </Html>
           </group>
-        </group>
-      ))}
+        ))}
       {links.length > 0 && (
         <FatLine
           points={links}

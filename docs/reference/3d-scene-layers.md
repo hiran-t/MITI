@@ -9,7 +9,7 @@ The scene is independent of the robot description. A grid, TF frames and sensor 
 | Layer                 | ROS 2 interface                                                            | Display                                                                                           |
 | --------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | Robot                 | `std_msgs/msg/String` (`*robot_description`), `sensor_msgs/msg/JointState` | URDF model; links follow TF, joint states pose links without TF                                   |
-| TF                    | `tf2_msgs/msg/TFMessage`                                                   | Frame axes, labels, parent connections                                                            |
+| TF                    | `tf2_msgs/msg/TFMessage`                                                   | Solid red, green and blue X, Y, Z axes at each frame, labels, parent connections                  |
 | Point Cloud           | `sensor_msgs/msg/PointCloud2`                                              | XYZ points; packed RGB/RGBA or individual color channels                                          |
 | Laser Scan            | `sensor_msgs/msg/LaserScan`                                                | Valid ranges projected onto the scan plane                                                        |
 | Marker / Marker Array | `visualization_msgs/msg/Marker`, `MarkerArray`                             | Arrows, cubes, spheres, cylinders, lines, lists, points, text, meshes, triangles and arrow strips |
