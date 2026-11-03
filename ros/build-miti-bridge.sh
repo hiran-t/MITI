@@ -10,7 +10,7 @@
 set -euo pipefail
 
 # The MITI-sdk version MITI is tested with.
-ref="${MITI_SDK_REF:-caf929a79d249810ab1268b067fd8266fecc9ce7}"
+ref="${MITI_SDK_REF:-v0.1.1}"
 distro="${ROS_DISTRO:?run in a ROS 2 environment, e.g. pixi run -e humble build-bridge}"
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 root="$here/miti-sdk"
@@ -40,7 +40,8 @@ PY
 fi
 
 echo "Building miti_bridge for $distro (once; a few minutes)"
-rm -rf "$install"
+# A build folder keeps the source path it was configured with: start afresh for a new ref.
+rm -rf "$install" "$root/build/$distro"
 # Tests and examples need GoogleTest and are not needed to run the bridge.
 colcon --log-base "$root/log/$distro" build --merge-install \
   --base-paths "$src/core" "$src/ros" \

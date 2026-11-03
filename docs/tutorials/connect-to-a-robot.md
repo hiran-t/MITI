@@ -22,7 +22,7 @@ sudo apt update && sudo apt install ros-$ROS_DISTRO-miti-bridge
 ros2 launch miti_bridge miti_start
 ```
 
-The apt repository goes online with the MITI SDK's first release; until then, [build miti_bridge from source](https://github.com/hiran-t/MITI-sdk#build-from-source). [Run miti_bridge on the robot](../how-to-guides/run-miti-bridge-on-the-robot.md) lists its launch arguments.
+To build it from source instead, see [the MITI SDK](https://github.com/hiran-t/MITI-sdk#build-from-source). [Run miti_bridge on the robot](../how-to-guides/run-miti-bridge-on-the-robot.md) lists its launch arguments.
 
 :::{note}
 A robot that still runs foxglove_bridge works too: enter its address the same way. JPEG camera compression, point clouds reduced on the robot, rate limits applied on the robot and the link statistics need miti_bridge.
