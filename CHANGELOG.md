@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [3.4.4] - 2026-11-03
+
 ### Changed
 
 - MITI runs on Next.js 16 and React 19. Next.js 14 no longer gets security fixes, and `npm audit` reported advisories in it, up to remote code execution in its image optimizer (the .deb and the Docker image never served it). The 3D Scene uses React Three Fiber 9 and drei 10.
