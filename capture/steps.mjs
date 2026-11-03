@@ -1,7 +1,7 @@
 // Higher-level steps for MITI screenshots.
 import { js, click, fill, setStorage, load, sleep, shot } from './lib.mjs';
-/** The robot's foxglove_bridge. */
-export const BRIDGE = process.env.MITI_BRIDGE ?? 'ws://100.99.81.13:8765';
+/** The robot's bridge: MITI_BRIDGE=ws://<robot>:8765. */
+export const BRIDGE = process.env.MITI_BRIDGE ?? 'ws://localhost:8765';
 export const COLOR = '/camera/camera/color/image_raw';
 export const DEPTH = '/camera/camera/aligned_depth_to_color/image_raw';
 const widget = (i, type, title, props = {}) => ({ i, type, title, x: 0, y: 0, w: 6, h: 9, minW: 2, minH: 6, props });

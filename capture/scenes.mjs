@@ -61,7 +61,7 @@ const scenes = {
     await click(`document.querySelector('.connection-status button[aria-label="Connection settings"]')`, 800);
     await click(`document.querySelector('#bridge-url')`, 200);
     await js(`document.querySelector('#bridge-url').select() || true`);
-    await send('Input.insertText', { text: 'ws://100.99.81.13:8765' });
+    await send('Input.insertText', { text: 'ws://192.168.10.27:8765' }); // the manual's example address
     await sleep(800);
   },
   async sources() {
