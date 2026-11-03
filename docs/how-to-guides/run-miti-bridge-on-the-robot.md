@@ -61,3 +61,9 @@ miti_bridge decides on the robot what crosses the network, so a slow link carrie
 - **TF and joint states** go first, ahead of images and point clouds.
 
 The status bar shows how much the bridge sends per second; it turns amber when messages wait on the robot for more than half a second. **Sources** lists what each topic uses.
+
+```{figure} ../images/miti-bridge-on-robot.webp
+:alt: MITI connected to miti_bridge on an Isaac Sim Unitree G1. The 3D Scene shows the robot model, its camera image, the lidar and the costmap; the color camera arrives at 85 KB a frame and the depth camera at 3.7 MB a frame; the status bar shows ROS 2 · miti_bridge and 16.2 MB/s
+
+miti_bridge on an Isaac Sim Unitree G1. The color camera arrives as JPEG, 85 KB a frame; the depth camera stays raw, 3.7 MB a frame.
+```
