@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- The 3D Scene draws TF frames as solid red, green and blue axes, like a pose shown as axes, instead of thin lines, so they are easy to see on a robot. **Axis scale** still sets their size. All frames are drawn together in one draw call, so a humanoid with dozens of links stays fast; poses shown as axes are drawn the same way.
+
 ## [3.4.4] - 2026-11-03
 
 ### Changed
