@@ -5,8 +5,9 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 /** The logo or browser icon of MITI_BRANDING_DIR: `/api/branding/logo`, `/api/branding/icon`. */
-export function GET(_request: Request, { params }: { params: { file: string } }) {
-  const which = params.file === 'logo' || params.file === 'icon' ? params.file : null;
+export async function GET(_request: Request, { params }: { params: Promise<{ file: string }> }) {
+  const { file } = await params;
+  const which = file === 'logo' || file === 'icon' ? file : null;
   const image = which && readBrandingImage(readBranding(), which);
   if (!image) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return new NextResponse(new Uint8Array(image.data), {

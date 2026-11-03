@@ -30,16 +30,33 @@ const config: Config = {
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async.
 // These packages ship untranspiled ES modules, so Jest transforms them: urdf-loader and the
-// three.js loaders it imports, and the drag-and-drop backends react-mosaic-component uses.
+// three.js loaders it imports, and the drag-and-drop backends react-mosaic-component uses. next/jest
+// adds node_modules patterns of its own, which would still skip them, so they are replaced by one
+// pattern that also keeps the exceptions next/jest makes for Next.js's own client code.
+const ESM_PACKAGES = [
+  'urdf-loader',
+  'three/examples/jsm',
+  'react-dnd[^/]*',
+  'dnd-core',
+  'dnd-multi-backend',
+  'rdndmb-html5-to-touch',
+  '@react-dnd',
+  'geist',
+  'next/dist/client',
+  'next/dist/shared/lib',
+  'next/src/client',
+  'next/src/shared/lib',
+];
 const jestConfig = createJestConfig(config);
 export default async () => {
   const resolved = await jestConfig();
   return {
     ...resolved,
-    transformIgnorePatterns: (resolved.transformIgnorePatterns ?? []).map((pattern) =>
-      pattern === '/node_modules/'
-        ? '/node_modules/(?!(urdf-loader|three/examples/jsm|react-dnd[^/]*|dnd-core|dnd-multi-backend|rdndmb-html5-to-touch|@react-dnd)/)'
-        : pattern
-    ),
+    transformIgnorePatterns: [
+      `/node_modules/(?!(${ESM_PACKAGES.join('|')})/)`,
+      ...(resolved.transformIgnorePatterns ?? []).filter(
+        (pattern) => !pattern.startsWith('/node_modules')
+      ),
+    ],
   };
 };

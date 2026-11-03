@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed
+
+- MITI runs on Next.js 16 and React 19. Next.js 14 no longer gets security fixes, and `npm audit` reported advisories in it, up to remote code execution in its image optimizer (the .deb and the Docker image never served it). The 3D Scene uses React Three Fiber 9 and drei 10.
+- Widgets run on React 19, which MITI shares with them. Widget API 1 is unchanged: widgets built against React 18 keep working.
+
 ## [3.4.3] - 2026-11-03
 
 ### Added

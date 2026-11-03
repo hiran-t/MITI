@@ -31,7 +31,7 @@ export function useTF({
   );
   const topicKey = JSON.stringify(tfTopics);
   // A hidden panel keeps the tree current but publishes it only once it is visible again.
-  const publishHeld = useRef<() => void>();
+  const publishHeld = useRef<(() => void) | undefined>(undefined);
   const visible = usePanelVisibleRef(() => publishHeld.current?.());
   useEffect(() => {
     const frames = new Map<string, TFFrame>();
