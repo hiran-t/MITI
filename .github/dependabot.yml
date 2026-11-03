@@ -1,0 +1,30 @@
+# Version updates, weekly and grouped so they arrive as a few pull requests. Security updates for
+# vulnerable dependencies are separate: Dependabot opens them as soon as an advisory is published.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore(deps)
+    groups:
+      # Minor and patch updates together. three.js changes its API in minor versions (0.x), so its
+      # updates come on their own; major versions always do.
+      npm-minor-and-patch:
+        update-types: [minor, patch]
+        exclude-patterns: [three, '@types/three']
+    ignore:
+      # Version 7 changes the layout format: #17.
+      - dependency-name: react-mosaic-component
+        update-types: ['version-update:semver-major']
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns: ['*']
