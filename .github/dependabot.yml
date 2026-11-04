@@ -22,6 +22,9 @@ updates:
       # MITI runs on Node.js 22 (CI, the Docker image, the .deb), so its types stay on 22.
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
+      # typescript-eslint supports TypeScript up to 6.0; version 7 waits until it does.
+      - dependency-name: typescript
+        versions: ['>=7']
   - package-ecosystem: github-actions
     directory: /
     schedule:
