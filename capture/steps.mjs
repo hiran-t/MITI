@@ -78,7 +78,8 @@ export async function chooseIn(title, label, value) {
 }
 /** Opens a topic's settings (its title toggles them) if they are closed. */
 export async function openSection(title) {
-  const closed = await js(`!(${sectionOf(title)})?.querySelector('.tree-toggle-open')`);
+  // Every section header has a .tree-toggle-open button; aria-expanded says whether it is open.
+  const closed = await js(`(${sectionOf(title)})?.querySelector(':scope > .tree-header .tree-toggle-open')?.getAttribute('aria-expanded') !== 'true'`);
   if (closed) await click(`all('.tree-title').find((t) => t.textContent.trim() === ${JSON.stringify(title)})`, 500);
 }
 /** Fills a text setting inside a topic's settings. */
@@ -86,6 +87,6 @@ export const fillIn = (title, label, text) =>
   fill(`(${sectionOf(title)}).querySelector('input[aria-label=' + JSON.stringify(${JSON.stringify(label)}) + ']')`, text);
 /** Closes a settings group if it is open. */
 export async function closeSection(title) {
-  const open = await js(`!!(${sectionOf(title)})?.querySelector(':scope > .tree-header .tree-toggle-open')`);
+  const open = await js(`(${sectionOf(title)})?.querySelector(':scope > .tree-header .tree-toggle-open')?.getAttribute('aria-expanded') === 'true'`);
   if (open) await click(`all('.tree-title').find((t) => t.textContent.trim() === ${JSON.stringify(title)})`, 400);
 }

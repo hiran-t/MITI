@@ -107,6 +107,9 @@ const scenes = {
     await seg('Sync timestamps', 'Off');
     await show('Transforms');
     await closeSection('General'); await closeSection('Topics'); await openSection('Transforms');
+    // Thinner, translucent axes keep the image readable where frames sit just in front of the lens.
+    await fillIn('Transforms', 'Axis thickness', '0.25');
+    await fillIn('Transforms', 'Axis opacity', '0.5');
     await sleep(20000);
   },
   async 'scene-frames'() {
