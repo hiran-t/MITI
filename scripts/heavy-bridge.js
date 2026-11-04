@@ -16,9 +16,14 @@ const { WebSocketServer } = require('ws');
 const { FoxgloveServer } = require('@foxglove/ws-protocol');
 
 // Messages are written with MITI's own CDR code (src/lib/bridge), loaded as TypeScript.
+// It compiles to CommonJS (node16 module rules, as this package is not "type": "module").
 require('ts-node').register({
   transpileOnly: true,
-  compilerOptions: { module: 'commonjs', moduleResolution: 'node' },
+  compilerOptions: {
+    module: 'node16',
+    moduleResolution: 'node16',
+    rootDir: require('path').join(__dirname, '..'),
+  },
 });
 const { createEncoder } = require('../src/lib/bridge/codec');
 
