@@ -20,7 +20,7 @@ function setup(value = '') {
   return { onCommit, input: screen.getByRole('combobox', { name: 'Topic' }) };
 }
 
-test('typing does not commit until Enter or blur', () => {
+test('typing does not commit until Enter or blur-sm', () => {
   const { onCommit, input } = setup();
   for (const partial of ['/', '/l', '/li', '/livox/', '/livox/scan'])
     fireEvent.change(input, { target: { value: partial } });

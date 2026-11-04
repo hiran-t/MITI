@@ -1,6 +1,64 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+/* The theme colors and the --miti-* tokens come from src/lib/theme.ts, through this config. */
+@config '../../tailwind.config.ts';
+
+/*
+  MITI's element defaults. They sit in the base layer so utility classes override them: CSS
+  outside a layer would beat every utility. The first two keep Tailwind CSS 3's defaults that
+  version 4 changed: borders gray-200 instead of currentcolor, and placeholders gray-400.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: theme(colors.gray.200);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: theme(colors.gray.400);
+  }
+
+  body {
+    color: var(--foreground);
+    background: var(--background);
+    font-family:
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+      'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    min-height: 100vh;
+  }
+
+  html {
+    min-height: 100vh;
+  }
+
+  * {
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+  }
+
+  button,
+  input,
+  select {
+    font: inherit;
+  }
+  button,
+  [role='button'] {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+  :focus-visible {
+    outline: 1px solid var(--miti-accent);
+    outline-offset: 1px;
+  }
+}
 
 /* Colors come from the --miti-* tokens in src/lib/theme.ts (injected by tailwind.config.ts). */
 :root {
@@ -9,43 +67,6 @@
   --miti-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --miti-overlay: color-mix(in srgb, var(--miti-bg-chrome) 88%, transparent);
   color-scheme: dark;
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
-    'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
-  min-height: 100vh;
-}
-
-html {
-  min-height: 100vh;
-}
-
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
-
-button,
-input,
-select {
-  font: inherit;
-}
-button {
-  cursor: pointer;
-}
-button:disabled {
-  cursor: not-allowed;
-}
-:focus-visible {
-  outline: 1px solid var(--miti-accent);
-  outline-offset: 1px;
 }
 
 /* ─── Panel layout: split mosaic (react-mosaic) with 1px seams ─────────────── */

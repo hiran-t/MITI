@@ -12,17 +12,18 @@ export const connectionStyles = {
 
   // Connection settings button
   settingsButton: {
-    base: 'p-1.5 rounded border border-gray-700 hover:bg-gray-800 transition-colors',
+    base: 'p-1.5 rounded-sm border border-gray-700 hover:bg-gray-800 transition-colors',
     icon: 'w-4 h-4 text-gray-400',
   },
 
   // Connection settings modal
   modal: {
     backdrop: 'fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 text-[13px]',
-    container: 'bg-gray-900 border border-gray-700 rounded shadow-xl max-w-md w-full text-gray-300',
+    container:
+      'bg-gray-900 border border-gray-700 rounded-sm shadow-xl max-w-md w-full text-gray-300',
     header: 'flex items-center justify-between px-4 py-3 border-b border-gray-800',
     title: 'text-sm font-medium text-gray-200',
-    closeButton: 'p-1 hover:bg-gray-800 rounded transition-colors',
+    closeButton: 'p-1 hover:bg-gray-800 rounded-sm transition-colors',
     closeIcon: 'w-5 h-5 text-gray-400',
     content: 'p-4 space-y-4',
     footer: 'flex items-center justify-between px-4 py-3 border-t border-gray-800',
@@ -32,7 +33,7 @@ export const connectionStyles = {
   form: {
     label: 'block text-xs text-gray-400 mb-1.5',
     input:
-      'w-full h-8 px-2.5 bg-gray-950 border border-gray-700 rounded text-gray-200 font-mono text-xs placeholder-gray-600 focus:outline-none focus:border-accent transition-colors',
+      'w-full h-8 px-2.5 bg-gray-950 border border-gray-700 rounded-sm text-gray-200 font-mono text-xs placeholder-gray-600 focus:outline-hidden focus:border-accent transition-colors',
     hint: 'mt-1 text-xs text-gray-500',
   },
 
@@ -49,7 +50,7 @@ export const connectionStyles = {
 
   // Examples section
   examples: {
-    container: 'bg-gray-950 rounded p-3',
+    container: 'bg-gray-950 rounded-sm p-3',
     title: 'text-xs font-medium text-gray-400 mb-2',
     list: 'space-y-1',
     link: 'block font-mono text-xs text-accent hover:text-accent-hover transition-colors',
@@ -60,9 +61,9 @@ export const connectionStyles = {
     reset: 'px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors',
     group: 'flex gap-2',
     cancel:
-      'px-3 py-1.5 text-xs text-gray-300 border border-gray-700 rounded hover:bg-gray-800 transition-colors',
+      'px-3 py-1.5 text-xs text-gray-300 border border-gray-700 rounded-sm hover:bg-gray-800 transition-colors',
     apply:
-      'shrink-0 px-3 py-1.5 text-xs text-gray-200 border border-gray-700 rounded hover:bg-gray-800 transition-colors disabled:opacity-40 disabled:hover:bg-transparent',
-    save: 'px-3 py-1.5 text-xs bg-accent hover:bg-accent-hover text-gray-950 font-medium rounded transition-colors',
+      'shrink-0 px-3 py-1.5 text-xs text-gray-200 border border-gray-700 rounded-sm hover:bg-gray-800 transition-colors disabled:opacity-40 disabled:hover:bg-transparent',
+    save: 'px-3 py-1.5 text-xs bg-accent hover:bg-accent-hover text-gray-950 font-medium rounded-sm transition-colors',
   },
 } as const;

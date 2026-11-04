@@ -109,17 +109,17 @@ function BTNodeRow({ node, depth = 0 }: { node: BTNode; depth?: number }) {
   return (
     <div>
       <div
-        className={`mb-0.5 flex cursor-pointer items-center gap-1.5 rounded border px-2 py-1 text-xs transition-opacity hover:opacity-90 ${style.bg}`}
+        className={`mb-0.5 flex cursor-pointer items-center gap-1.5 rounded-sm border px-2 py-1 text-xs transition-opacity hover:opacity-90 ${style.bg}`}
         style={{ marginLeft: `${depth * 16}px` }}
         onClick={() => hasChildren && setCollapsed(!collapsed)}
       >
-        <span className={`h-2 w-2 flex-shrink-0 rounded-full ${style.dot}`} />
+        <span className={`h-2 w-2 shrink-0 rounded-full ${style.dot}`} />
         <BTNodeIcon type={node.type} />
         <span className="flex-1 truncate font-medium text-gray-200">{node.name}</span>
-        <span className={`flex-shrink-0 text-xs ${style.label}`}>{status}</span>
-        <span className="flex-shrink-0 text-xs text-gray-600">[{node.type}]</span>
+        <span className={`shrink-0 text-xs ${style.label}`}>{status}</span>
+        <span className="shrink-0 text-xs text-gray-600">[{node.type}]</span>
         {hasChildren && (
-          <span className="flex-shrink-0 text-xs text-gray-500">{collapsed ? '▶' : '▼'}</span>
+          <span className="shrink-0 text-xs text-gray-500">{collapsed ? '▶' : '▼'}</span>
         )}
       </div>
       {!collapsed &&
@@ -180,7 +180,7 @@ function SMACC2Tab({ client, topic }: { client: BridgeClient | null; topic: stri
     <div className="flex h-full flex-col gap-3 overflow-hidden">
       {/* Status header */}
       <div
-        className={`flex flex-shrink-0 items-center gap-2 rounded border px-3 py-2 ${data.is_running ? 'border-ok/40 bg-ok/10' : 'border-gray-700 bg-gray-800/50'}`}
+        className={`flex shrink-0 items-center gap-2 rounded-sm border px-3 py-2 ${data.is_running ? 'border-ok/40 bg-ok/10' : 'border-gray-700 bg-gray-800/50'}`}
       >
         <span
           className={`h-2.5 w-2.5 rounded-full ${data.is_running ? 'animate-pulse bg-ok' : 'bg-gray-600'}`}
@@ -190,19 +190,19 @@ function SMACC2Tab({ client, topic }: { client: BridgeClient | null; topic: stri
           {data.machine_id || '—'}
         </span>
         <span
-          className={`ml-auto rounded px-2 py-0.5 text-xs font-medium ${data.is_running ? 'bg-ok/20 text-ok' : 'bg-gray-700 text-gray-400'}`}
+          className={`ml-auto rounded-sm px-2 py-0.5 text-xs font-medium ${data.is_running ? 'bg-ok/20 text-ok' : 'bg-gray-700 text-gray-400'}`}
         >
           {data.is_running ? 'RUNNING' : 'STOPPED'}
         </span>
       </div>
 
       {/* Current / Previous state */}
-      <div className="grid flex-shrink-0 grid-cols-2 gap-2">
-        <div className="rounded border border-accent/30 bg-accent/10 px-3 py-2">
+      <div className="grid shrink-0 grid-cols-2 gap-2">
+        <div className="rounded-sm border border-accent/30 bg-accent/10 px-3 py-2">
           <p className="mb-1 text-xs text-gray-500">Current State</p>
           <p className="truncate text-sm font-bold text-accent">{data.current_state || '—'}</p>
         </div>
-        <div className="rounded border border-gray-700 bg-gray-800/40 px-3 py-2">
+        <div className="rounded-sm border border-gray-700 bg-gray-800/40 px-3 py-2">
           <p className="mb-1 text-xs text-gray-500">Previous State</p>
           <p className="truncate text-sm font-medium text-gray-400">{data.previous_state || '—'}</p>
         </div>
@@ -210,7 +210,7 @@ function SMACC2Tab({ client, topic }: { client: BridgeClient | null; topic: stri
 
       {/* States list */}
       {states.length > 0 && (
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <p className="mb-1.5 text-xs font-medium text-gray-500">All States</p>
           <div className="flex flex-wrap gap-1.5">
             {states.map((s, i) => (
@@ -231,26 +231,26 @@ function SMACC2Tab({ client, topic }: { client: BridgeClient | null; topic: stri
 
       {/* Transition history */}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <p className="mb-1.5 flex-shrink-0 text-xs font-medium text-gray-500">
+        <p className="mb-1.5 shrink-0 text-xs font-medium text-gray-500">
           Transition History{' '}
           {history.length > 0 && <span className="text-gray-600">({history.length})</span>}
         </p>
         <div className="flex-1 space-y-1 overflow-y-auto pr-1">
           {history.length === 0 ? (
-            <p className="text-xs italic text-gray-600">No transitions yet</p>
+            <p className="text-xs text-gray-600 italic">No transitions yet</p>
           ) : (
             history.map((_, i) => {
               const t = history[history.length - 1 - i];
               return (
                 <div
                   key={i}
-                  className="flex items-center gap-2 rounded border border-gray-800 bg-gray-800/40 px-2 py-1.5 text-xs"
+                  className="flex items-center gap-2 rounded-sm border border-gray-800 bg-gray-800/40 px-2 py-1.5 text-xs"
                 >
                   <span className="truncate text-gray-400">{t.from_state}</span>
-                  <span className="flex-shrink-0 text-gray-600">→</span>
+                  <span className="shrink-0 text-gray-600">→</span>
                   <span className="truncate font-medium text-accent">{t.to_state}</span>
                   {t.timestamp && (
-                    <span className="ml-auto flex-shrink-0 tabular-nums text-gray-600">
+                    <span className="ml-auto shrink-0 text-gray-600 tabular-nums">
                       {new Date(t.timestamp / 1e6).toLocaleTimeString()}
                     </span>
                   )}
@@ -262,7 +262,7 @@ function SMACC2Tab({ client, topic }: { client: BridgeClient | null; topic: stri
       </div>
 
       {/* Footer */}
-      <div className="flex flex-shrink-0 items-center gap-2 text-xs text-gray-600">
+      <div className="flex shrink-0 items-center gap-2 text-xs text-gray-600">
         <Clock className="h-3 w-3" />
         {lastUpdate ? lastUpdate.toLocaleTimeString() : '—'}
       </div>
@@ -297,9 +297,9 @@ function BehaviorTreeTab({ client, topic }: { client: BridgeClient | null; topic
   return (
     <div className="flex h-full flex-col gap-3 overflow-hidden">
       {/* Stats bar */}
-      <div className="flex flex-shrink-0 items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         <div
-          className={`flex flex-1 items-center gap-2 rounded border px-3 py-1.5 ${data.is_running ? 'border-warn/40 bg-warn/10' : 'border-gray-700 bg-gray-800/50'}`}
+          className={`flex flex-1 items-center gap-2 rounded-sm border px-3 py-1.5 ${data.is_running ? 'border-warn/40 bg-warn/10' : 'border-gray-700 bg-gray-800/50'}`}
         >
           <span
             className={`h-2 w-2 rounded-full ${data.is_running ? 'animate-pulse bg-warn' : 'bg-gray-600'}`}
@@ -308,19 +308,19 @@ function BehaviorTreeTab({ client, topic }: { client: BridgeClient | null; topic
             Tree: <span className="font-medium text-gray-300">{data.tree_id || '—'}</span>
           </span>
         </div>
-        <div className="flex-shrink-0 rounded border border-gray-700 bg-gray-800/50 px-3 py-1.5 text-xs text-gray-400">
-          <span className="font-medium tabular-nums text-gray-300">{data.total_ticks ?? 0}</span>{' '}
+        <div className="shrink-0 rounded-sm border border-gray-700 bg-gray-800/50 px-3 py-1.5 text-xs text-gray-400">
+          <span className="font-medium text-gray-300 tabular-nums">{data.total_ticks ?? 0}</span>{' '}
           ticks
         </div>
         <div
-          className={`flex-shrink-0 rounded border px-3 py-1.5 text-xs font-medium ${data.is_running ? 'border-warn/40 text-warn' : 'border-gray-700 text-gray-500'}`}
+          className={`shrink-0 rounded-sm border px-3 py-1.5 text-xs font-medium ${data.is_running ? 'border-warn/40 text-warn' : 'border-gray-700 text-gray-500'}`}
         >
           {data.is_running ? 'RUNNING' : 'IDLE'}
         </div>
       </div>
 
       {/* Status legend */}
-      <div className="flex flex-shrink-0 items-center gap-3 px-1">
+      <div className="flex shrink-0 items-center gap-3 px-1">
         {(['SUCCESS', 'FAILURE', 'RUNNING', 'IDLE'] as NodeStatus[]).map((s) => (
           <div key={s} className="flex items-center gap-1.5">
             <span className={`h-2 w-2 rounded-full ${STATUS_STYLES[s].dot}`} />
@@ -334,12 +334,12 @@ function BehaviorTreeTab({ client, topic }: { client: BridgeClient | null; topic
         {data.root_node ? (
           <BTNodeRow node={data.root_node} depth={0} />
         ) : (
-          <p className="text-xs italic text-gray-600">No tree data</p>
+          <p className="text-xs text-gray-600 italic">No tree data</p>
         )}
       </div>
 
       {/* Footer */}
-      <div className="flex flex-shrink-0 items-center gap-2 text-xs text-gray-600">
+      <div className="flex shrink-0 items-center gap-2 text-xs text-gray-600">
         <Clock className="h-3 w-3" />
         {lastUpdate ? lastUpdate.toLocaleTimeString() : '—'}
       </div>
@@ -402,9 +402,9 @@ export default function StateMachineMonitor({
   const [activeTab, setActiveTab] = useState<TabType>('smacc2');
 
   return (
-    <div className="relative flex h-full w-full flex-col overflow-hidden rounded border border-gray-800 bg-gray-950">
+    <div className="relative flex h-full w-full flex-col overflow-hidden rounded-sm border border-gray-800 bg-gray-950">
       {/* Header */}
-      <div className="flex flex-shrink-0 items-center gap-1 border-b border-gray-800 bg-gray-900/60 px-3 py-2">
+      <div className="flex shrink-0 items-center gap-1 border-b border-gray-800 bg-gray-900/60 px-3 py-2">
         {TABS.map((tab) => (
           <button
             key={tab.id}

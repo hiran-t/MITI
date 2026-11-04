@@ -38,9 +38,9 @@ export const widgetStyles = {
   menu: {
     backdrop: 'fixed inset-0 z-30 bg-black/20',
     container:
-      'fixed bottom-24 right-6 z-50 bg-gray-900 border border-gray-800 rounded shadow-2xl p-2 min-w-[250px]',
+      'fixed bottom-24 right-6 z-50 bg-gray-900 border border-gray-800 rounded-sm shadow-2xl p-2 min-w-[250px]',
     header: 'text-xs font-semibold text-gray-400 px-3 py-2 mb-1',
-    item: 'w-full flex items-center gap-3 p-3 hover:bg-gray-800 rounded transition-colors text-left',
+    item: 'w-full flex items-center gap-3 p-3 hover:bg-gray-800 rounded-sm transition-colors text-left',
     itemIcon: 'text-2xl',
     itemContent: 'flex-1',
     itemTitle: 'text-sm text-gray-200 font-medium',
