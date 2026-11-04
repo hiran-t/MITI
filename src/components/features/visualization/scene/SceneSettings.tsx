@@ -894,6 +894,22 @@ export function TransformsSection({
         onCommit={(axisScale) => onChange({ axisScale })}
       />
       <NumberField
+        label="Axis thickness"
+        value={transforms.axisThickness}
+        min={0.05}
+        max={5}
+        step={0.25}
+        onCommit={(axisThickness) => onChange({ axisThickness })}
+      />
+      <NumberField
+        label="Axis opacity"
+        value={transforms.axisOpacity}
+        min={0}
+        max={1}
+        step={0.1}
+        onCommit={(axisOpacity) => onChange({ axisOpacity })}
+      />
+      <NumberField
         label="Line width"
         value={transforms.lineWidth}
         min={0.1}

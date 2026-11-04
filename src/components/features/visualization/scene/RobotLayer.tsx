@@ -8,6 +8,7 @@ import { useTopic } from '@/hooks/useTopic';
 import { resolveResourceUrl, resourceBase } from '@/lib/scene/resources';
 import { parseParameterName } from '@/lib/scene/scene-config';
 import { placeLinks } from '@/lib/scene/robot-placement';
+import { applyUrdfMaterial } from '@/lib/scene/urdf-material';
 import { disposeObject, loadMeshResource, meshErrorMessage } from '@/lib/scene/mesh-loader';
 import type { TFTree } from '@/types/tf-messages';
 import type { LayerStatus } from '@/types/scene';
@@ -180,7 +181,7 @@ export default function RobotLayer({
     loader.workingPath = workingPath;
     // Keep package:// intact; loadMeshResource resolves it through the bridge or MITI's server.
     loader.packages = (pkg: string) => `package://${pkg}`;
-    loader.loadMeshCb = (path, _manager, done) => {
+    loader.loadMeshCb = (path, _manager, material, done) => {
       loadMeshResource(
         path,
         { meshBaseUrl, packageMapping, fetchAsset },
@@ -188,6 +189,7 @@ export default function RobotLayer({
       )
         .then((mesh) => {
           if (!live) return disposeObject(mesh);
+          applyUrdfMaterial(mesh, material);
           if (colorRef.current) applyColor(mesh, colorRef.current);
           done(mesh);
           setMeshVersion((version) => version + 1);
