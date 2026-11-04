@@ -10,7 +10,7 @@
 set -euo pipefail
 
 # The MITI-sdk version MITI is tested with.
-ref="${MITI_SDK_REF:-v0.1.1}"
+ref="${MITI_SDK_REF:-v0.1.2}"
 distro="${ROS_DISTRO:?run in a ROS 2 environment, e.g. pixi run -e humble build-bridge}"
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 root="$here/miti-sdk"

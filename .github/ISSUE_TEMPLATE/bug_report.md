@@ -36,7 +36,7 @@ If they help, add screenshots or a short recording.
 - **ROS 2 distro**: [Humble, Jazzy, ...]
 - **Bridge**: [e.g. miti_bridge]
 - **Where it runs**: [on the robot / beside MITI with pixi (`pixi run -e humble miti-bridge`) / beside MITI with Docker (`docker compose --profile bridge up -d`)]
-- **Bridge version**: [e.g. miti_bridge 0.1.1 (`dpkg-query -W ros-$ROS_DISTRO-miti-bridge`)]
+- **Bridge version**: [e.g. miti_bridge 0.1.2 (`dpkg-query -W ros-$ROS_DISTRO-miti-bridge`)]
 - **Bridge address in MITI**: [e.g. ws://192.168.1.10:8765]
 - **Topics and message types involved**: [e.g. /camera/color/image_raw, sensor_msgs/msg/Image]
 - **Network**: [same machine, wired, Wi-Fi, VPN]
