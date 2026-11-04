@@ -50,4 +50,4 @@ Questions, ideas and setups using MITI are welcome in [Discussions](https://gith
 
 ## License
 
-[MIT](LICENSE). MITI builds on [ROS 2](https://docs.ros.org/), [miti_bridge](https://github.com/hiran-t/MITI-sdk), [three.js](https://threejs.org/), [React Three Fiber](https://docs.pmnd.rs/react-three-fiber/), [Next.js](https://nextjs.org/), [Tailwind CSS](https://tailwindcss.com/), [react-mosaic](https://github.com/nomcopter/react-mosaic) and [urdf-loader](https://github.com/gkjohnson/urdf-loaders).
+[MIT](LICENSE). The .deb (`/usr/lib/miti/THIRD_PARTY_LICENSES`) and the Docker image (`/app/THIRD_PARTY_LICENSES`) carry the licenses of the packages they ship. MITI builds on [ROS 2](https://docs.ros.org/), [miti_bridge](https://github.com/hiran-t/MITI-sdk), [three.js](https://threejs.org/), [React Three Fiber](https://docs.pmnd.rs/react-three-fiber/), [Next.js](https://nextjs.org/), [Tailwind CSS](https://tailwindcss.com/), [react-mosaic](https://github.com/nomcopter/react-mosaic) and [urdf-loader](https://github.com/gkjohnson/urdf-loaders).

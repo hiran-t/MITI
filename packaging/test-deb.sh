@@ -58,6 +58,7 @@ echo "$(. /etc/os-release && echo "$PRETTY_NAME"), $(dpkg --print-architecture),
 
 check "installing starts nothing" bash -c '! pgrep -x node'
 check "Node.js runs" /usr/lib/miti/node/bin/node -e 'process.exit(0)'
+check "the third-party licenses ship" grep -q '^next@' /usr/lib/miti/THIRD_PARTY_LICENSES
 check "miti --help" miti --help
 
 start 'miti run' /tmp/run.log

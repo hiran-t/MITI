@@ -2,8 +2,13 @@
 
 ## [Unreleased]
 
+### Added
+
+- The .deb and the Docker image carry `THIRD_PARTY_LICENSES`: the version, license and license text of each npm package they ship (`scripts/third-party-licenses.mjs`).
+
 ### Changed
 
+- The stand-in bridge's WebSocket server package is a dev dependency: only `scripts/heavy-bridge.js` uses it.
 - With a bridge that has only the base protocol, the status bar says **WebSocket bridge** and Sources says **Base protocol (WebSocket)**, and the Image panel's help text speaks of "other bridges". The Windows bridge script is `ros/windows-bridge.ps1`; `pixi run -e <distro> bridge` and `miti-bridge` start it as before.
 - MITI decodes and encodes ROS 2 messages with its own code instead of third-party libraries. Messages decode to the same values as before, and in Chrome a camera image or a large point cloud decodes two to three times as fast. Fields of type `wstring`, which MITI could not read before, now decode.
 
