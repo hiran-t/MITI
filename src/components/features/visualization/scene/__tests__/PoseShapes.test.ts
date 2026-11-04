@@ -67,6 +67,17 @@ test('axes are three instances per pose along the pose X, Y and Z', () => {
   expect(mesh.boundingSphere!.containsPoint(new THREE.Vector3(1, 2.5, 3))).toBe(true);
 });
 
+test('axis thickness multiplies the radius, not the length', () => {
+  const mesh = new THREE.InstancedMesh(new THREE.CylinderGeometry(1, 1, 1), undefined, 3);
+  writeAxes(mesh, [new THREE.Matrix4()], 0.5, 0.25);
+  const shaft = new THREE.Matrix4();
+  mesh.getMatrixAt(2, shaft);
+  const along = new THREE.Vector3(0, 1, 0).applyMatrix4(shaft).toArray();
+  const across = new THREE.Vector3(1, 0, 0).applyMatrix4(shaft).toArray();
+  [0, 0, 0.5].forEach((v, i) => expect(along[i]).toBeCloseTo(v));
+  [0.005, 0, 0].forEach((v, i) => expect(across[i]).toBeCloseTo(v));
+});
+
 test('axes capacity grows in steps so a changing frame count rarely rebuilds the mesh', () => {
   expect(axesCapacity(0)).toBe(4);
   expect(axesCapacity(1)).toBe(4);
