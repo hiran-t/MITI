@@ -33,6 +33,8 @@ rm -rf "$stage/.next/cache" "$stage"/.env*
 cp ros/miti-bridge.sh ros/cyclonedds.xml "$stage/ros/"
 # The launcher behind `miti run` (it starts server.js, and miti_bridge with --bridge).
 cp scripts/start-miti.mjs scripts/bridge-settings.mjs "$stage/scripts/"
+# The licenses of the npm packages MITI ships (Node.js brings its own LICENSE below).
+node scripts/third-party-licenses.mjs "$stage/THIRD_PARTY_LICENSES"
 
 # Architecture-specific files would only run on the build machine.
 native="$(find "$stage/node_modules" -name '*.node' 2>/dev/null || true)"

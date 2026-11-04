@@ -1,5 +1,4 @@
-import { parse } from '@foxglove/rosmsg';
-import { MessageWriter } from '@foxglove/rosmsg2-serialization';
+import { createEncoder } from '../codec';
 import {
   createDecodeHandler,
   type ChannelSpec,
@@ -43,7 +42,7 @@ const cloudChannel: ChannelSpec = {
 
 /** A 2×2 bgr8 image with one byte of row padding, as CDR. */
 const imageBytes = (blue = 10) =>
-  new MessageWriter(parse(IMAGE_SCHEMA, { ros2: true })).writeMessage({
+  createEncoder(IMAGE_SCHEMA)({
     header,
     height: 2,
     width: 2,
@@ -58,7 +57,7 @@ function cloudBytes() {
   const data = new Uint8Array(36);
   const view = new DataView(data.buffer);
   [1, 2, 3, NaN, 0, 0, 7, 8, 9].forEach((v, i) => view.setFloat32(i * 4, v, true));
-  return new MessageWriter(parse(CLOUD_SCHEMA, { ros2: true })).writeMessage({
+  return createEncoder(CLOUD_SCHEMA)({
     header,
     height: 1,
     width: 3,
@@ -112,7 +111,7 @@ describe('decode handler', () => {
 
   test('a message that cannot be prepared is still delivered, for the panel to report', () => {
     const handle = createDecodeHandler();
-    const bad = new MessageWriter(parse(IMAGE_SCHEMA, { ros2: true })).writeMessage({
+    const bad = createEncoder(IMAGE_SCHEMA)({
       header,
       height: 2,
       width: 2,

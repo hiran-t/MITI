@@ -1109,7 +1109,8 @@ to the same worker, which keeps the channel's decoder.
 (`lib/bridge/protocol.ts`), offering the WebSocket subprotocol `miti.bridge.v1` first; miti_bridge
 selects it. `miti.*` operations go only to a bridge that selected `miti.bridge.v1` and advertises
 their capability; with any other subprotocol, MITI uses the base protocol alone. Messages arrive
-as CDR (or JSON) and are decoded with the schemas the bridge advertises (`lib/bridge/codec.ts`).
+as CDR (or JSON) and are decoded with the schemas the bridge advertises, by MITI's own CDR code
+(`lib/bridge/codec.ts`).
 
 Subscriptions are shared per topic and survive reconnects and node restarts: they bind to a
 channel whenever the bridge advertises the topic. After a lost connection, each connection retries
