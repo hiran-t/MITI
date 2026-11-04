@@ -48,7 +48,7 @@ function expectMatrix(actual: THREE.Matrix4, expected: THREE.Matrix4) {
   actual.elements.forEach((value, index) => expect(value).toBeCloseTo(expected.elements[index], 6));
 }
 
-test('every link with a TF frame is drawn at that frame, like Foxglove', () => {
+test('every link with a TF frame is drawn at that frame', () => {
   const robot = new URDFLoader().parse(URDF);
   const t = tree([
     frame('base_link', 'odom', 1, 2, 0, Math.PI / 2),

@@ -10,7 +10,7 @@ export interface TopicOptions {
   throttleRate?: number;
   /**
    * Deliver at most this many messages per second (Hz), dropping extras before they are decoded.
-   * miti_bridge sends only these; foxglove_bridge still sends every message.
+   * miti_bridge sends only these; a bridge with only the base protocol sends every message.
    */
   maxRate?: number;
   /** Over miti_bridge, transform the messages on the robot (see `SubscribeOptions.transform`). */

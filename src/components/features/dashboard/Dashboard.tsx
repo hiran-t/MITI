@@ -65,7 +65,7 @@ export default function Dashboard() {
     ? 'WebSocket'
     : client?.usesMitiProtocol()
       ? 'MITI protocol (miti.bridge.v1)'
-      : 'Foxglove WebSocket protocol';
+      : 'Base protocol (WebSocket)';
   // The client object is created before it connects; gating it makes the list load on (re)connect.
   const { topics, loading, refreshTopics } = useTopicList(connected ? client : null);
   const {
@@ -98,7 +98,7 @@ export default function Dashboard() {
   );
   const [resizingSidebar, setResizingSidebar] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
-  /** Drag the sidebar's edge to resize it, as in Foxglove. */
+  /** Drag the sidebar's edge to resize it. */
   const startSidebarResize = (event: ReactPointerEvent<HTMLDivElement>) => {
     const left = sidebarRef.current?.getBoundingClientRect().left ?? 0;
     const handle = event.currentTarget;

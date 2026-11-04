@@ -31,7 +31,7 @@ export interface SubscribeOptions {
    * transform, because they all receive its output: a `jpeg` subscriber of a raw Image topic gets
    * `sensor_msgs/CompressedImage` messages, and must show both. `jpeg` waits for a raw frame whose
    * encoding JPEG can hold (rgb8, bgr8, rgba8, bgra8, mono8); depth and Bayer images stay raw.
-   * foxglove_bridge ignores it.
+   * A bridge with only the base protocol ignores it.
    */
   transform?: Transform;
 }

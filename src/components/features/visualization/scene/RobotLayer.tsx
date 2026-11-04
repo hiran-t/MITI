@@ -383,7 +383,7 @@ function jointInfo(robot: URDFRobot): JointInfo[] {
 }
 
 /**
- * Foxglove's robot display options: per-link visibility, opacity, mesh outlines and link axes.
+ * Robot display options: per-link visibility, opacity, mesh outlines and link axes.
  * Idempotent, so it can run again whenever a mesh loads or an option changes.
  */
 function styleRobot(
