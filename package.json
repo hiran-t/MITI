@@ -33,7 +33,7 @@
     "react-mosaic-component": "^7.2.1",
     "tailwindcss": "^3.4.19",
     "three": "^0.160.1",
-    "urdf-loader": "^0.12.6"
+    "urdf-loader": "^0.13.1"
   },
   "devDependencies": {
     "@foxglove/ws-protocol": "^0.8.0",
@@ -55,7 +55,7 @@
     "lint-staged": "^15.2.0",
     "postcss": "^8.5.6",
     "prettier": "^3.1.1",
-    "prettier-plugin-tailwindcss": "^0.5.9",
+    "prettier-plugin-tailwindcss": "^0.8.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.72.1",
