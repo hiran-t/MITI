@@ -24,9 +24,9 @@ on:
       - 'package-lock.json'
       - 'next.config.js'
       - '.github/workflows/packages.yml'
+  # Every pull request, so the required Package checks always report (main's ruleset).
   pull_request:
     branches: [ main ]
-    paths: *package-paths
   release:
     types: [published]
   workflow_dispatch:
