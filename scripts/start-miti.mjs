@@ -195,7 +195,7 @@ function startBridge() {
   const script = isWindows
     ? [
         'powershell',
-        ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', 'ros/foxglove-bridge.ps1'],
+        ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', 'ros/windows-bridge.ps1'],
       ]
     : ['bash', ['ros/miti-bridge.sh']];
   const child = spawn(script[0], script[1], {

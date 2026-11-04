@@ -50,7 +50,7 @@ const ROS1_LEVELS: Record<number, LogLevel> = {
   8: 'ERROR',
   16: 'FATAL',
 };
-const FOXGLOVE_LEVELS: Record<number, LogLevel> = {
+const LEVELS_1_TO_5: Record<number, LogLevel> = {
   1: 'DEBUG',
   2: 'INFO',
   3: 'WARN',
@@ -72,7 +72,7 @@ export function toLogEntry(message: unknown, id: number): LogEntry | null {
     return {
       id,
       stamp: seconds(m.timestamp as Time),
-      level: FOXGLOVE_LEVELS[level] ?? 'UNKNOWN',
+      level: LEVELS_1_TO_5[level] ?? 'UNKNOWN',
       name: text(m.name),
       message: text(m.message),
       file: text(m.file),

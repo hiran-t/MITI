@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- With a bridge that has only the base protocol, the status bar says **WebSocket bridge** and Sources says **Base protocol (WebSocket)**, and the Image panel's help text speaks of "other bridges". The Windows bridge script is `ros/windows-bridge.ps1`; `pixi run -e <distro> bridge` and `miti-bridge` start it as before.
+
 ## [3.4.5] - 2026-11-03
 
 ### Changed

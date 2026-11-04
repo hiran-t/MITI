@@ -65,7 +65,7 @@ export default function Dashboard() {
     ? 'WebSocket'
     : client?.usesMitiProtocol()
       ? 'MITI protocol (miti.bridge.v1)'
-      : 'Foxglove WebSocket protocol';
+      : 'Base protocol (WebSocket)';
   // The client object is created before it connects; gating it makes the list load on (re)connect.
   const { topics, loading, refreshTopics } = useTopicList(connected ? client : null);
   const {

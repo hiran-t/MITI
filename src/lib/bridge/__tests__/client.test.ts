@@ -398,19 +398,19 @@ test('depth images, other message types and base-protocol bridges are never sent
   expect(control.ops('miti.subscriptionOptions')).toHaveLength(0);
   client.disconnect();
 
-  const foxglove = await connect(['miti.transforms'], 'synchronized');
-  foxglove.advertise([cdrChannel(4, '/camera/image_raw', 'sensor_msgs/msg/Image', IMAGE_SCHEMA)]);
+  const baseOnly = await connect(['miti.transforms'], 'synchronized');
+  baseOnly.advertise([cdrChannel(4, '/camera/image_raw', 'sensor_msgs/msg/Image', IMAGE_SCHEMA)]);
   const view = jest.fn();
-  foxglove.client.subscribe('/camera/image_raw', view, undefined, jpeg);
-  foxglove.control.binary(
+  baseOnly.client.subscribe('/camera/image_raw', view, undefined, jpeg);
+  baseOnly.control.binary(
     messageFrame(
-      foxglove.control.lastSubscriptionId(),
+      baseOnly.control.lastSubscriptionId(),
       cdr(IMAGE_SCHEMA, { width: 2, encoding: 'rgb8', data: new Uint8Array(6) })
     )
   );
   expect(view).toHaveBeenCalledTimes(1);
-  expect(foxglove.control.ops('miti.subscriptionOptions')).toHaveLength(0);
-  foxglove.client.disconnect();
+  expect(baseOnly.control.ops('miti.subscriptionOptions')).toHaveLength(0);
+  baseOnly.client.disconnect();
 });
 
 test('point clouds are reduced on the robot when every subscriber asks for the same', async () => {
@@ -476,9 +476,9 @@ test('over miti.bridge.v1 the link stats sum what each connection reports', asyn
   expect(seen).toHaveBeenLastCalledWith(null);
   client.disconnect();
 
-  const foxglove = await connect(['miti.stats']);
-  expect(foxglove.control.ops('miti.subscribeStats')).toHaveLength(0);
-  foxglove.client.disconnect();
+  const baseOnly = await connect(['miti.stats']);
+  expect(baseOnly.control.ops('miti.subscribeStats')).toHaveLength(0);
+  baseOnly.client.disconnect();
 });
 
 test('over miti.bridge.v1 publishing sends CDR, asking for an unknown schema once', async () => {

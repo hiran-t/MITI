@@ -81,7 +81,7 @@ function Get-PortOwner([int]$Port) {
 # the port: move to the next free one.
 if (Test-PortInUse $port) {
   if (Test-Bridge $port) {
-    [Console]::Error.WriteLine("foxglove_bridge already runs on port $port; use that one.")
+    [Console]::Error.WriteLine("A bridge already runs on port $port; use that one.")
     exit 3
   }
   $taken = $port
@@ -98,7 +98,7 @@ if (Test-PortInUse $port) {
     [Console]::Error.WriteLine("Port $taken is used by $owner, and no port up to $($taken + 20) is free.")
     exit 1
   }
-  [Console]::Error.WriteLine("Port $taken is used by $owner; foxglove_bridge uses $port instead. " +
+  [Console]::Error.WriteLine("Port $taken is used by $owner; the bridge uses $port instead. " +
     "pixi run miti finds it; otherwise enter ws://<this machine>:$port in MITI's connection settings.")
 }
 
@@ -138,7 +138,7 @@ $locators
 $env:ROS_STATIC_PEERS = $peers -join ';'
 
 $robot = if ($peers.Count) { ", robot $($peers -join ' ')" } else { '' }
-Write-Host "foxglove_bridge: ws://${address}:$port, ROS_DOMAIN_ID=$env:ROS_DOMAIN_ID, $env:RMW_IMPLEMENTATION$robot"
+Write-Host "Bridge: ws://${address}:$port, ROS_DOMAIN_ID=$env:ROS_DOMAIN_ID, $env:RMW_IMPLEMENTATION$robot"
 
 & ros2 launch foxglove_bridge foxglove_bridge_launch.xml `
   "port:=$port" `

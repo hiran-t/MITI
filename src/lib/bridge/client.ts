@@ -490,7 +490,7 @@ export class BridgeClient {
     if (!this.connected) return null;
     return this.usesMitiProtocol()
       ? (this.control.serverInfo?.name ?? 'miti_bridge')
-      : 'foxglove_bridge';
+      : 'WebSocket bridge';
   }
 
   /** How the link to miti_bridge is doing; null with another bridge or before its first report. */
@@ -582,7 +582,7 @@ export class BridgeClient {
       return;
     }
     if (!this.control.serverInfo?.supportedEncodings?.includes('json'))
-      throw new Error('foxglove_bridge does not accept JSON messages');
+      throw new Error('The bridge does not accept JSON messages');
     let channelId = this.clientChannels.get(topic);
     if (channelId === undefined) {
       const schemaName = this.publishTypes.get(topic);

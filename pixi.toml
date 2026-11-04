@@ -58,8 +58,8 @@ miti-bridge = { cmd = "node scripts/start-miti.mjs --port {{ port }} --bridge", 
 # bridge RoboStack provides.
 [feature.bridge.target.win-64.tasks]
 build-msgs = { cmd = "powershell -NoProfile -ExecutionPolicy Bypass -File ros/build-msgs.ps1", description = "Build message packages in ros/overlay/src" }
-build-bridge = { cmd = "echo 'On Windows the bridge is foxglove_bridge from RoboStack: nothing to build.'", description = "Nothing on Windows: the bridge there comes prebuilt from RoboStack" }
-bridge = { cmd = "powershell -NoProfile -ExecutionPolicy Bypass -File ros/foxglove-bridge.ps1", depends-on = ["build-bridge"], description = "The bridge on this machine (port 8765)" }
+build-bridge = { cmd = "echo 'On Windows the bridge comes prebuilt from RoboStack: nothing to build.'", description = "Nothing on Windows: the bridge there comes prebuilt from RoboStack" }
+bridge = { cmd = "powershell -NoProfile -ExecutionPolicy Bypass -File ros/windows-bridge.ps1", depends-on = ["build-bridge"], description = "The bridge on this machine (port 8765)" }
 
 # The bridge can only offer topics whose message definitions are installed beside it; add the
 # robot's own message packages as described in docs/DEPLOYMENT.md.
