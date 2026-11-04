@@ -1,0 +1,69 @@
+Package: miti
+Architecture: arm64
+Version: 3.4.4
+Priority: optional
+Section: misc
+Maintainer: MITI Contributors <78252832+hiran-t@users.noreply.github.com>
+Installed-Size: 138455
+Depends: libc6 (>= 2.28), libstdc++6
+Recommends: ros-humble-miti-bridge | ros-jazzy-miti-bridge
+Filename: pool/main/m/miti/miti_3.4.4_arm64.deb
+Size: 49013934
+MD5sum: 6e27ab5d568ca15eb222ce61d52126a7
+SHA1: 927c98c755c825e9d816858a2abeb1606c1b1dea
+SHA256: 0766084c67796559d43df1aaa1d76fa79d2762b8b1dbb1982d9a3dda9707d818
+SHA512: ce8da32c3d0369b970f4191f3eeffe35df35dee0eccbd820555e2e895750d416d51e1ad5edf63223ad9a1b8cd41f061ee4529ff8b7872598e70d294bf7c5a17e
+Homepage: https://github.com/hiran-t/MITI
+Description: Web dashboard for ROS 2 robots
+ MITI shows a robot's topics in the browser: a 3D scene with the robot model,
+ TF, point clouds and maps, camera images, logs and plots. It connects to
+ miti_bridge on the robot, or to one beside it (miti run --bridge).
+ Node.js is included. Start it with `miti run` (Ctrl+C stops it), or at boot
+ with the miti service.
+
+Package: miti
+Architecture: arm64
+Version: 3.4.5
+Priority: optional
+Section: misc
+Maintainer: MITI Contributors <78252832+hiran-t@users.noreply.github.com>
+Installed-Size: 138455
+Depends: libc6 (>= 2.28), libstdc++6
+Recommends: ros-humble-miti-bridge | ros-jazzy-miti-bridge
+Filename: pool/main/m/miti/miti_3.4.5_arm64.deb
+Size: 49010426
+MD5sum: 614ce1cbc685695486bd993704a8d9f0
+SHA1: 3a0e94bd8239532606987d9ed6b9645643fd2990
+SHA256: 0a4dc44ddf4bf4bc7777a21c8cdc1ff2fd99daa9aeccc8418326a0f9b6af8ece
+SHA512: d2613eaeabb594ae5743ad14c44a991c30e8755ffa71301725631cba19df4ecc1e4966d73578a7534dc40dd6c00c8cfadc0a96c423716cc7ac36b5f54d1ccc23
+Homepage: https://github.com/hiran-t/MITI
+Description: Web dashboard for ROS 2 robots
+ MITI shows a robot's topics in the browser: a 3D scene with the robot model,
+ TF, point clouds and maps, camera images, logs and plots. It connects to
+ miti_bridge on the robot, or to one beside it (miti run --bridge).
+ Node.js is included. Start it with `miti run` (Ctrl+C stops it), or at boot
+ with the miti service.
+
+Package: miti
+Architecture: arm64
+Version: 3.4.6
+Priority: optional
+Section: misc
+Maintainer: MITI Contributors <78252832+hiran-t@users.noreply.github.com>
+Installed-Size: 138780
+Depends: libc6 (>= 2.28), libstdc++6
+Recommends: ros-humble-miti-bridge | ros-jazzy-miti-bridge
+Filename: pool/main/m/miti/miti_3.4.6_arm64.deb
+Size: 49066124
+MD5sum: a9e67f2371bc56248f09977effd17f67
+SHA1: 4811d5aee87574a50347b9eb1fc8cf7d90605e73
+SHA256: 26a7dc2bcb77a5d92aa909fd59825fd9f124694a1a0cee9f162f61c40e321580
+SHA512: 01432963ed2d296222c21c1e0b6b4e6d1307e2914dafab4a335ecf4807f9a6e8ebf9cb6485571bdab7c6b9ac2d63c343e4d34bd28f646b398920fcb787b187af
+Homepage: https://github.com/hiran-t/MITI
+Description: Web dashboard for ROS 2 robots
+ MITI shows a robot's topics in the browser: a 3D scene with the robot model,
+ TF, point clouds and maps, camera images, logs and plots. It connects to
+ miti_bridge on the robot, or to one beside it (miti run --bridge).
+ Node.js is included. Start it with `miti run` (Ctrl+C stops it), or at boot
+ with the miti service.
+

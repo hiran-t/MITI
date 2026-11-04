@@ -1,0 +1,12 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>MITI apt repository</title>
+<h1>MITI apt repository</h1>
+<p>Ubuntu 22.04 and 24.04, amd64 and arm64:</p>
+<pre>
+curl -fsSL https://hiran-t.github.io/MITI/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/miti.gpg
+echo "deb [signed-by=/usr/share/keyrings/miti.gpg] https://hiran-t.github.io/MITI stable main" | sudo tee /etc/apt/sources.list.d/miti.list
+sudo apt-get update
+sudo apt-get install miti
+</pre>
+<p>See <a href="https://github.com/hiran-t/MITI">github.com/hiran-t/MITI</a>.</p>
