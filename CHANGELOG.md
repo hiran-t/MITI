@@ -8,7 +8,7 @@
 
 ### Changed
 
-- `@foxglove/ws-protocol` is a dev dependency: only the stand-in bridge `scripts/heavy-bridge.js` uses it.
+- The stand-in bridge's WebSocket server package is a dev dependency: only `scripts/heavy-bridge.js` uses it.
 
 ## [3.4.5] - 2026-11-03
 
