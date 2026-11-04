@@ -42,7 +42,7 @@ const COLOR_MAPS: { value: ColorMapName; label: string }[] = [
   { value: 'rainbow', label: 'Rainbow' },
 ];
 
-/** Image panel settings, laid out like Foxglove's Image panel. */
+/** Image panel settings. */
 export default function ImageSettings({
   config,
   onChange,

@@ -1,4 +1,4 @@
-# Windows version of foxglove-bridge.sh: runs foxglove_bridge on this machine, joined to the
+# Windows bridge script: runs the bridge RoboStack provides on this machine, joined to the
 # robot's ROS 2 network over DDS. Used by `pixi run -e <distro> bridge` and `miti-bridge` on
 # Windows; it reads the same environment variables as the bash script:
 #   ROS_DOMAIN_ID, RMW_IMPLEMENTATION, CYCLONEDDS_URI, ROS_STATIC_PEERS, BRIDGE_PORT, BRIDGE_ADDRESS,
@@ -16,7 +16,7 @@ if (-not (Get-Command ros2 -ErrorAction SilentlyContinue)) {
 }
 
 if ($env:OS -eq 'Windows_NT' -and $env:CONDA_PREFIX) {
-  # RoboStack installs foxglove.dll and foxglove_cpp_shared.dll in Library\lib, which Windows does
+  # RoboStack installs the bridge's DLLs in Library\lib, which Windows does
   # not search; without this the bridge exits at start with 0xC0000135 (DLL not found).
   $env:PATH = (Join-Path $env:CONDA_PREFIX 'Library\lib') + ';' + $env:PATH
   # ros2 launch cannot create its "latest" log symlink without Developer Mode; that is harmless.
@@ -42,7 +42,7 @@ function Test-PortInUse([int]$Port) {
   try { $client.Connect('127.0.0.1', $Port); $true } catch { $false } finally { $client.Dispose() }
 }
 
-# A foxglove_bridge answers the WebSocket handshake with its own subprotocol.
+# A bridge answers the WebSocket handshake with its subprotocol.
 function Test-Bridge([int]$Port) {
   $client = New-Object System.Net.Sockets.TcpClient
   try {

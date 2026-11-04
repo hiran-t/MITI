@@ -29,7 +29,7 @@ remove = { cmd = "rm -rf .next node_modules coverage .miti ros/overlay/build ros
 # miti_bridge, built from MITI-sdk's source on ROS 2 from RoboStack. It subscribes to the robot's
 # topics over DDS, so the robot only publishes as usual and the bridge's work happens on this
 # machine. Pick the robot's ROS distro: Humble and Jazzy nodes do not discover each other
-# reliably. miti_bridge does not support Windows yet; there the bridge is foxglove_bridge.
+# reliably. miti_bridge does not support Windows yet; there pixi installs another bridge.
 [feature.bridge.system-requirements]
 macos = "14.0"
 
@@ -54,12 +54,12 @@ build-bridge = { cmd = "bash ros/build-miti-bridge.sh", description = "Build mit
 bridge = { cmd = "bash ros/miti-bridge.sh", depends-on = ["build-bridge"], description = "miti_bridge on this machine (port 8765)" }
 miti-bridge = { cmd = "node scripts/start-miti.mjs --port {{ port }} --bridge", args = [{ arg = "port", default = "3000" }], depends-on = ["build", "build-bridge"], description = "MITI and miti_bridge together (ports move if taken)" }
 
-# Windows runs the PowerShell versions of the scripts (miti-bridge is plain Node.js), with
-# foxglove_bridge as the bridge.
+# Windows runs the PowerShell versions of the scripts (miti-bridge is plain Node.js), with the
+# bridge RoboStack provides.
 [feature.bridge.target.win-64.tasks]
 build-msgs = { cmd = "powershell -NoProfile -ExecutionPolicy Bypass -File ros/build-msgs.ps1", description = "Build message packages in ros/overlay/src" }
-build-bridge = { cmd = "echo 'On Windows the bridge is foxglove_bridge from RoboStack: nothing to build.'", description = "Nothing on Windows: the bridge there is foxglove_bridge" }
-bridge = { cmd = "powershell -NoProfile -ExecutionPolicy Bypass -File ros/foxglove-bridge.ps1", depends-on = ["build-bridge"], description = "foxglove_bridge on this machine (port 8765)" }
+build-bridge = { cmd = "echo 'On Windows the bridge is foxglove_bridge from RoboStack: nothing to build.'", description = "Nothing on Windows: the bridge there comes prebuilt from RoboStack" }
+bridge = { cmd = "powershell -NoProfile -ExecutionPolicy Bypass -File ros/foxglove-bridge.ps1", depends-on = ["build-bridge"], description = "The bridge on this machine (port 8765)" }
 
 # The bridge can only offer topics whose message definitions are installed beside it; add the
 # robot's own message packages as described in docs/DEPLOYMENT.md.

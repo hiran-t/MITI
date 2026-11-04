@@ -77,7 +77,7 @@ const HEAVY_TYPES = new Set(
 export const isHeavyType = (type: string) => HEAVY_TYPES.has(normalizeMessageType(type));
 
 /**
- * `synchronized`: one connection, panels show the same moment (as Foxglove does).
+ * `synchronized`: one connection, panels show the same moment.
  * `separate`: heavy topics on their own connections, robot motion first on slow links.
  */
 export type StreamMode = 'synchronized' | 'separate';
@@ -331,12 +331,12 @@ interface Pending<T> {
 }
 
 /**
- * Client for the robot's bridge: miti_bridge (the MITI protocol, miti.bridge.v1), or
- * foxglove_bridge (the Foxglove WebSocket protocol) on robots that still run it. Messages arrive
- * as CDR and are decoded with the schemas the bridge advertises.
+ * Client for the robot's bridge: miti_bridge (the MITI protocol, miti.bridge.v1), or a bridge with
+ * only the base protocol. Messages arrive as CDR and are decoded with the schemas the bridge
+ * advertises.
  *
  * The bridge sends each client's messages in order. In the default `synchronized` stream mode
- * every topic shares one connection, as in the Foxglove app: messages arrive in the order the
+ * every topic shares one connection: messages arrive in the order the
  * robot produced them, so cameras, TF and the 3D scene show the same moment (late together on a
  * slow link). In `separate` mode every heavy topic (images, point clouds, maps) gets a connection
  * of its own: TF and robot motion stay real-time and a point cloud is not queued behind camera
@@ -346,7 +346,7 @@ interface Pending<T> {
  * Subscriptions are shared per topic and survive reconnects and node restarts: they bind to a
  * channel whenever the bridge advertises the topic. A subscriber may cap how often it is called
  * (`maxRate`). miti_bridge applies the limit itself, so the messages never cross the network.
- * foxglove_bridge cannot: messages arriving sooner are dropped here, before decoding, and the
+ * Over the base protocol alone, messages arriving sooner are dropped here, before decoding, and the
  * subscription is never paused to emulate a limit (measured against a robot, resubscribing between
  * frames lost more frames than it saved bandwidth). Over miti_bridge, subscribers may also ask for
  * a transform (JPEG images, reduced point clouds), and the client reports the link's stats.
@@ -480,7 +480,7 @@ export class BridgeClient {
     return this.connected;
   }
 
-  /** Whether the bridge speaks the MITI protocol (miti_bridge) rather than foxglove_bridge's. */
+  /** Whether the bridge speaks the MITI protocol (miti_bridge), not only the base protocol. */
   usesMitiProtocol(): boolean {
     return this.connected && (this.control.client?.isMiti ?? false);
   }
@@ -493,7 +493,7 @@ export class BridgeClient {
       : 'foxglove_bridge';
   }
 
-  /** How the link to miti_bridge is doing; null with foxglove_bridge or before its first report. */
+  /** How the link to miti_bridge is doing; null with another bridge or before its first report. */
   getLinkStats(): LinkStats | null {
     return this.linkStats;
   }
@@ -567,10 +567,10 @@ export class BridgeClient {
   }
 
   /**
-   * Publish a message on a topic declared with `advertise()`. foxglove_bridge takes it as JSON.
-   * miti_bridge takes CDR: the message is encoded with the type's schema, which the bridge sends
-   * with the topic's channel or, the first time for a type it does not advertise, on request; the
-   * message waits for it, and a failure then reaches the error callbacks.
+   * Publish a message on a topic declared with `advertise()`. Over the base protocol it is sent as
+   * JSON. miti_bridge takes CDR: the message is encoded with the type's schema, which the bridge
+   * sends with the topic's channel or, the first time for a type it does not advertise, on
+   * request; the message waits for it, and a failure then reaches the error callbacks.
    */
   publish(topic: string, message: unknown): void {
     const client = this.control.client;

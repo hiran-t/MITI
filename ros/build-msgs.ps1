@@ -1,5 +1,5 @@
 # Windows version of build-msgs.sh: builds the robot's own message packages in ros/overlay/src
-# so foxglove_bridge can offer their topics (`pixi run -e <distro> build-msgs`). Needs the
+# so the bridge can offer their topics (`pixi run -e <distro> build-msgs`). Needs the
 # Visual Studio 2022 Build Tools with "Desktop development with C++"; pixi sets up the compiler.
 $ErrorActionPreference = 'Stop'
 Set-Location (Join-Path $PSScriptRoot 'overlay')

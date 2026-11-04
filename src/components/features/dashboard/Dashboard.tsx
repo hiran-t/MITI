@@ -98,7 +98,7 @@ export default function Dashboard() {
   );
   const [resizingSidebar, setResizingSidebar] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
-  /** Drag the sidebar's edge to resize it, as in Foxglove. */
+  /** Drag the sidebar's edge to resize it. */
   const startSidebarResize = (event: ReactPointerEvent<HTMLDivElement>) => {
     const left = sidebarRef.current?.getBoundingClientRect().left ?? 0;
     const handle = event.currentTarget;
