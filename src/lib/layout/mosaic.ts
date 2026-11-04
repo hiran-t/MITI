@@ -1,6 +1,6 @@
 /**
- * Panel arrangement as react-mosaic 7's n-ary tree, the model Foxglove's layout uses: every node
- * is a panel id or a row/column split of two or more nodes, each with its share.
+ * Panel arrangement as react-mosaic 7's n-ary tree: every node is a panel id or a row/column
+ * split of two or more nodes, each with its share.
  *
  * MITI 3.4.5 and earlier saved react-mosaic 6's binary tree (`first`, `second`,
  * `splitPercentage`); `syncMosaic` converts it, keeping every panel's place and size.
@@ -167,7 +167,7 @@ export function removeFromMosaic(node: MosaicTree | null, id: string): MosaicTre
 
 /**
  * Adds a panel beside `target` (or beside everything when there is no target), splitting along
- * the target's longer side as Foxglove does when a panel is added next to another.
+ * the target's longer side when a panel is added next to another.
  */
 export function addToMosaic(
   node: MosaicTree | null,
