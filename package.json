@@ -23,8 +23,6 @@
     "prepare": "husky install || true"
   },
   "dependencies": {
-    "@foxglove/rosmsg": "^5.0.5",
-    "@foxglove/rosmsg2-serialization": "^3.1.2",
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.2",
     "fflate": "^0.8.3",

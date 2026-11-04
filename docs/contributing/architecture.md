@@ -61,10 +61,16 @@ connection settings change it per browser.
 - **miti_bridge** ([MITI-sdk](https://github.com/hiran-t/MITI-sdk)) on the robot or beside MITI.
   MITI offers the subprotocol `miti.bridge.v1` first.
 - **`ProtocolClient`** (`lib/bridge/protocol.ts`): MITI's own protocol client, used by
-  `BridgeClient`.
-- **A ROS message definition parser and a CDR serializer** (npm packages, listed in
-  `package.json`): parse the advertised `ros2msg` schemas and decode or encode CDR. The load
-  harness's stand-in bridge uses a WebSocket server package from the same list.
+  `BridgeClient`. The load harness's stand-in bridge uses a WebSocket server package listed in
+  `package.json`.
+- **MITI's own CDR code** (`lib/bridge/`): `msg-definition.ts` parses the `ros2msg` schemas the
+  bridge advertises, `cdr.ts` reads and writes CDR (either byte order, with the 4-byte
+  encapsulation header and alignment), and `cdr-message.ts` turns a schema into a decoder and an
+  encoder of whole messages, which `codec.ts` gives the decode workers and `BridgeClient`. It
+  replaced the third-party ROS message libraries MITI used up to 3.4.5. Its tests compare it with
+  what those libraries decoded and encoded, and with the bytes ROS 2 itself serializes with Fast DDS
+  and Cyclone DDS (`lib/bridge/__tests__/fixtures/cdr-messages.json`, made by
+  `scripts/cdr-fixtures/`).
 
 ## Project structure
 
@@ -87,6 +93,7 @@ MITI/
 │   ├── start-miti.mjs        # pixi run miti / miti run: picks free ports, starts MITI and the bridge
 │   ├── bridge-settings.mjs   # ROS network settings of the bridge beside MITI
 │   ├── traffic-archive.py    # Keeps GitHub's traffic numbers (Traffic archive workflow)
+│   ├── cdr-fixtures/         # Makes the CDR test fixtures, with ROS 2 and the previous libraries
 │   ├── heavy-bridge.js       # Load harness: a stand-in bridge with robot-sized data
 │   ├── perf-run.js           # Load harness: measures MITI in Chrome
 │   └── perf-probe.js         # Browser-side half of the harness
@@ -186,12 +193,15 @@ src/
 │   ├── bridge/                           # Bridge client
 │   │   ├── __tests__/
 │   │   ├── asset-cache.ts                # Robot assets in Cache Storage
+│   │   ├── cdr-message.ts                # Reads and writes whole messages, from parsed definitions
+│   │   ├── cdr.ts                        # CDR: byte order, alignment, primitives and arrays
 │   │   ├── client.ts                     # BridgeClient
 │   │   ├── codec.ts                      # CDR/JSON decoders and encoders from schemas
 │   │   ├── decode-core.ts                # What a decode worker does
 │   │   ├── decode-pool.ts                # Web Workers that decode heavy topics
 │   │   ├── decode-worker-factory.ts
 │   │   ├── decode.worker.ts              # Worker entry point
+│   │   ├── msg-definition.ts             # Parses ros2msg schemas: fields, constants, defaults
 │   │   ├── protocol.ts                   # The wire protocol: miti.bridge.v1 and its base protocol
 │   │   ├── topics.ts                     # Topic name and type helpers
 │   │   └── types.ts
