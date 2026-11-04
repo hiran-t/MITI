@@ -14,7 +14,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Leave empty to connect to foxglove_bridge on the host MITI is served from (port 8765);
+# Leave empty to connect to the bridge on the host MITI is served from (port 8765);
 # Next.js builds NEXT_PUBLIC_* values into the app, so this is a build argument.
 ARG NEXT_PUBLIC_BRIDGE_URL=
 ENV NEXT_PUBLIC_BRIDGE_URL=${NEXT_PUBLIC_BRIDGE_URL}

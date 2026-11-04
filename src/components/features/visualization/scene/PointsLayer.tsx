@@ -13,8 +13,8 @@ export interface PointStyle extends PointColorSettings {
   stixels: boolean;
 }
 
-// Sizes are in screen pixels, as in Foxglove; colors are written as given (sRGB), untouched by
-// lighting or tone mapping.
+// Sizes are in screen pixels; colors are written as given (sRGB), untouched by lighting or tone
+// mapping.
 const POINT_VERTEX = /* glsl */ `
 uniform float size;
 uniform float pixelRatio;
@@ -163,7 +163,7 @@ interface TrailEntry {
 
 /**
  * Draws the latest message at its current transform and, with a decay time, earlier messages
- * where they were when superseded (Foxglove's decay), so a moving sensor leaves a trail.
+ * where they were when superseded, so a moving sensor leaves a trail.
  */
 export default function PointsLayer({
   points,

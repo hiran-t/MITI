@@ -25,7 +25,7 @@ MITI and the miti_bridge beside it are configured with environment variables. Wh
 
 ## Bridge beside MITI
 
-Read by `ros/miti-bridge.sh` with every way of running the bridge beside MITI (on Windows, by `ros/foxglove-bridge.ps1`, which runs foxglove_bridge):
+Read by `ros/miti-bridge.sh` with every way of running the bridge beside MITI (on Windows, by the PowerShell script in `ros/` that starts the bridge pixi installs there):
 
 | Variable                 | Default            | Meaning                                                                                                                 |
 | ------------------------ | ------------------ | ----------------------------------------------------------------------------------------------------------------------- |
@@ -38,6 +38,6 @@ Read by `ros/miti-bridge.sh` with every way of running the bridge beside MITI (o
 | `BRIDGE_TOPIC_WHITELIST` | `['.*']`           | Regular expressions of the topics to offer                                                                              |
 | `BRIDGE_MAX_QOS_DEPTH`   | `10`               | The largest queue a subscription keeps                                                                                  |
 
-miti_bridge has no limit in bytes per browser: it keeps a short queue for each subscription and sends the newest camera frames and point clouds. `BRIDGE_SEND_BUFFER_LIMIT`, a foxglove_bridge setting, is no longer read.
+miti_bridge has no limit in bytes per browser: it keeps a short queue for each subscription and sends the newest camera frames and point clouds. `BRIDGE_SEND_BUFFER_LIMIT` is no longer read, except by the bridge on Windows.
 
 `ROS_DOMAIN_ID` and `ROS_STATIC_PEERS` can also be changed from the browser when MITI started the bridge; those values are saved and win over the variables (see [Change the ROS network settings](../how-to-guides/change-ros-network-settings.md)).

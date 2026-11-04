@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds the robot's own message packages so foxglove_bridge can offer their topics.
+# Builds the robot's own message packages so the bridge can offer their topics.
 # Put the packages (or the whole repo that holds them) in ros/overlay/src, then run
 # `pixi run -e <distro> build-msgs`. The Docker image runs this when it is built.
 # Each ROS distro gets its own install space: ros/overlay/install/<distro>.

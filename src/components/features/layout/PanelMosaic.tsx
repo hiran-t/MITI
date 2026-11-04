@@ -38,8 +38,8 @@ interface PanelMosaicProps {
 const asTree = (node: MosaicNode<string> | null) => node as MosaicTree | null;
 
 /**
- * Panels tile the workspace like Foxglove's layout: drag a panel's header onto an edge of another
- * panel to split it there, and drag the dividers between panels to resize them.
+ * Panels tile the workspace: drag a panel's header onto an edge of another panel to split it
+ * there, and drag the dividers between panels to resize them.
  */
 export default function PanelMosaic({
   widgets,

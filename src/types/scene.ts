@@ -17,7 +17,7 @@ export const LAYER_TYPES = {
   camera: { label: 'Camera / Image', message: 'sensor_msgs/msg/CameraInfo' },
 } as const;
 export type LayerType = keyof typeof LAYER_TYPES;
-/** Point cloud and laser scan display, as in Foxglove's 3D panel. */
+/** Point cloud and laser scan display. */
 export interface PointDisplaySettings {
   /** Screen pixels. */
   pointSize?: number;
@@ -35,7 +35,7 @@ export interface PointDisplaySettings {
   /** Draw a line from each point down to z = 0. */
   stixels?: boolean;
 }
-/** Occupancy grid display, as in Foxglove's 3D panel. */
+/** Occupancy grid display. */
 export interface MapDisplaySettings {
   mapColorMode?: MapColorMode;
   minColor?: string;
@@ -48,7 +48,7 @@ export interface MapDisplaySettings {
   drawBehind?: boolean;
 }
 export type PoseDisplayType = 'axis' | 'arrow' | 'line';
-/** Pose, pose array, odometry and path display, as in Foxglove's 3D panel. */
+/** Pose, pose array, odometry and path display. */
 export interface PoseDisplaySettings {
   /** Poses default to axes, pose arrays and odometry to arrows, paths to a line. */
   poseType?: PoseDisplayType;

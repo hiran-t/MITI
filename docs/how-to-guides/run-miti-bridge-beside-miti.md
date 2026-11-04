@@ -32,7 +32,7 @@ pixi run -e humble bridge        # miti_bridge only
 
 The first run builds miti_bridge into `ros/miti-sdk/`, which takes a few minutes once for each distro; `pixi run -e humble build-bridge` does only that build. Settings are environment variables, for example `ROS_DOMAIN_ID=5 pixi run -e humble miti-bridge`.
 
-On Windows, pixi still runs foxglove_bridge beside MITI: miti_bridge does not support Windows yet. See [Install on Windows](install-on-windows.md).
+On Windows, pixi installs and starts another bridge beside MITI, because miti_bridge does not support Windows yet. See [Install on Windows](install-on-windows.md).
 
 ## With Docker Compose
 
@@ -55,4 +55,4 @@ The bridge beside MITI only knows what is installed on the MITI machine:
 
 ## Ports
 
-If port 8765 is taken by another program, the bridge moves to the next free port and says so, and MITI follows. If a bridge already listens there (miti_bridge, or a foxglove_bridge), MITI uses it.
+If port 8765 is taken by another program, the bridge moves to the next free port and says so, and MITI follows. If a bridge already listens there, MITI uses it.

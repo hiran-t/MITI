@@ -3,7 +3,7 @@
 pixi runs MITI on Windows 10 and 11 (x86-64) with the same commands as on Linux. Windows support is new; please report problems.
 
 :::{note}
-miti_bridge does not support Windows yet. The bridge tasks on Windows run foxglove_bridge beside MITI instead, with the PowerShell versions of the scripts in `ros/` (`*.ps1`). MITI works with it, but without JPEG compression, point clouds reduced on the robot, rate limits applied by the bridge and the link statistics. For those, run miti_bridge on the robot, or beside MITI in WSL 2 (see below).
+miti_bridge does not support Windows yet. On Windows, pixi installs a prebuilt bridge from RoboStack instead, and the bridge tasks start it beside MITI with the PowerShell versions of the scripts in `ros/` (`*.ps1`). JPEG compression, point clouds reduced on the robot, rate limits applied by the bridge and the link statistics need miti_bridge: run it on the robot, or beside MITI in WSL 2 (see below).
 :::
 
 ## Install and run
@@ -18,8 +18,8 @@ cd C:\MITI
 
 ```powershell
 pixi run miti                       # MITI on http://<this machine>:3000
-pixi run -e humble miti-bridge      # MITI and foxglove_bridge beside it (-e jazzy for Jazzy)
-pixi run -e humble bridge           # foxglove_bridge only (on Linux and macOS: miti_bridge)
+pixi run -e humble miti-bridge      # MITI and the bridge beside it (-e jazzy for Jazzy)
+pixi run -e humble bridge           # the bridge only (on Linux and macOS: miti_bridge)
 ```
 
 ## Change the settings
@@ -34,7 +34,7 @@ pixi run -e jazzy miti-bridge
 
 ## Allow MITI through the firewall
 
-The first start asks whether to allow Node.js, Python and foxglove_bridge on the network; allow them on private networks. Or open the ports once, in PowerShell as administrator:
+The first start asks whether to allow Node.js, Python and the bridge on the network; allow them on private networks. Or open the ports once, in PowerShell as administrator:
 
 ```powershell
 New-NetFirewallRule -DisplayName "MITI web and bridge" -Direction Inbound -Protocol TCP -LocalPort 3000,8765 -Action Allow -Profile Private

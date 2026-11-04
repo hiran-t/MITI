@@ -10,7 +10,7 @@ const ros2 = (level: number, name: string, msg: string) => ({
   line: 42,
 });
 
-test('ROS 2, ROS 1 and Foxglove log messages are normalised', () => {
+test('ROS 2, ROS 1 and other log messages are normalised', () => {
   expect(toLogEntry(ros2(30, 'pickplace_state_machine', 'gripper slow'), 1)).toEqual({
     id: 1,
     stamp: 12.5,

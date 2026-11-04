@@ -24,10 +24,6 @@ ros2 launch miti_bridge miti_start
 
 To build it from source instead, see [the MITI SDK](https://github.com/hiran-t/MITI-sdk#build-from-source). [Run miti_bridge on the robot](../how-to-guides/run-miti-bridge-on-the-robot.md) lists its launch arguments.
 
-:::{note}
-A robot that still runs foxglove_bridge works too: enter its address the same way. JPEG camera compression, point clouds reduced on the robot, rate limits applied on the robot and the link statistics need miti_bridge.
-:::
-
 ## Enter the robot's address
 
 1. In MITI, click the **gear** in the status bar, next to the bridge address.

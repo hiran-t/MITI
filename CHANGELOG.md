@@ -5,6 +5,7 @@
 ### Changed
 
 - The tiled panel layout uses react-mosaic-component 7, which supports React 19 itself, so MITI no longer forces newer drag-and-drop libraries into it. Layouts saved by MITI 3.4.5 and earlier, in the browser and in files, open unchanged. Exported layout files are now format version 2, which stores how panels tile as react-mosaic 7's n-ary tree; MITI still opens version 1 files, but MITI 3.4.5 and earlier cannot open version 2 files.
+- With a bridge that has only the base protocol, the status bar says **WebSocket bridge** and Sources says **Base protocol (WebSocket)**, and the Image panel's help text speaks of "other bridges". The Windows bridge script is `ros/windows-bridge.ps1`; `pixi run -e <distro> bridge` and `miti-bridge` start it as before.
 
 ## [3.4.5] - 2026-11-03
 
@@ -25,7 +26,7 @@
 
 ### Added
 
-- MITI connects to [miti_bridge](https://github.com/hiran-t/MITI-sdk), the robot-side bridge that replaces foxglove_bridge, over its MITI protocol (`miti.bridge.v1`). MITI offers that protocol first and still connects to foxglove_bridge as before.
+- MITI connects to [miti_bridge](https://github.com/hiran-t/MITI-sdk), MITI's own robot-side bridge, over its MITI protocol (`miti.bridge.v1`). MITI offers that protocol first and still connects to the bridge it used before.
 - With miti_bridge:
   - Publishing sends CDR. A message type that no topic advertises is looked up from the bridge once, before its first message is sent.
   - The bridge applies each topic's rate limits (`maxRate` and throttle windows), so messages no panel shows do not cross the network.
@@ -37,12 +38,12 @@
 ### Changed
 
 - The bridge beside MITI is now miti_bridge, on Linux and macOS:
-  - `pixi run -e <distro> miti-bridge` and `pixi run -e <distro> bridge` build miti_bridge (MITI SDK v0.1.1) from source on their first run (`pixi run -e <distro> build-bridge` builds it alone). On Windows the bridge beside MITI is still foxglove_bridge, until miti_bridge supports Windows.
-  - `miti run --bridge` and the `miti-bridge` service of the apt package run `ros-<distro>-miti-bridge`, from the MITI SDK's apt repository. The package now recommends it instead of foxglove_bridge.
+  - `pixi run -e <distro> miti-bridge` and `pixi run -e <distro> bridge` build miti_bridge (MITI SDK v0.1.1) from source on their first run (`pixi run -e <distro> build-bridge` builds it alone). On Windows the bridge beside MITI stays the one used before, until miti_bridge supports Windows.
+  - `miti run --bridge` and the `miti-bridge` service of the apt package run `ros-<distro>-miti-bridge`, from the MITI SDK's apt repository. The package now recommends it instead of the bridge it recommended before.
   - Docker Compose's `bridge` profile runs the `miti-bridge` service, whose image builds miti_bridge.
   - `BRIDGE_SEND_BUFFER_LIMIT` is gone: miti_bridge keeps a queue per subscription instead.
-  - A bridge already listening on the bridge port, miti_bridge or foxglove_bridge, is used as before.
-- The connection settings ask for the **Bridge URL**, and messages name the bridge without assuming foxglove_bridge.
+  - A bridge already listening on the bridge port is used as before.
+- The connection settings ask for the **Bridge URL**, and messages no longer assume which bridge runs on the robot.
 - The manual describes miti_bridge, on the robot and beside MITI. The guides moved to "Run miti_bridge on the robot" and "Run miti_bridge beside MITI"; the old addresses link to them.
 - The widget SDK moved to [MITI-widget-sdk](https://github.com/hiran-t/MITI-widget-sdk): install `@miti/sdk` from `git+https://github.com/hiran-t/MITI-widget-sdk.git#semver:^1.0.0`. The package name and widget API 1 are unchanged. [MITI-sdk](https://github.com/hiran-t/MITI-sdk) is now the robot side, where miti_bridge lives.
 
@@ -75,7 +76,7 @@
 - Panel types are registered (`src/panels`) instead of listed in four places; the built-in panels are registered the same way as widgets' panels
 - A saved layout keeps panels whose type MITI does not know, with their settings, instead of dropping them; they show as not installed until their widget is imported
 
-- The documentation is organized like the MoveIt documentation, on the Read the Docs theme in MITI's colors: Tutorials (getting started, connecting, the workspace, the 3D Scene, cameras), How-To Guides grouped by task (install and deploy, connect to ROS 2, visualize data, monitor and control, troubleshooting), Concepts (how MITI works, frames and transforms), Reference (command line, configuration, panel settings, 3D Scene layers, state machine messages) and Contributing. The deployment guide is split into one guide per task. Architecture diagrams (foxglove_bridge on the robot or beside MITI, and the data flow in the browser) replace the text drawings; diagrams of the TF tree, the stream modes and discovery over Wi-Fi, and screenshots of the ROS network settings, TF errors and the Publish settings, explain those pages; and the GitHub link on every page opens the repository
+- The documentation is organized like the MoveIt documentation, on the Read the Docs theme in MITI's colors: Tutorials (getting started, connecting, the workspace, the 3D Scene, cameras), How-To Guides grouped by task (install and deploy, connect to ROS 2, visualize data, monitor and control, troubleshooting), Concepts (how MITI works, frames and transforms), Reference (command line, configuration, panel settings, 3D Scene layers, state machine messages) and Contributing. The deployment guide is split into one guide per task. Architecture diagrams (the bridge on the robot or beside MITI, and the data flow in the browser) replace the text drawings; diagrams of the TF tree, the stream modes and discovery over Wi-Fi, and screenshots of the ROS network settings, TF errors and the Publish settings, explain those pages; and the GitHub link on every page opens the repository
 
 ## [3.3.6] - 2026-10-31
 
@@ -86,7 +87,7 @@
 ### Changed
 
 - GitHub Actions use their Node 24 versions (checkout 7, setup-node 7, upload-artifact 7, download-artifact 8, Docker actions 4–7), and failing tests now fail CI
-- The connection settings call the default stream mode **Synchronized**, and Sources names the protocol foxglove_bridge (WebSocket)
+- The connection settings call the default stream mode **Synchronized**, and Sources names the WebSocket bridge as the protocol
 - The default layout is the 3D Scene, color and depth cameras and the log. Camera panels still on a default topic that the robot does not publish switch to the robot's own topic of that kind, e.g. `/camera/camera/color/image_raw` from a RealSense driver; topics you chose are kept
 - All documentation is one Read the Docs site in `docs/`: the user manual and deployment guide (`manual/`), the 3D Scene and state machine reference (`reference/`) and the developer guides (`develop/`). The README is now a short introduction with install commands and a link to the manual
 - The manual's screenshots live on the `docs-images` branch, with the scripts that take them, and are fetched when the manual is built (`docs/fetch-images.sh`), so the source tree holds no images
@@ -96,7 +97,7 @@
 
 - The tests run in CI again: on Node 22 Jest loads `jest.config.ts` as an ES module, which needs `next/jest.js`; the failure had been hidden by `continue-on-error`
 - The 3D Scene reference and the manual describe the odometry covariance ellipsoid the scene draws
-- `miti run --bridge` and the `miti-bridge` service work with only `ros-<distro>-foxglove-bridge` installed: without the `ros2` command, `ros/foxglove-bridge.sh` starts the foxglove_bridge node directly instead of exiting with `ros2: not found`
+- `miti run --bridge` and the `miti-bridge` service work with only the bridge's ROS package installed: without the `ros2` command, the bridge script starts the bridge node directly instead of exiting with `ros2: not found`
 
 ### Removed
 
@@ -109,8 +110,8 @@
 
 ### Added
 
-- Debian packages for Ubuntu 22.04 and 24.04 (amd64 and arm64) and an apt repository at `https://hiran-t.github.io/MITI`, so MITI installs with `sudo apt-get install miti`. The package includes Node.js and adds the `miti` command: `miti run` serves MITI in the terminal until Ctrl+C, with the same port handling as `pixi run miti`, and `miti run --bridge` adds foxglove_bridge from the ROS 2 in `/opt/ros`. Installing starts nothing; `miti` and `miti-bridge` systemd services start MITI at boot when enabled. Settings are in `/etc/miti/`. Built and tested on Ubuntu 22.04 and 24.04 for amd64 and arm64, each on its own architecture, for every change, and published for each release by `.github/workflows/packages.yml`
-- `ros/foxglove-bridge.sh` uses the ROS 2 installed in `/opt/ros` when `ROS_DISTRO` is not set and Humble is not there
+- Debian packages for Ubuntu 22.04 and 24.04 (amd64 and arm64) and an apt repository at `https://hiran-t.github.io/MITI`, so MITI installs with `sudo apt-get install miti`. The package includes Node.js and adds the `miti` command: `miti run` serves MITI in the terminal until Ctrl+C, with the same port handling as `pixi run miti`, and `miti run --bridge` adds the WebSocket bridge from the ROS 2 in `/opt/ros`. Installing starts nothing; `miti` and `miti-bridge` systemd services start MITI at boot when enabled. Settings are in `/etc/miti/`. Built and tested on Ubuntu 22.04 and 24.04 for amd64 and arm64, each on its own architecture, for every change, and published for each release by `.github/workflows/packages.yml`
+- The bridge script uses the ROS 2 installed in `/opt/ros` when `ROS_DISTRO` is not set and Humble is not there
 - Release tags publish the MITI image to `ghcr.io/hiran-t/miti` (linux/amd64 and linux/arm64, tagged with the version and `latest`)
 - A daily workflow keeps the repository's traffic (views, clones, referrers, stars) beyond GitHub's 14 days, on the `traffic` branch; it needs a `TRAFFIC_TOKEN` secret
 
@@ -118,18 +119,18 @@
 
 ### Added
 
-- ROS network settings in the browser: with `pixi run -e <distro> miti-bridge`, the connection settings set the bridge's `ROS_DOMAIN_ID` and the robot's IP addresses and restart foxglove_bridge with them; MITI reconnects on its own. The settings are saved in `.miti/bridge.json`. A bridge that stops after such a change no longer stops MITI, and the settings show its last log line
+- ROS network settings in the browser: with `pixi run -e <distro> miti-bridge`, the connection settings set the bridge's `ROS_DOMAIN_ID` and the robot's IP addresses and restart the bridge with them; MITI reconnects on its own. The settings are saved in `.miti/bridge.json`. A bridge that stops after such a change no longer stops MITI, and the settings show its last log line
 
 ### Fixed
 
 - `ROS_STATIC_PEERS` now works on Humble too (pixi, Windows and Docker): the bridge scripts add the robot to Fast DDS's initial peers or Cyclone DDS's peers, keeping multicast discovery
-- Detecting a running foxglove_bridge no longer makes it log `Connection reset by peer`
+- Detecting a running bridge no longer makes it log `Connection reset by peer`
 
 ## [3.3.3] - 2026-10-30
 
 ### Fixed
 
-- Windows: foxglove_bridge no longer exits at start with `0xC0000135` (DLL not found); RoboStack installs `foxglove.dll` and `foxglove_cpp_shared.dll` in `Library\lib`, which the bridge script now adds to `PATH`. The harmless `WinError 1314` log-symlink warning is silenced
+- Windows: the bridge no longer exits at start with `0xC0000135` (DLL not found); RoboStack installs the bridge's DLLs in `Library\lib`, which the bridge script now adds to `PATH`. The harmless `WinError 1314` log-symlink warning is silenced
 - `miti-bridge` and the bridge it starts now always agree on the port: the launcher also checks whether something answers on the port (on Windows a port forwarded for one address could still be opened on all addresses), and tells the bridge to use exactly that port
 
 ### Changed
@@ -140,8 +141,8 @@
 
 ### Changed
 
-- Ports move out of each other's way. `pixi run miti` and `miti-bridge` (now one Node.js launcher, `scripts/start-miti.mjs`, the same on Linux, macOS and Windows) serve MITI on the next free port when 3000 is taken; `miti-bridge` uses a foxglove_bridge already on 8765, or starts the bridge on the next free port when another program holds 8765; `pixi run miti` finds a bridge already running on this machine. MITI learns the bridge port at run time (`MITI_BRIDGE_PORT`, also set by Docker Compose from `BRIDGE_PORT`), so browsers connect without any setting
-- The bridge scripts (`pixi run bridge`) name the program holding their port, with the command to stop it or, for `svchost` on Windows, to check port forwarding, then move to the next free port; a foxglove_bridge already on the port is reported instead of started twice
+- Ports move out of each other's way. `pixi run miti` and `miti-bridge` (now one Node.js launcher, `scripts/start-miti.mjs`, the same on Linux, macOS and Windows) serve MITI on the next free port when 3000 is taken; `miti-bridge` uses a bridge already on 8765, or starts the bridge on the next free port when another program holds 8765; `pixi run miti` finds a bridge already running on this machine. MITI learns the bridge port at run time (`MITI_BRIDGE_PORT`, also set by Docker Compose from `BRIDGE_PORT`), so browsers connect without any setting
+- The bridge scripts (`pixi run bridge`) name the program holding their port, with the command to stop it or, for `svchost` on Windows, to check port forwarding, then move to the next free port; a bridge already on the port is reported instead of started twice
 - The output of `pixi run miti` / `miti-bridge` lists the addresses to open, including this machine's address on the network
 
 ### Removed
@@ -157,7 +158,7 @@
 
 ### Changed
 
-- When MITI cannot reach foxglove_bridge, the notice names the address it tried and says what to do: start the bridge on the robot and enter its address, or run `pixi run -e <distro> miti-bridge`
+- When MITI cannot reach the bridge, the notice names the address it tried and says what to do: start the bridge on the robot and enter its address, or run `pixi run -e <distro> miti-bridge`
 
 ## [3.3.0] - 2026-10-30
 
@@ -169,25 +170,25 @@
 
 ### Added
 
-- The foxglove_bridge beside MITI includes nav2's `bond` messages, so `/bond` is offered instead of logging `package 'bond' not found`
+- The bridge beside MITI includes nav2's `bond` messages, so `/bond` is offered instead of logging `package 'bond' not found`
 - `ROS_STATIC_PEERS` passes through Docker Compose to the bridge, so a Jazzy bridge can find the robot by IP when Wi-Fi drops multicast discovery
 
 ### Fixed
 
-- The bridge script stops with a clear message when its port is already in use, instead of foxglove_bridge aborting with a bind error
+- The bridge script stops with a clear message when its port is already in use, instead of the bridge aborting with a bind error
 
 ### Changed
 
-- Documentation rewritten for 3.2: a standard README (install with pixi, Docker or from source, foxglove_bridge on the robot or beside MITI, configuration, troubleshooting), a deployment guide with install commands for pixi, Docker, Node.js and foxglove_bridge and a pixi systemd service, and API, architecture, contributing, release, security, 3D Scene, State Machine and performance docs that match the code; issue and pull request templates ask for the ROS distro and where foxglove_bridge runs
+- Documentation rewritten for 3.2: a standard README (install with pixi, Docker or from source, the bridge on the robot or beside MITI, configuration, troubleshooting), a deployment guide with install commands for pixi, Docker, Node.js and the bridge and a pixi systemd service, and API, architecture, contributing, release, security, 3D Scene, State Machine and performance docs that match the code; issue and pull request templates ask for the ROS distro and where the bridge runs
 
 ## [3.2.0] - 2026-10-30
 
 ### Added
 
 - `pixi run miti` installs Node.js and the npm packages, builds MITI and serves it on port 3000 (`pixi run miti 8080` for another port), with no system Node.js; later runs skip the build when nothing changed
-- foxglove_bridge on the MITI machine instead of the robot: `pixi run -e humble miti-bridge` (or `-e jazzy`) runs MITI and a bridge that joins the robot's ROS 2 network over DDS, so the robot only publishes; `pixi run -e <distro> bridge` runs the bridge alone
-- Docker Compose `bridge` profile (`docker compose --profile bridge up -d`) with a foxglove_bridge image (`ros/Dockerfile`, Humble by default) on host networking; ROS distro, domain ID, RMW, topic whitelist and send buffer are set in `.env`
-- The bridge includes the standard message packages (common_interfaces, tf2, nav2, map, moveit, foxglove, control and vision messages); the robot's own message packages go in `ros/overlay/src` and are built with `pixi run -e <distro> build-msgs` or into the Docker image
+- The WebSocket bridge on the MITI machine instead of the robot: `pixi run -e humble miti-bridge` (or `-e jazzy`) runs MITI and a bridge that joins the robot's ROS 2 network over DDS, so the robot only publishes; `pixi run -e <distro> bridge` runs the bridge alone
+- Docker Compose `bridge` profile (`docker compose --profile bridge up -d`) with a bridge image (`ros/Dockerfile`, Humble by default) on host networking; ROS distro, domain ID, RMW, topic whitelist and send buffer are set in `.env`
+- The bridge includes the standard message packages (common_interfaces, tf2, nav2, map, moveit, control and vision messages); the robot's own message packages go in `ros/overlay/src` and are built with `pixi run -e <distro> build-msgs` or into the Docker image
 - Cyclone DDS settings for large messages over Wi-Fi (`ros/cyclonedds.xml`)
 
 ### Changed
@@ -207,13 +208,13 @@
 
 ### Added
 
-- Camera panel works like Foxglove's Image panel:
+- The Camera panel gains calibration, overlays and image controls:
   - Calibration topic (Auto = `<image dir>/camera_info`, None, or any CameraInfo topic) and a Topics section that draws point clouds, laser scans, occupancy grids and costmaps, poses, paths, markers and robot models over the image, projected through the camera intrinsics and placed with TF; Sync timestamps uses TF at the image stamp
   - Color mode for mono and depth images: Gradient or color map (Turbo, Rainbow) with Value min/max
   - Flip horizontal/vertical and rotation 0/90/180/270°, applied to the image and overlays alike
   - Rectify undistorts plumb_bob and rational_polynomial lenses on the GPU
   - Without calibration or TF the plain image stays visible with a message
-- Load harness for performance work: `scripts/heavy-bridge.js` (a robot-sized foxglove_bridge stand-in) and `scripts/perf-run.js` (measures frame rate, long tasks and main-thread time in Chrome); see `docs/PERFORMANCE.md`
+- Load harness for performance work: `scripts/heavy-bridge.js` (a stand-in bridge with robot-sized data) and `scripts/perf-run.js` (measures frame rate, long tasks and main-thread time in Chrome); see `docs/PERFORMANCE.md`
 
 ### Changed
 
@@ -231,7 +232,7 @@
 
 ### Changed
 
-- New MITI look in the style of VS Code and JetBrains, replacing the Foxglove-like styling: neutral dark grays, a muted teal accent (`#2fb4c4`) used only for active, selected and focus states, and status colors (ok, warning, error) used only for real state
+- New MITI look in the style of VS Code and JetBrains, replacing the previous styling: neutral dark grays, a muted teal accent (`#2fb4c4`) used only for active, selected and focus states, and status colors (ok, warning, error) used only for real state
 - Workspace shell rearranged without changing any workflow:
   - one title bar with the MITI logo, the layout name, Reset layout and Add panel (now icon buttons)
   - an activity bar on the left replaces the Sidebar button and the sidebar tabs (Panel, Topics, Problems, Sources); clicking the open view closes the sidebar, and arrow keys move between views
@@ -249,27 +250,27 @@
 
 ### Added
 
-- Log panel, modelled on Foxglove's: streams `/rosout` (`rcl_interfaces/msg/Log`, also ROS 1 and `foxglove.Log`), filters by minimum level, search chips matching node names or message text, and hidden node names; display options for font size, level, date, time, time zone, node name and source location; copy and clear
-- 3D Scene per-topic display settings like Foxglove's: point clouds and laser scans get point size in pixels, circle or square points, decay time, color modes (flat, color map with Turbo or Rainbow, gradient, RGB, RGBA) on any field with automatic or fixed value range, and stixel view; occupancy grids get Custom, Map, Costmap and Raw palettes with min, max, unknown and invalid colors, frame lock and draw behind
+- Log panel: streams `/rosout` (`rcl_interfaces/msg/Log`, also ROS 1 logs), filters by minimum level, search chips matching node names or message text, and hidden node names; display options for font size, level, date, time, time zone, node name and source location; copy and clear
+- 3D Scene per-topic display settings: point clouds and laser scans get point size in pixels, circle or square points, decay time, color modes (flat, color map with Turbo or Rainbow, gradient, RGB, RGBA) on any field with automatic or fixed value range, and stixel view; occupancy grids get Custom, Map, Costmap and Raw palettes with min, max, unknown and invalid colors, frame lock and draw behind
 - Color fields in settings accept typed hex values, including `#rrggbbaa` with alpha
-- Poses, poses with covariance (new layer type, e.g. `/amcl_pose`), pose arrays, odometry and paths display as axes, arrows (shaft and head length and width) or a gradient line with width in meters, as in Foxglove; poses with covariance and odometry draw a covariance ellipsoid
-- Robot description settings like Foxglove's: Control mode (Joint states or Manual), a Joint states section listing every movable joint with live positions or manual sliders, a Links section with per-link visibility, opacity, mesh outlines and link axes
+- Poses, poses with covariance (new layer type, e.g. `/amcl_pose`), pose arrays, odometry and paths display as axes, arrows (shaft and head length and width) or a gradient line with width in meters; poses with covariance and odometry draw a covariance ellipsoid
+- Robot description settings: Control mode (Joint states or Manual), a Joint states section listing every movable joint with live positions or manual sliders, a Links section with per-link visibility, opacity, mesh outlines and link axes
 - Marker topics list their namespaces with visibility toggles
 - The sidebar resizes by dragging its edge (double-click resets it); the width is remembered
 
 ### Changed
 
-- Point clouds and laser scans are colored automatically like Foxglove (the message's own colors, else intensity on a color map, else flat), and their point size is in screen pixels instead of meters
-- Panels tile the workspace like Foxglove's layout (react-mosaic) instead of a block grid: drag a panel's header onto an edge of another panel to split it there, drag the dividers to resize, and new panels open beside the selected one; saved layouts are converted automatically, and `react-grid-layout` is removed
-- Poses default to axes, pose arrays and odometry to arrows, and paths to a line, as in Foxglove; the old arrow size setting is replaced by axis scale and arrow dimensions
+- Point clouds and laser scans are colored automatically (the message's own colors, else intensity on a color map, else flat), and their point size is in screen pixels instead of meters
+- Panels tile the workspace (react-mosaic) instead of a block grid: drag a panel's header onto an edge of another panel to split it there, drag the dividers to resize, and new panels open beside the selected one; saved layouts are converted automatically, and `react-grid-layout` is removed
+- Poses default to axes, pose arrays and odometry to arrows, and paths to a line; the old arrow size setting is replaced by axis scale and arrow dimensions
 
 ## [2.1.0] - 2026-10-29
 
 ### Changed
 
-- MITI connects to [foxglove_bridge](https://github.com/foxglove/foxglove-sdk) (Foxglove WebSocket protocol, default `ws://localhost:8765`) instead of rosbridge_server; messages are CDR-decoded in the browser using the schemas the bridge advertises
+- MITI connects to a WebSocket bridge (default `ws://localhost:8765`) instead of rosbridge_server; messages are CDR-decoded in the browser using the schemas the bridge advertises
 - `NEXT_PUBLIC_ROSBRIDGE_URL` renamed to `NEXT_PUBLIC_BRIDGE_URL`; a rosbridge URL saved in the browser is migrated to the same host on port 8765
-- 3D Scene settings follow Foxglove's 3D panel (Frame, Scene, View, Transforms, Topics, Custom layers, Publish); MITI 2.0 layouts are migrated
+- 3D Scene settings are grouped into Frame, Scene, View, Transforms, Topics, Custom layers and Publish; MITI 2.0 layouts are migrated
 - Data is placed with TF at its own timestamp by default; TF history holds 30 s / 3,000 samples per frame
 
 ### Added

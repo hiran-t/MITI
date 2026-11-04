@@ -120,7 +120,7 @@ afterAll(() => {
   global.WebSocket = original;
 });
 
-test('offers miti.bridge.v1, then the Foxglove subprotocols, opening one connection up front', async () => {
+test('offers miti.bridge.v1, then the base subprotocols, opening one connection up front', async () => {
   const { client, control } = await connect(['assets']);
   expect(Socket.instances).toHaveLength(1);
   expect(control.protocols).toEqual(['miti.bridge.v1', 'foxglove.sdk.v1', 'foxglove.websocket.v1']);
@@ -162,7 +162,7 @@ test('light topics bind on the control connection, decode CDR and share one subs
   client.disconnect();
 });
 
-test('by default every topic shares one connection, as in Foxglove', async () => {
+test('by default every topic shares one connection', async () => {
   Socket.instances = [];
   const client = new BridgeClient('ws://robot:8765');
   const connected = client.connect();
@@ -272,7 +272,7 @@ test('a rate cap drops messages that come too soon, without ever unsubscribing',
     send(3, 400); // 500 ms after seq 1
     send(4, 600); // a slow link: delivered as soon as it arrives
     expect(onImage.mock.calls.map(([m]) => m.seq)).toEqual([1, 3, 4]);
-    // foxglove_bridge does not take the miti.* operations.
+    // A bridge with only the base protocol does not take the miti.* operations.
     expect(lane.ops('miti.subscriptionOptions')).toHaveLength(0);
     expect(lane.ops('unsubscribe')).toHaveLength(0);
     expect(lane.ops('subscribe')).toHaveLength(1);
@@ -377,7 +377,7 @@ test('over miti.bridge.v1 a color image topic is sent as JPEG when every subscri
   client.disconnect();
 });
 
-test('depth images, other message types and foxglove_bridge are never sent a transform', async () => {
+test('depth images, other message types and base-protocol bridges are never sent a transform', async () => {
   const { client, control, advertise } = await connect(
     ['miti.transforms'],
     'synchronized',
@@ -398,19 +398,19 @@ test('depth images, other message types and foxglove_bridge are never sent a tra
   expect(control.ops('miti.subscriptionOptions')).toHaveLength(0);
   client.disconnect();
 
-  const foxglove = await connect(['miti.transforms'], 'synchronized');
-  foxglove.advertise([cdrChannel(4, '/camera/image_raw', 'sensor_msgs/msg/Image', IMAGE_SCHEMA)]);
+  const baseOnly = await connect(['miti.transforms'], 'synchronized');
+  baseOnly.advertise([cdrChannel(4, '/camera/image_raw', 'sensor_msgs/msg/Image', IMAGE_SCHEMA)]);
   const view = jest.fn();
-  foxglove.client.subscribe('/camera/image_raw', view, undefined, jpeg);
-  foxglove.control.binary(
+  baseOnly.client.subscribe('/camera/image_raw', view, undefined, jpeg);
+  baseOnly.control.binary(
     messageFrame(
-      foxglove.control.lastSubscriptionId(),
+      baseOnly.control.lastSubscriptionId(),
       cdr(IMAGE_SCHEMA, { width: 2, encoding: 'rgb8', data: new Uint8Array(6) })
     )
   );
   expect(view).toHaveBeenCalledTimes(1);
-  expect(foxglove.control.ops('miti.subscriptionOptions')).toHaveLength(0);
-  foxglove.client.disconnect();
+  expect(baseOnly.control.ops('miti.subscriptionOptions')).toHaveLength(0);
+  baseOnly.client.disconnect();
 });
 
 test('point clouds are reduced on the robot when every subscriber asks for the same', async () => {
@@ -476,9 +476,9 @@ test('over miti.bridge.v1 the link stats sum what each connection reports', asyn
   expect(seen).toHaveBeenLastCalledWith(null);
   client.disconnect();
 
-  const foxglove = await connect(['miti.stats']);
-  expect(foxglove.control.ops('miti.subscribeStats')).toHaveLength(0);
-  foxglove.client.disconnect();
+  const baseOnly = await connect(['miti.stats']);
+  expect(baseOnly.control.ops('miti.subscribeStats')).toHaveLength(0);
+  baseOnly.client.disconnect();
 });
 
 test('over miti.bridge.v1 publishing sends CDR, asking for an unknown schema once', async () => {

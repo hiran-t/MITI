@@ -57,7 +57,7 @@ port="${BRIDGE_PORT:-8765}"
 
 in_use() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
 # A bridge answers the WebSocket handshake with its subprotocol: miti_bridge with miti.bridge.v1,
-# a foxglove_bridge with foxglove.*. MITI connects to either.
+# another bridge with its own. MITI connects to either.
 is_bridge() {
   local reply
   reply="$( (exec 3<>"/dev/tcp/127.0.0.1/$1" || exit 1
