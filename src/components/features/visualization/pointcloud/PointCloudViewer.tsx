@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { BridgeClient } from '@/lib/bridge/client';
 import { useTopic } from '@/hooks/useTopic';
 import Scene3D from '../urdf/Scene3D';
-import { Loader2 } from 'lucide-react';
+import { LoaderCircle } from 'lucide-react';
 import * as THREE from 'three';
 import { parsePointCloud2, type ParsedPoint } from '@/lib/parsers/pointcloud-parser';
 import type { sensor_msgs } from '@/types/ros-messages';
@@ -110,7 +110,7 @@ export default function PointCloudViewer({
       {!pointCloudData ? (
         <div className={visualizationStyles.pointcloud.centerContent}>
           <div className={visualizationStyles.pointcloud.loadingContainer}>
-            {client && <Loader2 className={visualizationStyles.pointcloud.loadingSpinner} />}
+            {client && <LoaderCircle className={visualizationStyles.pointcloud.loadingSpinner} />}
             <p className={visualizationStyles.pointcloud.loadingText}>
               {client ? `Waiting for ${topic} topic…` : 'Connect to ROS to view point cloud data'}
             </p>

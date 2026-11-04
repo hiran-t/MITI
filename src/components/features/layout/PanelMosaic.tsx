@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Mosaic, MosaicWindow, type MosaicNode } from 'react-mosaic-component';
 import 'react-mosaic-component/react-mosaic-component.css';
-import { Lock, Maximize2, Minimize2, Unlock, X } from 'lucide-react';
+import { Lock, Maximize2, Minimize2, LockOpen, X } from 'lucide-react';
 import type { WidgetConfig } from '@/types/widget';
 import type { BridgeClient } from '@/lib/bridge/client';
 import type { TopicInfo } from '@/lib/bridge/types';
@@ -178,13 +178,13 @@ export default function PanelMosaic({
                         widgetStyles.buttons.base,
                         widget.locked && widgetStyles.buttons.lock
                       )}
-                      aria-label={widget.locked ? 'Unlock panel position' : 'Lock panel position'}
-                      title={widget.locked ? 'Unlock panel position' : 'Lock panel position'}
+                      aria-label={widget.locked ? 'LockOpen panel position' : 'Lock panel position'}
+                      title={widget.locked ? 'LockOpen panel position' : 'Lock panel position'}
                     >
                       {widget.locked ? (
                         <Lock className={widgetStyles.buttons.icon} />
                       ) : (
-                        <Unlock className={widgetStyles.buttons.icon} />
+                        <LockOpen className={widgetStyles.buttons.icon} />
                       )}
                     </button>
                   </div>

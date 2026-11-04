@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import {
-  AlertCircle,
+  CircleAlert,
   XCircle,
   ListTree,
   PanelLeft,
@@ -365,7 +365,7 @@ export default function Dashboard() {
               {error && (
                 <details className="inspector-problem" open>
                   <summary>
-                    <AlertCircle size={14} />
+                    <CircleAlert size={14} />
                     Connection failed
                   </summary>
                   <p>{error.message}</p>
@@ -377,7 +377,7 @@ export default function Dashboard() {
               {widgetProblems.map((problem) => (
                 <details key={problem.id} className="inspector-problem" open>
                   <summary>
-                    <AlertCircle size={14} />
+                    <CircleAlert size={14} />
                     Widget {problem.id}
                   </summary>
                   <p>{problem.error}</p>
@@ -385,7 +385,7 @@ export default function Dashboard() {
               ))}
               {problemCount === 0 && (
                 <div className="inspector-empty">
-                  <AlertCircle size={24} />
+                  <CircleAlert size={24} />
                   <strong>No reported errors</strong>
                   <p>
                     {connected

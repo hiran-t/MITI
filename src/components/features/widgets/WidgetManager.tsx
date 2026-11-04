@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, type DragEvent } from 'react';
-import { AlertCircle, Puzzle, Upload } from 'lucide-react';
+import { CircleAlert, Puzzle, Upload } from 'lucide-react';
 import { usePanels } from '@/panels';
 import {
   checkWidgetUrl,
@@ -155,7 +155,7 @@ export default function WidgetManager({ usedTypes }: { usedTypes: string[] }) {
       )}
       {message && (
         <p role={message.error ? 'alert' : 'status'} className="widget-message">
-          {message.error && <AlertCircle size={13} aria-hidden="true" />}
+          {message.error && <CircleAlert size={13} aria-hidden="true" />}
           {message.text}
         </p>
       )}
@@ -224,7 +224,7 @@ export default function WidgetManager({ usedTypes }: { usedTypes: string[] }) {
       {problems.map((problem) => (
         <details key={problem.id} className="inspector-problem" open>
           <summary>
-            <AlertCircle size={14} />
+            <CircleAlert size={14} />
             {problem.id}
           </summary>
           <p>{problem.error}</p>

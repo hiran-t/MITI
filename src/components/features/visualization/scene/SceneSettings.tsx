@@ -1,7 +1,7 @@
 'use client';
 import { MITI_CYAN } from '@/lib/theme';
 import type { CSSProperties } from 'react';
-import { AlertCircle, CheckCircle2, Clock } from 'lucide-react';
+import { CircleAlert, CircleCheck, Clock } from 'lucide-react';
 import {
   ColorField,
   NumberField,
@@ -121,8 +121,7 @@ const splitTopics = (value: string) =>
 
 export function StatusLine({ status, depth = 1 }: { status?: LayerStatus; depth?: number }) {
   if (!status || status.level === 'off') return null;
-  const Icon =
-    status.level === 'error' ? AlertCircle : status.level === 'ok' ? CheckCircle2 : Clock;
+  const Icon = status.level === 'error' ? CircleAlert : status.level === 'ok' ? CircleCheck : Clock;
   const tone =
     status.level === 'error' ? 'text-danger' : status.level === 'ok' ? 'text-ok' : 'text-gray-400';
   return (

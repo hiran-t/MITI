@@ -2,7 +2,7 @@
 
 import { memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { ArrowDown, Copy, Trash2, X } from 'lucide-react';
+import { ArrowDown, Copy, Trash, X } from 'lucide-react';
 import WidgetSettingsPortal from '../layout/WidgetSettingsPortal';
 import { SelectField, ToggleField, TreeField, TreeSection } from '../layout/SettingsTree';
 import TopicInput from '../topic-viewer/TopicInput';
@@ -261,7 +261,7 @@ export default function LogPanel({
             setLogs([]);
           }}
         >
-          <Trash2 size={14} />
+          <Trash size={14} />
         </button>
       </div>
 

@@ -9,7 +9,14 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from 'react';
-import { ChevronDown, ChevronRight, AlertCircle, Eye, EyeOff, MoreVertical } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronRight,
+  CircleAlert,
+  Eye,
+  EyeOff,
+  EllipsisVertical,
+} from 'lucide-react';
 import { SettingsSearchContext } from './WidgetSettingsPortal';
 
 /**
@@ -49,7 +56,7 @@ export function ActionMenu({ label, actions }: { label: string; actions: TreeAct
           }
         }}
       >
-        <MoreVertical size={14} />
+        <EllipsisVertical size={14} />
       </button>
       {open && (
         <div className="tree-menu-list" role="menu">
@@ -125,7 +132,7 @@ export function TreeSection({
           <span className="tree-title">{title}</span>
           {error && (
             <span className="tree-error-icon" title={error} aria-label={error}>
-              <AlertCircle size={13} />
+              <CircleAlert size={13} />
             </span>
           )}
         </button>
@@ -165,7 +172,7 @@ export function TreeField({
       <span className="tree-label">
         {error && (
           <span className="tree-error-icon" title={error}>
-            <AlertCircle size={13} />
+            <CircleAlert size={13} />
           </span>
         )}
         {label}
