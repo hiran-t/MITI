@@ -1,7 +1,6 @@
 /**
  * ROS 2 message definitions as bridges advertise them (`ros2msg`): the `.msg` text of a type, then
- * each type it uses after a line of `=` and a `MSG: package/Type` line. miti_bridge and
- * foxglove_bridge write them the same way.
+ * each type it uses after a line of `=` and a `MSG: package/Type` line, as miti_bridge writes them.
  *
  * Field lines follow the `.msg` format of rosidl: `type name`, `type name default`, or
  * `type NAME=value` for a constant, with `string<=N`, `T[N]`, `T[<=N]` and `T[]` for bounded

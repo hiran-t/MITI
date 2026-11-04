@@ -8,8 +8,8 @@ import { createDecoder, createEncoder } from '../codec';
 import { parseMessageDefinition, type MessageDefinition } from '../msg-definition';
 
 /**
- * fixtures/cdr-messages.json (scripts/cdr-fixtures/generate.js) holds what Foxglove's ROS libraries,
- * which MITI used before its own, made of sample messages, and the bytes ROS 2 itself serializes.
+ * fixtures/cdr-messages.json (scripts/cdr-fixtures/generate.js) holds what the ROS libraries MITI
+ * used before its own made of sample messages, and the bytes ROS 2 itself serializes.
  */
 interface Case {
   key: string;
@@ -67,7 +67,7 @@ function unaligned(bytes: Uint8Array): Uint8Array {
   return frame.subarray(13, 13 + bytes.length);
 }
 
-/** MITI's definitions in the shape the fixture records Foxglove's in. */
+/** MITI's definitions in the shape the fixture records the previous parser's in. */
 const asFixture = (definitions: MessageDefinition[]) =>
   definitions.map(({ name, fields, constants }) => ({
     ...(name !== undefined && { name }),
@@ -84,14 +84,14 @@ const asFixture = (definitions: MessageDefinition[]) =>
     constants,
   }));
 
-describe('MITI reads definitions as Foxglove did', () => {
+describe('MITI reads definitions as the previous parser did', () => {
   test.each(Object.keys(types))('%s', (type) => {
     const { schema, definitions } = types[type];
     expect(asFixture(parseMessageDefinition(schema))).toStrictEqual(revive(definitions));
   });
 });
 
-describe('MITI decodes and encodes CDR as Foxglove did', () => {
+describe('MITI decodes and encodes CDR as the previous libraries did', () => {
   test.each(cases.map((c) => [c.key, c] as const))('%s', (_, c) => {
     const { schema } = types[c.type];
     const decode = createDecoder('cdr', 'ros2msg', schema);

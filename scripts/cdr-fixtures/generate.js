@@ -2,10 +2,10 @@
 /**
  * Writes src/lib/bridge/__tests__/fixtures/cdr-messages.json, which MITI's CDR tests compare with:
  * sample messages of the types MITI shows, with
- *   - the bytes and decoded objects of Foxglove's ROS libraries, which MITI used before its own;
- *   - the bytes ROS 2 itself serializes, with Fast DDS and Cyclone DDS, and how Foxglove decoded them.
+ *   - the bytes and decoded objects of the ROS libraries MITI used before its own;
+ *   - the bytes ROS 2 itself serializes, with Fast DDS and Cyclone DDS, and how those decoded them.
  *
- * MITI no longer depends on the Foxglove libraries; to run this again, install them without saving,
+ * MITI no longer depends on those libraries; to run this again, install them without saving,
  * in a shell with ROS 2 (e.g. `pixi shell -e humble`):
  *
  *   npm install --no-save @foxglove/rosmsg@5 @foxglove/rosmsg2-serialization@3 @foxglove/cdr@3
@@ -372,7 +372,9 @@ const ROS_CASES = [
 const SEP = '\n' + '='.repeat(80) + '\n';
 const TIME = 'MSG: builtin_interfaces/Time\nint32 sec\nuint32 nanosec';
 
-/** A custom type with nested arrays, defaults and constants; only Foxglove's libraries read it. */
+/**
+ * A custom type with nested arrays, defaults and constants; only the previous libraries read it.
+ */
 const NESTED_SCHEMA = [
   [
     '# A custom type with nested arrays',
@@ -512,7 +514,7 @@ const CUSTOM_CASES = [
   },
 ];
 
-/** Big-endian and CDR2 data, written field by field, that Foxglove's reader decodes. */
+/** Big-endian and CDR2 data, written field by field, that the previous reader decodes. */
 const BYTE_ORDER_SCHEMA = [
   'int16 a',
   'float64 b',
@@ -582,7 +584,7 @@ function tag(value) {
 const present = (object) =>
   Object.fromEntries(Object.entries(object).filter(([, v]) => v !== undefined));
 
-/** Foxglove's parsed definitions, for comparing MITI's parser with. */
+/** The previous parser's definitions, for comparing MITI's parser with. */
 const definitionsOf = (schema) =>
   parse(schema, { ros2: true }).map(({ name, definitions }) =>
     present({
@@ -657,7 +659,7 @@ function rosSerialize(samples) {
 function main() {
   const rosSamples = ROS_CASES.map((c) => ({ key: c.type, type: c.type, message: c.message }));
   const ros = rosSerialize(rosSamples);
-  /** Each type's schema once, as the bridge advertises it, with Foxglove's parse of it. */
+  /** Each type's schema once, as the bridge advertises it, with the previous parser's result. */
   const types = {};
   const addType = (type, schema) => {
     types[type] ??= { schema, definitions: definitionsOf(schema) };
@@ -685,7 +687,7 @@ function main() {
       entry.ros = {};
       for (const rmw of RMWS) {
         const bytes = Buffer.from(ros[rmw][sample.key].cdr, 'hex');
-        // How Foxglove decoded ROS 2's bytes, kept only where it differs from `decoded`.
+        // How the previous reader decoded ROS 2's bytes, kept only where it differs from `decoded`.
         const fromRos = tag(reader.readMessage(bytes));
         entry.ros[rmw] = { cdr: bytes.toString('hex') };
         if (JSON.stringify(fromRos) !== JSON.stringify(entry.decoded))
@@ -722,7 +724,7 @@ function main() {
   spawnSync('npx', ['prettier', '--write', OUT], { stdio: 'inherit' });
   console.log(`${cases.length} cases written to ${path.relative(process.cwd(), OUT)}`);
   console.log(
-    `Foxglove's bytes equal ROS 2's for ${sameAsRos.length} of ${rosSamples.length * RMWS.length}`
+    `The previous bytes equal ROS 2's for ${sameAsRos.length} of ${rosSamples.length * RMWS.length}`
   );
 }
 

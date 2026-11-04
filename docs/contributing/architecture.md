@@ -69,10 +69,10 @@ connection settings change it per browser.
   bridge advertises, `cdr.ts` reads and writes CDR (either byte order, with the 4-byte
   encapsulation header and alignment), and `cdr-message.ts` turns a schema into a decoder and an
   encoder of whole messages, which `codec.ts` gives the decode workers and `BridgeClient`. It
-  replaced Foxglove's ROS message libraries (`@foxglove/rosmsg`, `@foxglove/rosmsg2-serialization`),
-  which MITI used up to 3.4.5. Its tests compare it with what those libraries decoded and encoded,
-  and with the bytes ROS 2 itself serializes with Fast DDS and Cyclone DDS
-  (`lib/bridge/__tests__/fixtures/cdr-messages.json`, made by `scripts/cdr-fixtures/`).
+  replaced the third-party ROS message libraries MITI used up to 3.4.5. Its tests compare it with
+  what those libraries decoded and encoded, and with the bytes ROS 2 itself serializes with Fast DDS
+  and Cyclone DDS (`lib/bridge/__tests__/fixtures/cdr-messages.json`, made by
+  `scripts/cdr-fixtures/`).
 
 ## Project structure
 
@@ -95,7 +95,7 @@ MITI/
 │   ├── start-miti.mjs        # pixi run miti / miti run: picks free ports, starts MITI and the bridge
 │   ├── bridge-settings.mjs   # ROS network settings of the bridge beside MITI
 │   ├── traffic-archive.py    # Keeps GitHub's traffic numbers (Traffic archive workflow)
-│   ├── cdr-fixtures/         # Makes the CDR test fixtures, with ROS 2 and Foxglove's libraries
+│   ├── cdr-fixtures/         # Makes the CDR test fixtures, with ROS 2 and the previous libraries
 │   ├── heavy-bridge.js       # Load harness: a foxglove_bridge stand-in with robot-sized data
 │   ├── perf-run.js           # Load harness: measures MITI in Chrome
 │   └── perf-probe.js         # Browser-side half of the harness
