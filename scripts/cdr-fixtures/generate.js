@@ -5,10 +5,10 @@
  *   - the bytes and decoded objects of the ROS libraries MITI used before its own;
  *   - the bytes ROS 2 itself serializes, with Fast DDS and Cyclone DDS, and how those decoded them.
  *
- * MITI no longer depends on those libraries; to run this again, install them without saving,
- * in a shell with ROS 2 (e.g. `pixi shell -e humble`):
+ * MITI no longer depends on those libraries. To run this again, install the three packages
+ * required below with `npm install --no-save`, at the versions the fixture's `versions` field
+ * records, then run it in a shell with ROS 2 (e.g. `pixi shell -e humble`):
  *
- *   npm install --no-save @foxglove/rosmsg@5 @foxglove/rosmsg2-serialization@3 @foxglove/cdr@3
  *   node scripts/cdr-fixtures/generate.js
  *
  * ROS 2 only serializes here (rclpy's serialize_message); nothing joins a ROS graph. The domain is
