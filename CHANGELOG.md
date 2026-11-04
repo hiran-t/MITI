@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- The tiled panel layout uses react-mosaic-component 7, which supports React 19 itself, so MITI no longer forces newer drag-and-drop libraries into it. Layouts saved by MITI 3.4.5 and earlier, in the browser and in files, open unchanged. Exported layout files are now format version 2, which stores how panels tile as react-mosaic 7's n-ary tree; MITI still opens version 1 files, but MITI 3.4.5 and earlier cannot open version 2 files.
+
 ## [3.4.5] - 2026-11-03
 
 ### Changed

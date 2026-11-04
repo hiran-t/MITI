@@ -19,8 +19,9 @@ const NEW_PANEL_SIZE = { w: 4, h: 9 };
 
 /**
  * Preserve widget settings, clamp legacy grid geometry, and make sure the split tree holds every
- * panel exactly once. Layouts saved before the split tree are converted from their grid. Panels of
- * a type MITI does not know, e.g. from a widget that is not installed, are kept with their settings.
+ * panel exactly once. Layouts saved before the split tree are converted from their grid, and binary
+ * split trees saved by MITI 3.4.5 and earlier to the n-ary tree. Panels of a type MITI does not
+ * know, e.g. from a widget that is not installed, are kept with their settings.
  */
 export function normalizeLayout(value: unknown): LayoutConfig {
   if (!value || typeof value !== 'object' || !('widgets' in value) || !Array.isArray(value.widgets))
@@ -58,7 +59,7 @@ export function normalizeLayout(value: unknown): LayoutConfig {
   const stored = (value as { mosaic?: unknown }).mosaic;
   const mosaic =
     stored !== undefined
-      ? (stored as MosaicTree | null)
+      ? stored
       : mosaicFromGrid(widgets.map(({ i, x, y, w, h }) => ({ id: i, x, y, w, h })));
   return {
     widgets,

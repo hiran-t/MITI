@@ -217,9 +217,10 @@ export function useLayoutConfig(): {
 - `toggleLock`: locks or unlocks a panel's position (a locked panel cannot be dragged).
 
 `normalizeLayout` validates a stored layout: it drops unknown or duplicate panels, clamps the
-legacy grid fields, converts MITI 2.x grid layouts to a split tree with `mosaicFromGrid`, and makes
-sure the tree holds every panel exactly once. 3D Scene panels saved without props get the settings
-from the old `miti_urdf_config` key.
+legacy grid fields, converts MITI 2.x grid layouts to a split tree with `mosaicFromGrid` and binary
+trees from MITI 3.4.5 and earlier to the n-ary tree (`syncMosaic`), and makes sure the tree holds
+every panel exactly once. 3D Scene panels saved without props get the settings from the old
+`miti_urdf_config` key.
 
 ---
 
@@ -690,19 +691,24 @@ export interface LayoutConfig {
 export const DEFAULT_LAYOUT: LayoutConfig; // a 3D Scene and four cameras
 ```
 
-The split tree is defined in `lib/layout/mosaic.ts`:
+The split tree is react-mosaic 7's n-ary tree, defined in `lib/layout/mosaic.ts`:
 
 ```typescript
 export type MosaicDirection = 'row' | 'column';
 export interface MosaicSplit {
+  type: 'split';
   direction: MosaicDirection;
-  first: MosaicTree;
-  second: MosaicTree;
-  /** Share of the first node, 0–100; undefined splits evenly. */
-  splitPercentage?: number;
+  children: MosaicTree[];
+  /** Share of each child, 0–100, summing to 100; undefined splits evenly. MITI always sets it. */
+  splitPercentages?: number[];
 }
 export type MosaicTree = string | MosaicSplit;
 ```
+
+MITI 3.4.5 and earlier saved react-mosaic 6's binary tree (`LegacyMosaicTree`: `direction`, `first`,
+`second`, `splitPercentage`). `syncMosaic` converts it and gives every split explicit shares, so
+react-mosaic keeps their sizes when it flattens nested splits after a drag. MITI has no tabs: a
+react-mosaic tab group (`type: 'tabs'`) in a stored tree opens as its panels side by side.
 
 ---
 
@@ -1085,7 +1091,7 @@ to the same worker, which keeps the channel's decoder.
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `lib/parsers/message-summary.ts` | `summarizeMessage(value: unknown): unknown`: shortens typed arrays, long arrays and strings, and turns BigInt into strings, so a message can be shown as JSON. |
 | `lib/parsers/bytes.ts`           | `decodeBytes(data: string \| ArrayLike<number>): Uint8Array<ArrayBuffer>`: a `uint8[]` field as bytes (base64 strings are accepted).                           |
-| `lib/layout/mosaic.ts`           | `isSplit`, `leaves`, `mosaicFromGrid`, `addToMosaic`, `removeFromMosaic`, `syncMosaic`: split tree helpers.                                                    |
+| `lib/layout/mosaic.ts`           | `isSplit`, `leaves`, `shares`, `mosaicFromGrid`, `addToMosaic`, `removeFromMosaic`, `syncMosaic`: split tree helpers.                                          |
 | `lib/scene/transforms.ts`        | `stampSeconds`, `frameName`, `transformMatrix`, `lookupTransform(tree, target, source, time = 0): Matrix4`.                                                    |
 | `lib/scene/scene-config.ts`      | `normalizeSceneConfig(props: unknown): SceneConfig`, `topicLayerType`, `defaultTopicVisible`, `autoFixedFrame`, `parseParameterName`.                          |
 | `lib/scene/colors.ts`            | Point and map color modes, `COLOR_MAPS` (turbo, rainbow), `pointColors`, `occupancyPalette`, `parseHex`.                                                       |
