@@ -41,7 +41,7 @@ function stamp() {
   return { sec: Math.floor(ms / 1000), nanosec: (ms % 1000) * 1e6 };
 }
 
-/** The 3D Scene panel: a Foxglove-style scene with its settings in the sidebar. */
+/** The 3D Scene panel: a scene with its settings in the sidebar. */
 export default function SceneViewer({
   client,
   topics = [],

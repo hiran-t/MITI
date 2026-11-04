@@ -1,4 +1,4 @@
-# Windows version of foxglove-bridge.sh: runs foxglove_bridge on this machine, joined to the
+# Windows bridge script: runs the bridge RoboStack provides on this machine, joined to the
 # robot's ROS 2 network over DDS. Used by `pixi run -e <distro> bridge` and `miti-bridge` on
 # Windows; it reads the same environment variables as the bash script:
 #   ROS_DOMAIN_ID, RMW_IMPLEMENTATION, CYCLONEDDS_URI, ROS_STATIC_PEERS, BRIDGE_PORT, BRIDGE_ADDRESS,
@@ -16,7 +16,7 @@ if (-not (Get-Command ros2 -ErrorAction SilentlyContinue)) {
 }
 
 if ($env:OS -eq 'Windows_NT' -and $env:CONDA_PREFIX) {
-  # RoboStack installs foxglove.dll and foxglove_cpp_shared.dll in Library\lib, which Windows does
+  # RoboStack installs the bridge's DLLs in Library\lib, which Windows does
   # not search; without this the bridge exits at start with 0xC0000135 (DLL not found).
   $env:PATH = (Join-Path $env:CONDA_PREFIX 'Library\lib') + ';' + $env:PATH
   # ros2 launch cannot create its "latest" log symlink without Developer Mode; that is harmless.
@@ -42,7 +42,7 @@ function Test-PortInUse([int]$Port) {
   try { $client.Connect('127.0.0.1', $Port); $true } catch { $false } finally { $client.Dispose() }
 }
 
-# A foxglove_bridge answers the WebSocket handshake with its own subprotocol.
+# A bridge answers the WebSocket handshake with its subprotocol.
 function Test-Bridge([int]$Port) {
   $client = New-Object System.Net.Sockets.TcpClient
   try {
@@ -81,7 +81,7 @@ function Get-PortOwner([int]$Port) {
 # the port: move to the next free one.
 if (Test-PortInUse $port) {
   if (Test-Bridge $port) {
-    [Console]::Error.WriteLine("foxglove_bridge already runs on port $port; use that one.")
+    [Console]::Error.WriteLine("A bridge already runs on port $port; use that one.")
     exit 3
   }
   $taken = $port
@@ -98,7 +98,7 @@ if (Test-PortInUse $port) {
     [Console]::Error.WriteLine("Port $taken is used by $owner, and no port up to $($taken + 20) is free.")
     exit 1
   }
-  [Console]::Error.WriteLine("Port $taken is used by $owner; foxglove_bridge uses $port instead. " +
+  [Console]::Error.WriteLine("Port $taken is used by $owner; the bridge uses $port instead. " +
     "pixi run miti finds it; otherwise enter ws://<this machine>:$port in MITI's connection settings.")
 }
 
@@ -138,7 +138,7 @@ $locators
 $env:ROS_STATIC_PEERS = $peers -join ';'
 
 $robot = if ($peers.Count) { ", robot $($peers -join ' ')" } else { '' }
-Write-Host "foxglove_bridge: ws://${address}:$port, ROS_DOMAIN_ID=$env:ROS_DOMAIN_ID, $env:RMW_IMPLEMENTATION$robot"
+Write-Host "Bridge: ws://${address}:$port, ROS_DOMAIN_ID=$env:ROS_DOMAIN_ID, $env:RMW_IMPLEMENTATION$robot"
 
 & ros2 launch foxglove_bridge foxglove_bridge_launch.xml `
   "port:=$port" `

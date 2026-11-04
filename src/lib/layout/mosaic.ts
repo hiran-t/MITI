@@ -1,5 +1,5 @@
 /**
- * Panel arrangement as a binary split tree, the model Foxglove's layout uses (react-mosaic):
+ * Panel arrangement as a binary split tree (react-mosaic):
  * every node is a panel id or a row/column split of two nodes at a percentage.
  */
 export type MosaicDirection = 'row' | 'column';
@@ -93,7 +93,7 @@ export function removeFromMosaic(node: MosaicTree | null, id: string): MosaicTre
 
 /**
  * Adds a panel beside `target` (or beside everything when there is no target), splitting along
- * the target's longer side as Foxglove does when a panel is added next to another.
+ * the target's longer side when a panel is added next to another.
  */
 export function addToMosaic(
   node: MosaicTree | null,
