@@ -57,6 +57,10 @@ export interface TransformSettings {
   showLabels: boolean;
   labelSize: number;
   axisScale: number;
+  /** The axes' opacity, 0 to 1. */
+  axisOpacity: number;
+  /** The axes' thickness relative to their default, which grows with Axis scale. */
+  axisThickness: number;
   lineWidth: number;
   lineColor: string;
   tfTopics: string[];
@@ -230,6 +234,8 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
     showLabels: true,
     labelSize: 11,
     axisScale: 1,
+    axisOpacity: 1,
+    axisThickness: 1,
     lineWidth: 1,
     lineColor: MITI_CYAN,
     tfTopics: ['/tf', '/tf_static'],

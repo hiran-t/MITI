@@ -6,18 +6,18 @@ The scene is independent of the robot description. A grid, TF frames and sensor 
 
 ## Supported layers
 
-| Layer                 | ROS 2 interface                                                            | Display                                                                                           |
-| --------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Robot                 | `std_msgs/msg/String` (`*robot_description`), `sensor_msgs/msg/JointState` | URDF model; links follow TF, joint states pose links without TF                                   |
-| TF                    | `tf2_msgs/msg/TFMessage`                                                   | Solid red, green and blue X, Y, Z axes at each frame, labels, parent connections                  |
-| Point Cloud           | `sensor_msgs/msg/PointCloud2`                                              | XYZ points; packed RGB/RGBA or individual color channels                                          |
-| Laser Scan            | `sensor_msgs/msg/LaserScan`                                                | Valid ranges projected onto the scan plane                                                        |
-| Marker / Marker Array | `visualization_msgs/msg/Marker`, `MarkerArray`                             | Arrows, cubes, spheres, cylinders, lines, lists, points, text, meshes, triangles and arrow strips |
-| Occupancy Grid        | `nav_msgs/msg/OccupancyGrid`                                               | Grayscale grid with origin pose, resolution and unknown cells                                     |
-| Path                  | `nav_msgs/msg/Path`                                                        | Connected positions, respecting per-pose frames                                                   |
-| Odometry              | `nav_msgs/msg/Odometry`                                                    | Current pose arrow                                                                                |
-| Pose / Pose Array     | `geometry_msgs/msg/PoseStamped`, `PoseArray`                               | Pose arrows                                                                                       |
-| Camera / Image        | `sensor_msgs/msg/CameraInfo` + optional `Image` or `CompressedImage`       | Calibrated frustum and textured image plane                                                       |
+| Layer                 | ROS 2 interface                                                            | Display                                                                                                     |
+| --------------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Robot                 | `std_msgs/msg/String` (`*robot_description`), `sensor_msgs/msg/JointState` | URDF model; links follow TF, joint states pose links without TF                                             |
+| TF                    | `tf2_msgs/msg/TFMessage`                                                   | Red, green and blue X, Y, Z axes at each frame (axis scale, thickness, opacity), labels, parent connections |
+| Point Cloud           | `sensor_msgs/msg/PointCloud2`                                              | XYZ points; packed RGB/RGBA or individual color channels                                                    |
+| Laser Scan            | `sensor_msgs/msg/LaserScan`                                                | Valid ranges projected onto the scan plane                                                                  |
+| Marker / Marker Array | `visualization_msgs/msg/Marker`, `MarkerArray`                             | Arrows, cubes, spheres, cylinders, lines, lists, points, text, meshes, triangles and arrow strips           |
+| Occupancy Grid        | `nav_msgs/msg/OccupancyGrid`                                               | Grayscale grid with origin pose, resolution and unknown cells                                               |
+| Path                  | `nav_msgs/msg/Path`                                                        | Connected positions, respecting per-pose frames                                                             |
+| Odometry              | `nav_msgs/msg/Odometry`                                                    | Current pose arrow                                                                                          |
+| Pose / Pose Array     | `geometry_msgs/msg/PoseStamped`, `PoseArray`                               | Pose arrows                                                                                                 |
+| Camera / Image        | `sensor_msgs/msg/CameraInfo` + optional `Image` or `CompressedImage`       | Calibrated frustum and textured image plane                                                                 |
 
 Topic suggestions use the live topic list and filter by message type. A topic can also be entered manually. Visibility, topic, opacity and style controls for each layer are under **Topics** and **Custom layers** in the panel settings. Layer status distinguishes disconnected, waiting, empty, stale and errors. Removing a layer releases its subscriptions; changing a shared topic does not unsubscribe other panels.
 

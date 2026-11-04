@@ -44,10 +44,15 @@ export const axesCapacity = (count: number) => 2 ** Math.ceil(Math.log2(Math.max
 
 /**
  * Writes red, green and blue axes of length `scale` at each pose into `mesh`, three instances per
- * pose in X, Y, Z order.
+ * pose in X, Y, Z order. `thickness` multiplies their default radius.
  */
-export function writeAxes(mesh: THREE.InstancedMesh, matrices: THREE.Matrix4[], scale: number) {
-  const radius = scale * AXIS_RADIUS;
+export function writeAxes(
+  mesh: THREE.InstancedMesh,
+  matrices: THREE.Matrix4[],
+  scale: number,
+  thickness = 1
+) {
+  const radius = scale * AXIS_RADIUS * thickness;
   matrices.forEach((matrix, i) => {
     AXIS_ROTATIONS.forEach((rotation, axis) => {
       axisLocal.makeScale(radius, scale, radius).premultiply(rotation);
@@ -69,20 +74,30 @@ export function AxesInstances({
   matrices,
   scale,
   opacity = 1,
+  thickness = 1,
 }: {
   matrices: THREE.Matrix4[];
   scale: number;
   opacity?: number;
+  thickness?: number;
 }) {
   const ref = useRef<THREE.InstancedMesh>(null);
   const capacity = axesCapacity(matrices.length);
   // Before the next frame, so a new mesh never draws its identity instances.
   useLayoutEffect(() => {
-    if (ref.current) writeAxes(ref.current, matrices, scale);
-  }, [matrices, scale, capacity]);
+    if (ref.current) writeAxes(ref.current, matrices, scale, thickness);
+  }, [matrices, scale, thickness, capacity]);
   return (
     <instancedMesh key={capacity} ref={ref} args={[AXIS_GEOMETRY, undefined, capacity]}>
-      <meshBasicMaterial transparent={opacity < 1} opacity={opacity} toneMapped={false} />
+      {/* A new material when it turns translucent: three.js compiles an opaque material's shader
+          with alpha fixed at 1, and does not recompile it when `transparent` changes. */}
+      <meshBasicMaterial
+        key={opacity < 1 ? 'translucent' : 'opaque'}
+        transparent={opacity < 1}
+        opacity={opacity}
+        depthWrite={opacity >= 1}
+        toneMapped={false}
+      />
     </instancedMesh>
   );
 }

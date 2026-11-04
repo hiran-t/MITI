@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- **Axis thickness** and **Axis opacity** in the Transforms settings of the 3D Scene and the Image panel, for TF axes that cover what you are looking at, such as frames just in front of a camera.
+
 ## [3.4.5] - 2026-11-03
 
 ### Changed

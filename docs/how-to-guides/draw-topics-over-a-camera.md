@@ -80,7 +80,7 @@ A planner usually publishes a path only while it has a goal, so the topic can be
 1. Turn on **Transforms** and expand it.
 2. Check that **TF topics** lists `/tf, /tf_static`, and add any other TF topic the robot uses, such as `/fast_lio/tf` from FAST-LIO. Static TF topics with other names go in **Static TF topics**.
 3. Set **Labels**, **Label size (px)**, **Axis scale**, **Line width** and **Line color**.
-4. Turn single frames on and off with their eye icons to keep the image readable.
+4. Turn single frames on and off with their eye icons to keep the image readable. Frames close to the camera draw large axes: when they cover what you are looking at, lower **Axis thickness** or **Axis opacity**.
 
 ```{figure} ../images/camera-tf.webp
 :alt: A live camera image with TF axes, connecting lines and frame names drawn over it, and the Transforms group open in the settings
