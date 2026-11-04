@@ -40,6 +40,16 @@ test('MITI 2.0 3D Scene props keep their robot, layers and TF settings', () => {
   expect(config.layers.map((layer) => layer.type)).toEqual(['grid']);
 });
 
+test('layouts saved before axis opacity and thickness get both at 1', () => {
+  const { axisOpacity, axisThickness, ...before } = DEFAULT_SCENE_CONFIG.transforms;
+  expect([axisOpacity, axisThickness]).toEqual([1, 1]);
+  const config = normalizeSceneConfig({
+    version: 2,
+    transforms: { ...before, axisScale: 2 },
+  });
+  expect(config.transforms).toMatchObject({ axisScale: 2, axisOpacity: 1, axisThickness: 1 });
+});
+
 test('URL robot sources become URDF custom layers and empty props get defaults', () => {
   const config = normalizeSceneConfig({ mode: 'url', urdfUrl: 'http://robot/robot.urdf' });
   expect(config.layers.find((layer) => layer.type === 'urdf')).toMatchObject({

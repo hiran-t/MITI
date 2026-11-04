@@ -4,6 +4,7 @@
 
 ### Added
 
+- **Axis thickness** and **Axis opacity** in the Transforms settings of the 3D Scene and the Image panel, for TF axes that cover what you are looking at, such as frames just in front of a camera.
 - The .deb and the Docker image carry `THIRD_PARTY_LICENSES`: the version, license and license text of each npm package they ship (`scripts/third-party-licenses.mjs`).
 
 ### Changed

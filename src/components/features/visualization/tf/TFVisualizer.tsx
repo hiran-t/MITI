@@ -55,7 +55,14 @@ export default function TFVisualizer({
   const axisLength = AXIS_LENGTH * settings.axisScale;
   return (
     <>
-      <AxesInstances matrices={matrices} scale={axisLength} />
+      {settings.axisOpacity > 0 && (
+        <AxesInstances
+          matrices={matrices}
+          scale={axisLength}
+          opacity={settings.axisOpacity}
+          thickness={settings.axisThickness}
+        />
+      )}
       {settings.showLabels &&
         frames.map((frame) => (
           <group key={frame.name} matrix={frame.matrix} matrixAutoUpdate={false}>
