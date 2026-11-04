@@ -20,7 +20,7 @@ Topics, message types, rates and sizes, if the feature uses robot data.
 
 ## Alternatives
 
-Other approaches you have considered, or how you work around it today. If Foxglove or RViz already does this, describe how.
+Other approaches you have considered, or how you work around it today. If another tool already does this, describe how.
 
 ## Additional context
 

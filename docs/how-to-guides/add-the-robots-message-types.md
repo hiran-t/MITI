@@ -1,6 +1,6 @@
 # Add the Robot's Message Types
 
-The bridge can only offer topics whose message definitions are installed beside it. The standard packages (`common_interfaces`, `tf2_msgs`, `nav2_msgs`, `map_msgs`, `moveit_msgs`, `foxglove_msgs`, `control_msgs`, `vision_msgs`, and nav2's `bond`) are included. For the robot's own packages (for example `oc_g1_msgs`), add them to the MITI machine.
+The bridge can only offer topics whose message definitions are installed beside it. The standard packages (`common_interfaces`, `tf2_msgs`, `nav2_msgs`, `map_msgs`, `moveit_msgs`, `control_msgs`, `vision_msgs`, and nav2's `bond`) are included. For the robot's own packages (for example `oc_g1_msgs`), add them to the MITI machine.
 
 ## With pixi or Docker
 

@@ -102,8 +102,8 @@ Follow [Semantic Versioning](https://semver.org/):
 
 Examples from MITI's history:
 
-- `v2.1.0`: moved from rosbridge to foxglove_bridge
-- `v3.1.0`: Foxglove-style Image panel
+- `v2.1.0`: moved from rosbridge to a bridge that sends binary CDR messages
+- `v3.1.0`: Image panel with calibration, overlays and rectification
 - `v3.1.1`: removed unused code and dependencies
 
 ## Release notes
