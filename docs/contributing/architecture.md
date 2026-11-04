@@ -65,8 +65,14 @@ connection settings change it per browser.
 - **`ProtocolClient`** (`lib/bridge/protocol.ts`): the protocol client used by `BridgeClient`. It
   replaced @foxglove/ws-protocol's client and keeps its API; @foxglove/ws-protocol remains for the
   load harness's stand-in bridge.
-- **@foxglove/rosmsg** and **@foxglove/rosmsg2-serialization**: parse the advertised `ros2msg`
-  schemas and decode or encode CDR.
+- **MITI's own CDR code** (`lib/bridge/`): `msg-definition.ts` parses the `ros2msg` schemas the
+  bridge advertises, `cdr.ts` reads and writes CDR (either byte order, with the 4-byte
+  encapsulation header and alignment), and `cdr-message.ts` turns a schema into a decoder and an
+  encoder of whole messages, which `codec.ts` gives the decode workers and `BridgeClient`. It
+  replaced Foxglove's ROS message libraries (`@foxglove/rosmsg`, `@foxglove/rosmsg2-serialization`),
+  which MITI used up to 3.4.5. Its tests compare it with what those libraries decoded and encoded,
+  and with the bytes ROS 2 itself serializes with Fast DDS and Cyclone DDS
+  (`lib/bridge/__tests__/fixtures/cdr-messages.json`, made by `scripts/cdr-fixtures/`).
 
 ## Project structure
 
@@ -89,6 +95,7 @@ MITI/
 │   ├── start-miti.mjs        # pixi run miti / miti run: picks free ports, starts MITI and the bridge
 │   ├── bridge-settings.mjs   # ROS network settings of the bridge beside MITI
 │   ├── traffic-archive.py    # Keeps GitHub's traffic numbers (Traffic archive workflow)
+│   ├── cdr-fixtures/         # Makes the CDR test fixtures, with ROS 2 and Foxglove's libraries
 │   ├── heavy-bridge.js       # Load harness: a foxglove_bridge stand-in with robot-sized data
 │   ├── perf-run.js           # Load harness: measures MITI in Chrome
 │   └── perf-probe.js         # Browser-side half of the harness
@@ -188,12 +195,15 @@ src/
 │   ├── bridge/                           # Bridge client (miti_bridge, foxglove_bridge)
 │   │   ├── __tests__/
 │   │   ├── asset-cache.ts                # Robot assets in Cache Storage
+│   │   ├── cdr-message.ts                # Reads and writes whole messages, from parsed definitions
+│   │   ├── cdr.ts                        # CDR: byte order, alignment, primitives and arrays
 │   │   ├── client.ts                     # BridgeClient
 │   │   ├── codec.ts                      # CDR/JSON decoders and encoders from schemas
 │   │   ├── decode-core.ts                # What a decode worker does
 │   │   ├── decode-pool.ts                # Web Workers that decode heavy topics
 │   │   ├── decode-worker-factory.ts
 │   │   ├── decode.worker.ts              # Worker entry point
+│   │   ├── msg-definition.ts             # Parses ros2msg schemas: fields, constants, defaults
 │   │   ├── protocol.ts                   # The wire protocol: miti.bridge.v1 and foxglove_bridge's
 │   │   ├── topics.ts                     # Topic name and type helpers
 │   │   └── types.ts

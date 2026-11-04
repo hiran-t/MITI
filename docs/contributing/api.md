@@ -1104,8 +1104,8 @@ to the same worker, which keeps the channel's decoder.
 (`lib/bridge/protocol.ts`), offering the WebSocket subprotocols `miti.bridge.v1`,
 `foxglove.sdk.v1` and `foxglove.websocket.v1`, in that order: miti_bridge selects the first,
 foxglove_bridge one of the others. `miti.*` operations go only to miti_bridge. Messages arrive as
-CDR (or JSON) and are decoded with the schemas the bridge advertises
-(`@foxglove/rosmsg2-serialization`).
+CDR (or JSON) and are decoded with the schemas the bridge advertises, by MITI's own CDR code
+(`lib/bridge/codec.ts`).
 
 Subscriptions are shared per topic and survive reconnects and node restarts: they bind to a
 channel whenever the bridge advertises the topic. After a lost connection, each connection retries
