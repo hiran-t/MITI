@@ -14,8 +14,13 @@
 const http = require('http');
 const { WebSocketServer } = require('ws');
 const { FoxgloveServer } = require('@foxglove/ws-protocol');
-const { parse } = require('@foxglove/rosmsg');
-const { MessageWriter } = require('@foxglove/rosmsg2-serialization');
+
+// Messages are written with MITI's own CDR code (src/lib/bridge), loaded as TypeScript.
+require('ts-node').register({
+  transpileOnly: true,
+  compilerOptions: { module: 'commonjs', moduleResolution: 'node' },
+});
+const { createEncoder } = require('../src/lib/bridge/codec');
 
 const args = Object.fromEntries(
   process.argv
@@ -110,7 +115,7 @@ function add(topic, schemaName) {
       schema,
       schemaEncoding: 'ros2msg',
     }),
-    writer: new MessageWriter(parse(schema, { ros2: true })),
+    encode: createEncoder(schema),
     active: false,
     sent: 0,
     dropped: 0,
@@ -140,7 +145,7 @@ function sendBytes(topic, bytes) {
   channel.total.bytes += bytes.byteLength;
   server.sendMessage(channel.id, BigInt(Date.now()) * 1000000n, bytes);
 }
-const send = (topic, message) => sendBytes(topic, channels[topic].writer.writeMessage(message));
+const send = (topic, message) => sendBytes(topic, channels[topic].encode(message));
 const stamp = () => {
   const ms = Date.now();
   return { sec: Math.floor(ms / 1000), nanosec: (ms % 1000) * 1e6 };
@@ -169,7 +174,7 @@ for (let cam = 0; cam < CAMS; cam++) {
         data[i + 1] = (y + f * 20) & 255;
         data[i + 2] = ((x ^ y) + cam * 60) & 255;
       }
-    return channels[topic].writer.writeMessage({
+    return channels[topic].encode({
       header: { stamp: stamp(), frame_id: `camera${cam}_optical` },
       height: HEIGHT,
       width: WIDTH,
@@ -211,7 +216,7 @@ const clouds = Array.from({ length: CLOUDS }, (_, c) => {
     view.setUint8(o + 17, i % 4);
     view.setFloat64(o + 18, i * 1e-6, true);
   }
-  return channels['/livox/lidar'].writer.writeMessage({
+  return channels['/livox/lidar'].encode({
     header: { stamp: stamp(), frame_id: 'livox_frame' },
     height: 1,
     width: POINTS,

@@ -1,6 +1,5 @@
-import { parse } from '@foxglove/rosmsg';
-import { MessageReader, MessageWriter } from '@foxglove/rosmsg2-serialization';
 import { BridgeClient } from '../client';
+import { createDecoder, createEncoder } from '../codec';
 import { createDecodeHandler, type DecodeReply, type DecodeRequest } from '../decode-core';
 
 /** A WebSocket stand-in that records what the client sends and replays server frames. */
@@ -47,8 +46,7 @@ class Socket {
 }
 
 const STRING_SCHEMA = 'string data';
-const cdr = (schema: string, message: object) =>
-  new MessageWriter(parse(schema, { ros2: true })).writeMessage(message);
+const cdr = (schema: string, message: object) => createEncoder(schema)(message);
 
 function frame(op: number, header: number[], payload: Uint8Array, header64 = false) {
   const size = 1 + header.length * 4 + (header64 ? 8 : 0) + payload.length;
@@ -512,8 +510,8 @@ test('over miti.bridge.v1 publishing sends CDR, asking for an unknown schema onc
       channels: [{ id: 1, topic: '/flag', encoding: 'cdr', schemaName: 'std_msgs/msg/Bool' }],
     },
   ]);
-  const reader = new MessageReader(parse('bool data', { ros2: true }));
-  expect(binaryFrames().map((frame) => reader.readMessage(frame.subarray(5)))).toEqual([
+  const decode = createDecoder('cdr', 'ros2msg', 'bool data');
+  expect(binaryFrames().map((frame) => decode(frame.subarray(5)))).toEqual([
     { data: true },
     { data: false },
   ]);

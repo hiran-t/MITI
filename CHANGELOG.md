@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- MITI decodes and encodes ROS 2 messages with its own code instead of Foxglove's ROS message libraries. Messages decode to the same values as before, from miti_bridge and from foxglove_bridge, and in Chrome a camera image or a large point cloud decodes two to three times as fast. Fields of type `wstring`, which MITI could not read before, now decode.
+
 ## [3.4.5] - 2026-11-03
 
 ### Changed
