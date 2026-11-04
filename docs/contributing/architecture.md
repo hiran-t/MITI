@@ -42,7 +42,7 @@ connection settings change it per browser.
 - **Next.js 16** with the App Router, built with Turbopack. The page is a client component that
   loads the dashboard with `ssr: false`.
 - **React 19** and **TypeScript 5.9**.
-- **Tailwind CSS 3**, with colors backed by `--miti-*` CSS variables from `lib/theme.ts`. Class
+- **Tailwind CSS 4**, with colors backed by `--miti-*` CSS variables from `lib/theme.ts`. Class
   strings are grouped in `styles/*.styles.ts` and combined with a local `cn()` helper.
 - **react-mosaic-component** for the tiled panel layout.
 - **lucide-react** for icons.

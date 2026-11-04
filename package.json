@@ -25,13 +25,14 @@
   "dependencies": {
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.2",
+    "@tailwindcss/postcss": "^4.3.4",
     "fflate": "^0.8.3",
     "lucide-react": "^0.577.0",
     "next": "^16.4.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-mosaic-component": "^7.2.1",
-    "tailwindcss": "^4.3.3",
+    "tailwindcss": "^4.3.4",
     "three": "^0.160.1",
     "urdf-loader": "^0.13.1"
   },
@@ -46,7 +47,6 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@types/three": "^0.160.0",
-    "autoprefixer": "^10.4.24",
     "eslint": "^10.14.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "husky": "^8.0.3",
