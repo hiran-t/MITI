@@ -92,7 +92,7 @@ export interface JointInfo {
   value: number;
 }
 
-/** Poses default to axes, pose arrays and odometry to arrows, and paths to a line, as in Foxglove. */
+/** Poses default to axes, pose arrays and odometry to arrows, and paths to a line. */
 export const defaultPoseType = (type: string): PoseDisplayType =>
   type === 'path' ? 'line' : type === 'poses' || type === 'odometry' ? 'arrow' : 'axis';
 

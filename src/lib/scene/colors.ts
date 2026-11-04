@@ -1,7 +1,6 @@
 /**
- * Coloring for point clouds, laser scans and occupancy grids, following Foxglove's 3D panel
- * (which follows RViz): flat, gradient, color map and per-point RGB(A) for points; Map, Costmap,
- * Raw and Custom palettes for grids.
+ * Coloring for point clouds, laser scans and occupancy grids, following RViz: flat, gradient,
+ * color map and per-point RGB(A) for points; Map, Costmap, Raw and Custom palettes for grids.
  */
 import type { PointData } from '@/lib/parsers/pointcloud-parser';
 
@@ -109,7 +108,7 @@ function colorMapTable(name: ColorMapName): Float32Array {
   return table;
 }
 
-/** The color settings Foxglove starts with: the message's own colors, else intensity, else flat. */
+/** The color settings to start with: the message's own colors, else intensity, else flat. */
 export function autoPointColors(fields: string[], hasColors: boolean) {
   if (hasColors) return { colorMode: 'rgb' as const, colorField: 'intensity' };
   const field = fields.find((name) => ['intensity', 'i'].includes(name));

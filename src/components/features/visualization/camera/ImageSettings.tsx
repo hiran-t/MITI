@@ -42,7 +42,7 @@ const COLOR_MAPS: { value: ColorMapName; label: string }[] = [
   { value: 'rainbow', label: 'Rainbow' },
 ];
 
-/** Image panel settings, laid out like Foxglove's Image panel. */
+/** Image panel settings. */
 export default function ImageSettings({
   config,
   onChange,
@@ -205,8 +205,9 @@ export default function ImageSettings({
         />
         <p className="px-4 py-2 text-xs text-gray-400">
           Color mode applies to depth and mono images. Max FPS limits how often this panel decodes
-          and draws frames; miti_bridge sends only those, foxglove_bridge every frame. Compression
-          has miti_bridge send raw color images as JPEG; depth images and foxglove_bridge stay raw.
+          and draws frames; miti_bridge sends only those, other bridges every frame. Compression has
+          miti_bridge send raw color images as JPEG; depth images stay raw, and other bridges send
+          raw images.
         </p>
       </TreeSection>
 

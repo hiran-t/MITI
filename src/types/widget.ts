@@ -125,7 +125,7 @@ export type WidgetConfig = WidgetBase & { type: string; props?: unknown };
 export interface LayoutConfig {
   widgets: WidgetConfig[];
   /**
-   * How panels tile the workspace, as in Foxglove: a split tree of panel ids. Widget x/y/w/h
+   * How panels tile the workspace: a split tree of panel ids. Widget x/y/w/h
    * are the MITI 2.x grid positions, kept only to convert older layouts.
    */
   mosaic?: MosaicTree | null;

@@ -1,5 +1,5 @@
 /**
- * Image panel settings, named after Foxglove's Image panel. Stored as the `camera-viewer` widget's
+ * Image panel settings. Stored as the `camera-viewer` widget's
  * props; MITI ≤ 3.0 props (`{ topic, maxFps? }`) are read through `normalizeImageConfig`.
  */
 import type { Transform } from '@/lib/bridge/types';
@@ -19,7 +19,7 @@ export interface ImagePanelConfig {
   calibrationTopic?: string;
   /** Frames per second requested from the bridge; 0 receives every frame. */
   maxFps: number;
-  /** `jpeg`: miti_bridge sends raw color images as JPEG. foxglove_bridge always sends them raw. */
+  /** `jpeg`: miti_bridge sends raw color images as JPEG. Other bridges send them raw. */
   compression: 'jpeg' | 'none';
   rectify: boolean;
   /** Place the camera with TF at the image's stamp instead of the latest transform. */
@@ -61,7 +61,7 @@ export const DEFAULT_IMAGE_CONFIG: ImagePanelConfig = {
   colorMap: 'turbo',
   gradient: DEFAULT_IMAGE_GRADIENT,
   scene: { labelScale: 1, ignoreColladaUpAxis: false, meshUpAxis: 'z_up' },
-  // TF frames are opt-in on an image, as in Foxglove.
+  // TF frames are opt-in on an image.
   transforms: { ...DEFAULT_SCENE_CONFIG.transforms, visible: false },
   topics: {},
 };

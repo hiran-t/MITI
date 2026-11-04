@@ -29,7 +29,7 @@ test('map handles free, occupied, and signed unknown bytes', () => {
   expect(Array.from(pixels)).toEqual([255, 255, 255, 255, 0, 0, 0, 255, 128, 128, 128, 128]);
   expect(() => occupancyPixels(2, 2, [1])).toThrow('truncated');
 });
-test('map palettes follow Foxglove: custom, RViz map, costmap and raw', () => {
+test('map palettes: custom, RViz map, costmap and raw', () => {
   const cells = new Int8Array([0, 50, 100, -1, 120]);
   const colors = (palette: Uint8Array) => {
     const px = occupancyPixels(5, 1, cells, palette);

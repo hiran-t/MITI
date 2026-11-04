@@ -20,14 +20,14 @@ Closes #
 
 - [ ] `npm run lint`, `npm run type-check`, `npm test` and `npm run build` pass
 - [ ] Tested with real robot data through miti_bridge
-- [ ] Tested through foxglove_bridge too (for changes to the bridge client or to what a panel subscribes to)
+- [ ] Tested through a bridge without the `miti.*` operations too, such as `scripts/heavy-bridge.js` (for changes to the bridge client or to what a panel subscribes to)
 - [ ] Tested under load with `scripts/heavy-bridge.js` (for performance-sensitive changes)
 - [ ] Tested an older saved layout still loads (for changes to panel settings)
 
 **Test setup**
 
 - ROS 2 distro:
-- Bridge: <!-- miti_bridge or foxglove_bridge, and its version; on the robot, or beside MITI with pixi or Docker -->
+- Bridge: <!-- e.g. miti_bridge, and its version; on the robot, or beside MITI with pixi or Docker -->
 - Browser and OS:
 
 ## Screenshots

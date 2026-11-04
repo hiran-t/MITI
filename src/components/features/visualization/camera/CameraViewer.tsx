@@ -60,7 +60,7 @@ const MAX_MEANINGFUL_LAG_S = 30;
 const BACKGROUND = UI_TOKENS['bg-viewport'];
 /** Images and calibrations are the panel itself, not overlays. */
 const NOT_OVERLAYS: TopicLayerType[] = ['camera'];
-/** Overlays are opt-in, as in Foxglove's Image panel. */
+/** Overlays are opt-in. */
 const hiddenByDefault = () => false;
 
 /** image_transport publishes JPEG/PNG frames on `<topic>/compressed`. */
@@ -106,7 +106,7 @@ function rootFrame(tree: TFTree, frame: string): string {
 // ─── Main Component ─────────────────────────────────────────────────────────
 
 /**
- * The Image panel, after Foxglove's: a camera image with 3D topics drawn over it through the
+ * The Image panel: a camera image with 3D topics drawn over it through the
  * camera's calibration and TF, Color mode for depth and mono images, flips, rotation and Rectify.
  */
 export default function CameraViewer({

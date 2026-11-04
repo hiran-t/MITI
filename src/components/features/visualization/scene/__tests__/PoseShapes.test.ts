@@ -23,7 +23,7 @@ test('covariance ellipsoid radii are standard deviations along the principal axe
   expect(covarianceShape([1, 2, 3])).toBeNull();
 });
 
-test('pose display types default like Foxglove', () => {
+test('pose display types default to axes, arrows and a line', () => {
   expect(defaultPoseType('pose')).toBe('axis');
   expect(defaultPoseType('posecov')).toBe('axis');
   expect(defaultPoseType('poses')).toBe('arrow');
