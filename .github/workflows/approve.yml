@@ -23,5 +23,13 @@ jobs:
       - name: Approve
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
-        run: gh pr review "$PR_URL" --approve --body "Opened by the maintainer; CI still has to pass."
+          REVIEWS: repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews
+        # GitHub's API sometimes fails for a moment; without the approval the pull request would
+        # wait, so try again before giving up.
+        run: |
+          for attempt in 1 2 3 4 5; do
+            gh api "$REVIEWS" -f event=APPROVE \
+              -f body='Opened by the maintainer; CI still has to pass.' && exit 0
+            sleep $((attempt * 10))
+          done
+          exit 1
