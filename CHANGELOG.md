@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [3.4.6] - 2026-11-04
+
 ### Added
 
 - **Axis thickness** and **Axis opacity** in the Transforms settings of the 3D Scene and the Image panel, for TF axes that cover what you are looking at, such as frames just in front of a camera.
@@ -14,6 +16,8 @@
 - The tiled panel layout uses react-mosaic-component 7, which supports React 19 itself, so MITI no longer forces newer drag-and-drop libraries into it. Layouts saved by MITI 3.4.5 and earlier, in the browser and in files, open unchanged. Exported layout files are now format version 2, which stores how panels tile as react-mosaic 7's n-ary tree; MITI still opens version 1 files, but MITI 3.4.5 and earlier cannot open version 2 files.
 - With a bridge that has only the base protocol, the status bar says **WebSocket bridge** and Sources says **Base protocol (WebSocket)**, and the Image panel's help text speaks of "other bridges". The Windows bridge script is `ros/windows-bridge.ps1`; `pixi run -e <distro> bridge` and `miti-bridge` start it as before.
 - MITI decodes and encodes ROS 2 messages with its own code instead of third-party libraries. Messages decode to the same values as before, and in Chrome a camera image or a large point cloud decodes two to three times as fast. Fields of type `wstring`, which MITI could not read before, now decode.
+- MITI is built on Next.js 16.4.5, Tailwind CSS 4, three.js 0.187, urdf-loader 0.13 and lucide-react 1.x. It looks and works as before, and STL meshes keep the color their URDF gives them.
+- Developing MITI needs Node.js 22, as `CONTRIBUTING.md` says: the tools moved to TypeScript 6.0, husky 9, lint-staged 17 and @testing-library/jest-dom 7. Run `npm ci` after pulling.
 
 ## [3.4.5] - 2026-11-03
 

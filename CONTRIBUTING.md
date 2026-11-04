@@ -31,7 +31,7 @@ Open an issue with the **Feature request** template. Check first whether it has 
 4. Update the manual in `docs/` when behavior changes (it is the Read the Docs site, organized into tutorials, how-to guides, concepts, reference and contributing; see [docs/contributing/releases.md](docs/contributing/releases.md#user-manual-read-the-docs)), and add a line under `## [Unreleased]` in CHANGELOG.md.
 5. Open the pull request with the template filled in, including how you tested it.
 
-CI (`.github/workflows/ci.yml`) runs lint, type check, build and tests on every pull request to `main`, and `.github/workflows/docker.yml` builds the Docker image.
+CI (`.github/workflows/ci.yml`) runs lint, type check, build, tests and the end-to-end checks on every pull request to `main`; `.github/workflows/docker.yml` builds the Docker image, `.github/workflows/packages.yml` the .deb packages, and Read the Docs the manual. A pull request merges only when all of them pass, and one from a contributor also needs the maintainer's review.
 
 ## Development setup
 
