@@ -19,6 +19,9 @@ updates:
       # Version 7 changes the layout format: #17.
       - dependency-name: react-mosaic-component
         update-types: ['version-update:semver-major']
+      # MITI runs on Node.js 22 (CI, the Docker image, the .deb), so its types stay on 22.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule:
