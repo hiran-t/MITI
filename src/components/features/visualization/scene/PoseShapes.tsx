@@ -19,7 +19,7 @@ export interface PoseStyle {
   gradient: [string, string];
 }
 
-/** RViz's arrow defaults, which Foxglove also uses. */
+/** RViz's arrow defaults. */
 export const DEFAULT_ARROW = { shaftLength: 1, shaftWidth: 0.05, headLength: 0.3, headWidth: 0.1 };
 export const DEFAULT_PATH_GRADIENT: [string, string] = ['#38bdf8', MITI_CYAN];
 export const DEFAULT_COVARIANCE_COLOR = `${MITI_CYAN}66`;
@@ -67,8 +67,8 @@ export function writeAxes(
 }
 
 /**
- * Red, green and blue axes of length `scale` at each pose, like Foxglove's axis pose display. All
- * poses share one instanced mesh, so a robot's dozens of TF frames cost a single draw call.
+ * Red, green and blue axes of length `scale` at each pose. All poses share one instanced mesh, so
+ * a robot's dozens of TF frames cost a single draw call.
  */
 export function AxesInstances({
   matrices,

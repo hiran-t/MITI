@@ -1,6 +1,6 @@
 /**
  * Log messages from ROS 2 (`rcl_interfaces/msg/Log`, e.g. /rosout), ROS 1 (`rosgraph_msgs/Log`)
- * and Foxglove (`foxglove.Log`), normalised for the Log panel.
+ * and the other log types in `LOG_MESSAGE_TYPES`, normalised for the Log panel.
  */
 export const LOG_LEVELS = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'] as const;
 export type LogLevel = (typeof LOG_LEVELS)[number] | 'UNKNOWN';
@@ -50,7 +50,7 @@ const ROS1_LEVELS: Record<number, LogLevel> = {
   8: 'ERROR',
   16: 'FATAL',
 };
-const FOXGLOVE_LEVELS: Record<number, LogLevel> = {
+const LEVELS_1_TO_5: Record<number, LogLevel> = {
   1: 'DEBUG',
   2: 'INFO',
   3: 'WARN',
@@ -68,11 +68,11 @@ export function toLogEntry(message: unknown, id: number): LogEntry | null {
   const m = message as Record<string, unknown>;
   const level = Number(m.level);
   if ('message' in m) {
-    // foxglove.Log
+    // The log type with `message`, `name` and `timestamp` fields
     return {
       id,
       stamp: seconds(m.timestamp as Time),
-      level: FOXGLOVE_LEVELS[level] ?? 'UNKNOWN',
+      level: LEVELS_1_TO_5[level] ?? 'UNKNOWN',
       name: text(m.name),
       message: text(m.message),
       file: text(m.file),

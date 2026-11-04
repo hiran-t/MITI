@@ -10,11 +10,11 @@ describes the load harness used to measure that and what it measured.
 Two scripts that need only MITI's own npm packages (run `npm ci` first) and, for `perf-run.js`,
 Google Chrome (set `CHROME_PATH` if it is not in the default place):
 
-- `scripts/heavy-bridge.js`: a local foxglove_bridge stand-in that streams robot-sized data: raw
-  `rgb8` 1280×720 cameras, a Livox-style `PointCloud2` (x y z intensity tag line timestamp), TF,
-  a 200×200 costmap and `/rosout` in the shape of the robot's nav2 / pick-and-place logs. Like
-  foxglove_bridge, it drops a message for a client whose send buffer is over 10 MB, and it reports
-  what it sent per topic on `http://localhost:<port + 1>/stats`.
+- `scripts/heavy-bridge.js`: a local stand-in bridge, with the base protocol only, that streams
+  robot-sized data: raw `rgb8` 1280×720 cameras, a Livox-style `PointCloud2` (x y z intensity tag
+  line timestamp), TF, a 200×200 costmap and `/rosout` in the shape of the robot's nav2 /
+  pick-and-place logs. It drops a message for a client whose send buffer is over 10 MB, and it
+  reports what it sent per topic on `http://localhost:<port + 1>/stats`.
 - `scripts/perf-run.js`: opens MITI in Chrome with a throwaway profile over the DevTools protocol,
   sets up a 3D Scene (lidar, costmap, TF) + Log + cameras layout (`scripts/perf-probe.js`), and
   prints one JSON line: frame rate and frame-time percentiles (requestAnimationFrame), long tasks,

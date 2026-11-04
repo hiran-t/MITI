@@ -1,5 +1,5 @@
-import { parse } from '@foxglove/rosmsg';
-import { MessageReader, MessageWriter } from '@foxglove/rosmsg2-serialization';
+import { compileReader, compileWriter } from './cdr-message';
+import { parseMessageDefinition } from './msg-definition';
 
 const textDecoder = new TextDecoder();
 
@@ -19,14 +19,12 @@ export function createDecoder(
   schema: string
 ): Decoder {
   if (encoding === 'json') return (data) => JSON.parse(textDecoder.decode(data));
-  if (encoding === 'cdr' && (schemaEncoding ?? 'ros2msg') === 'ros2msg') {
-    const reader = new MessageReader(parse(schema, { ros2: true }));
-    return (data) => reader.readMessage(data);
-  }
+  if (encoding === 'cdr' && (schemaEncoding ?? 'ros2msg') === 'ros2msg')
+    return compileReader(parseMessageDefinition(schema));
   throw new Error(`Unsupported message encoding ${encoding} (${schemaEncoding ?? 'no schema'})`);
 }
 
+/** An encoder of CDR messages, from a `ros2msg` schema. */
 export function createEncoder(schema: string): Encoder {
-  const writer = new MessageWriter(parse(schema, { ros2: true }));
-  return (message) => writer.writeMessage(message);
+  return compileWriter(parseMessageDefinition(schema));
 }

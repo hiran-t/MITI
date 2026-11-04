@@ -1,5 +1,5 @@
 /**
- * Coloring for single-channel images (depth and mono), as in Foxglove's Image panel: a two-color
+ * Coloring for single-channel images (depth and mono): a two-color
  * gradient or a color map between Value min and Value max. The panel's shader looks colors up in
  * `colorLut`; `colorAt` is the same mapping on the CPU.
  */

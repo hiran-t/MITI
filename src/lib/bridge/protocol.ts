@@ -1,14 +1,13 @@
 /**
- * The bridge protocol: the MITI protocol (`miti.bridge.v1`, served by miti_bridge) and the
- * Foxglove WebSocket protocol that foxglove_bridge speaks, which shares its framing. The protocol
- * is specified in MITI-sdk's docs/protocol.md.
+ * The bridge protocol: the MITI protocol (`miti.bridge.v1`, served by miti_bridge) and the base
+ * protocol it builds on. The protocol is specified in MITI-sdk's docs/protocol.md.
  *
- * `ProtocolClient` keeps the API of @foxglove/ws-protocol's FoxgloveClient, which it replaces, and
- * adds the `miti.*` operations: they are sent only to a server that selected `miti.bridge.v1`.
+ * `ProtocolClient` adds the `miti.*` operations to the base protocol: they are sent only to a
+ * server that selected `miti.bridge.v1`.
  */
 
 export const MITI_SUBPROTOCOL = 'miti.bridge.v1';
-/** Offered in this order: miti_bridge picks the first, foxglove_bridge ≥ 3 the second. */
+/** Offered in this order: miti_bridge picks the first; other bridges pick a later one. */
 export const SUBPROTOCOLS = [MITI_SUBPROTOCOL, 'foxglove.sdk.v1', 'foxglove.websocket.v1'];
 
 export const StatusLevel = { INFO: 0, WARNING: 1, ERROR: 2 } as const;
@@ -36,7 +35,7 @@ export interface Service {
   type: string;
   request?: MessageDefinition;
   response?: MessageDefinition;
-  /** Older foxglove_bridge versions send these instead of `request` and `response`. */
+  /** Older bridges send these instead of `request` and `response`. */
   requestSchema?: string;
   responseSchema?: string;
 }

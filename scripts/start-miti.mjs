@@ -1,10 +1,10 @@
 // Starts MITI (`pixi run miti`, or `miti run` from the apt package) and, with --bridge,
-// miti_bridge beside it (`pixi run -e <distro> miti-bridge`, `miti run --bridge`); on Windows the
-// bridge is foxglove_bridge, until miti_bridge supports Windows. Runs the same on Linux, macOS and
+// miti_bridge beside it (`pixi run -e <distro> miti-bridge`, `miti run --bridge`); on Windows pixi
+// starts another bridge, until miti_bridge supports Windows. Runs the same on Linux, macOS and
 // Windows; Ctrl+C stops both.
 //
 // Ports move out of each other's way: if the web port is taken, MITI uses the next free one; if
-// the bridge port is taken by a bridge (miti_bridge or foxglove_bridge), MITI uses it, and if by
+// the bridge port is taken by a bridge, MITI uses it, and if by
 // something else, the bridge starts on the next free port. MITI learns the bridge port through
 // MITI_BRIDGE_PORT, so the browser connects to it without any setting.
 //
@@ -82,7 +82,7 @@ async function isFree(port) {
   return !(await answers(port)) && (await canListen(port));
 }
 
-/** True when a bridge (miti_bridge, or a foxglove_bridge) answers the WebSocket handshake. */
+/** True when a bridge answers the WebSocket handshake. */
 function isBridge(port) {
   return new Promise((resolve) => {
     const socket = net.connect(port, '127.0.0.1');
@@ -133,9 +133,7 @@ async function chooseBridge() {
       return { port: bridgePreferred, start: false, found: true };
     }
     const port = await firstFree(bridgePreferred + 1);
-    console.log(
-      `Port ${bridgePreferred} is used by another program; the bridge uses ${port}.`
-    );
+    console.log(`Port ${bridgePreferred} is used by another program; the bridge uses ${port}.`);
     return { port, start: true };
   }
   // MITI only: point it at a bridge already running here, if there is one.
@@ -197,7 +195,7 @@ function startBridge() {
   const script = isWindows
     ? [
         'powershell',
-        ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', 'ros/foxglove-bridge.ps1'],
+        ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', 'ros/windows-bridge.ps1'],
       ]
     : ['bash', ['ros/miti-bridge.sh']];
   const child = spawn(script[0], script[1], {
@@ -306,9 +304,7 @@ function startControl() {
     }
     Object.assign(ros, settings, { saved: true });
     bridgeRun.fromWeb = true;
-    console.log(
-      `ROS settings changed in MITI: ${describeSettings(ros)}; restarting the bridge.`
-    );
+    console.log(`ROS settings changed in MITI: ${describeSettings(ros)}; restarting the bridge.`);
     restarting = restarting.then(restartBridge);
     await restarting;
     reply(200, bridgeStatus());

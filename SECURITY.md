@@ -11,7 +11,7 @@ Security fixes go into the latest release.
 
 ## Reporting a vulnerability
 
-Email the maintainer at thongpanchang.h@gmail.com with "MITI security" in the subject.
+Use **Report a vulnerability** on the repository's [Security tab](https://github.com/hiran-t/MITI/security), or email the maintainer at thongpanchang.h@gmail.com with "MITI security" in the subject.
 
 **Do not report security vulnerabilities in public GitHub issues.**
 

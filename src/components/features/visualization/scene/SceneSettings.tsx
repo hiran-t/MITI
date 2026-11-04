@@ -288,7 +288,7 @@ function UrdfFields({
   );
 }
 
-/** Point size, shape, decay and coloring, as in Foxglove's point cloud and laser scan settings. */
+/** Point size, shape, decay and coloring for point clouds and laser scans. */
 function PointFields({
   type,
   settings,
@@ -420,7 +420,7 @@ function PointFields({
   );
 }
 
-/** Axes, arrows or a line, and covariance, as in Foxglove's pose, pose array and path settings. */
+/** Axes, arrows or a line, and covariance, for poses, pose arrays and paths. */
 function PoseFields({
   type,
   settings,
@@ -525,7 +525,7 @@ function PoseFields({
   );
 }
 
-/** Marker namespaces with visibility toggles, as in Foxglove's marker settings. */
+/** Marker namespaces with visibility toggles. */
 function NamespaceFields({
   namespaces,
   hidden,
@@ -561,7 +561,7 @@ function NamespaceFields({
   );
 }
 
-/** Occupancy grid palette and placement, as in Foxglove's occupancy grid settings. */
+/** Occupancy grid palette and placement. */
 function MapFields({
   settings,
   onChange,
@@ -847,7 +847,7 @@ function UrdfLayerFields({
   );
 }
 
-/** TF frames drawn in the scene, with their display settings, as in Foxglove's Transforms. */
+/** TF frames drawn in the scene, with their display settings. */
 export function TransformsSection({
   transforms,
   frames,

@@ -13,7 +13,7 @@ import { ChevronDown, ChevronRight, AlertCircle, Eye, EyeOff, MoreVertical } fro
 import { SettingsSearchContext } from './WidgetSettingsPortal';
 
 /**
- * Settings tree primitives modelled on Foxglove's panel settings: collapsible nodes with
+ * Settings tree primitives for panel settings: collapsible nodes with
  * visibility and action controls, and label/control rows that apply changes immediately.
  */
 

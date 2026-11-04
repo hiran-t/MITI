@@ -59,7 +59,7 @@ test('reads positions, skips invalid points and lists colorable fields', () => {
   expect(points.values('ring')).toBeUndefined();
 });
 
-test('picks colors like Foxglove: message colors, else intensity, else flat', () => {
+test('picks message colors, else intensity, else flat', () => {
   expect(autoPointColors(['x', 'intensity'], true).colorMode).toBe('rgb');
   expect(autoPointColors(['x', 'intensity'], false)).toEqual({
     colorMode: 'colormap',

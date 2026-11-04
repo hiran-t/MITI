@@ -8,9 +8,8 @@ signatures see [API](api.md); for running MITI see the [How-To Guides](../how-to
 MITI is a web application for visualizing ROS 2 robots and sensor data live. It runs in the
 browser and connects over WebSocket to [miti_bridge](https://github.com/hiran-t/MITI-sdk), using
 the MITI protocol (`miti.bridge.v1`, specified in MITI-sdk's `docs/protocol.md`). The bridge sends
-messages as CDR together with their schemas, and MITI decodes them in the browser. MITI still
-connects to foxglove_bridge with the Foxglove WebSocket protocol, which it used from MITI 2.1
-until miti_bridge (earlier versions used rosbridge).
+messages as CDR together with their schemas, and MITI decodes them in the browser. Versions
+before 2.1 used rosbridge.
 
 MITI's own Next.js server only serves the app and, when the bridge cannot serve robot assets,
 meshes and URDFs from the local ROS workspace. ROS data never passes through it.
@@ -45,7 +44,7 @@ connection settings change it per browser.
 - **React 19** and **TypeScript 5.9**.
 - **Tailwind CSS 3**, with colors backed by `--miti-*` CSS variables from `lib/theme.ts`. Class
   strings are grouped in `styles/*.styles.ts` and combined with a local `cn()` helper.
-- **react-mosaic-component** for the tiled panel layout (the model Foxglove's layout uses).
+- **react-mosaic-component** for the tiled panel layout.
 - **lucide-react** for icons.
 - **Node.js 22 with npm**: CI, pixi and the Docker image install with `npm ci` from
   `package-lock.json`.
@@ -60,13 +59,18 @@ connection settings change it per browser.
 ### ROS 2 integration
 
 - **miti_bridge** ([MITI-sdk](https://github.com/hiran-t/MITI-sdk)) on the robot or beside MITI.
-  MITI offers the subprotocols `miti.bridge.v1`, `foxglove.sdk.v1` and `foxglove.websocket.v1`, in
-  that order, so it also connects to foxglove_bridge.
-- **`ProtocolClient`** (`lib/bridge/protocol.ts`): the protocol client used by `BridgeClient`. It
-  replaced @foxglove/ws-protocol's client and keeps its API; @foxglove/ws-protocol remains for the
-  load harness's stand-in bridge.
-- **@foxglove/rosmsg** and **@foxglove/rosmsg2-serialization**: parse the advertised `ros2msg`
-  schemas and decode or encode CDR.
+  MITI offers the subprotocol `miti.bridge.v1` first.
+- **`ProtocolClient`** (`lib/bridge/protocol.ts`): MITI's own protocol client, used by
+  `BridgeClient`. The load harness's stand-in bridge uses a WebSocket server package listed in
+  `package.json`.
+- **MITI's own CDR code** (`lib/bridge/`): `msg-definition.ts` parses the `ros2msg` schemas the
+  bridge advertises, `cdr.ts` reads and writes CDR (either byte order, with the 4-byte
+  encapsulation header and alignment), and `cdr-message.ts` turns a schema into a decoder and an
+  encoder of whole messages, which `codec.ts` gives the decode workers and `BridgeClient`. It
+  replaced the third-party ROS message libraries MITI used up to 3.4.5. Its tests compare it with
+  what those libraries decoded and encoded, and with the bytes ROS 2 itself serializes with Fast DDS
+  and Cyclone DDS (`lib/bridge/__tests__/fixtures/cdr-messages.json`, made by
+  `scripts/cdr-fixtures/`).
 
 ## Project structure
 
@@ -84,12 +88,13 @@ MITI/
 │   ├── cyclonedds.xml        # Cyclone DDS settings for the bridge
 │   ├── Dockerfile            # Image for the compose "bridge" profile: builds miti_bridge from source
 │   ├── miti-bridge.sh        # pixi run bridge; reuses a bridge on the port or moves to a free one
-│   └── foxglove-bridge.ps1   # The same on Windows, with foxglove_bridge (miti_bridge has no Windows build)
+│   └── *-bridge.ps1          # The same on Windows, with the bridge pixi installs there (miti_bridge has no Windows build)
 ├── scripts/
 │   ├── start-miti.mjs        # pixi run miti / miti run: picks free ports, starts MITI and the bridge
 │   ├── bridge-settings.mjs   # ROS network settings of the bridge beside MITI
 │   ├── traffic-archive.py    # Keeps GitHub's traffic numbers (Traffic archive workflow)
-│   ├── heavy-bridge.js       # Load harness: a foxglove_bridge stand-in with robot-sized data
+│   ├── cdr-fixtures/         # Makes the CDR test fixtures, with ROS 2 and the previous libraries
+│   ├── heavy-bridge.js       # Load harness: a stand-in bridge with robot-sized data
 │   ├── perf-run.js           # Load harness: measures MITI in Chrome
 │   └── perf-probe.js         # Browser-side half of the harness
 ├── src/                      # The application (below)
@@ -185,16 +190,19 @@ src/
 │   ├── useTopic.ts
 │   └── useTopicList.ts
 ├── lib/
-│   ├── bridge/                           # Bridge client (miti_bridge, foxglove_bridge)
+│   ├── bridge/                           # Bridge client
 │   │   ├── __tests__/
 │   │   ├── asset-cache.ts                # Robot assets in Cache Storage
+│   │   ├── cdr-message.ts                # Reads and writes whole messages, from parsed definitions
+│   │   ├── cdr.ts                        # CDR: byte order, alignment, primitives and arrays
 │   │   ├── client.ts                     # BridgeClient
 │   │   ├── codec.ts                      # CDR/JSON decoders and encoders from schemas
 │   │   ├── decode-core.ts                # What a decode worker does
 │   │   ├── decode-pool.ts                # Web Workers that decode heavy topics
 │   │   ├── decode-worker-factory.ts
 │   │   ├── decode.worker.ts              # Worker entry point
-│   │   ├── protocol.ts                   # The wire protocol: miti.bridge.v1 and foxglove_bridge's
+│   │   ├── msg-definition.ts             # Parses ros2msg schemas: fields, constants, defaults
+│   │   ├── protocol.ts                   # The wire protocol: miti.bridge.v1 and its base protocol
 │   │   ├── topics.ts                     # Topic name and type helpers
 │   │   └── types.ts
 │   ├── camera/                           # Image panel math
@@ -278,7 +286,7 @@ How a message travels from the bridge to a panel.
 
 ```
 Dashboard → useBridge(url, streamMode) → new BridgeClient → connect()
-  → WebSocket (miti.bridge.v1, or foxglove.sdk.v1 with foxglove_bridge)
+  → WebSocket (miti.bridge.v1, or the base protocol alone)
   → serverInfo, channel and service advertisements
   → useTopicList(client) → topic list in the sidebar and in panel settings
 ```
@@ -352,19 +360,18 @@ like an IDE:
 `BridgeClient` (`lib/bridge/client.ts`) connects to the robot's bridge:
 
 - **Bridges and protocol.** It talks to the bridge through `ProtocolClient` (`lib/bridge/protocol.ts`).
-  - MITI offers the subprotocols `miti.bridge.v1`, `foxglove.sdk.v1` and `foxglove.websocket.v1`, in that order.
-  - miti_bridge (MITI-sdk) selects the first. Its framing is foxglove_bridge's, with `miti.*` operations added, which are sent only to it.
+  - MITI offers the subprotocol `miti.bridge.v1` first, and miti_bridge (MITI-sdk) selects it.
+  - The protocol has two parts: the base protocol (topics, services, parameters, assets and time) and MITI's `miti.*` operations. The `miti.*` operations are sent only when the bridge selected `miti.bridge.v1` and advertises their capability; with any other subprotocol MITI uses the base protocol alone.
   - The protocol is specified in MITI-sdk's `docs/protocol.md`.
 
 - **Lanes.** Each WebSocket to the bridge is a lane that reconnects on its own (every 3 s). The
   control lane carries the topic list, services, parameters and, in synchronized mode, every
   topic.
 - **Stream modes** (Connection settings → Streaming). The bridge queues each client's messages in
-  order. **Synchronized** (default) keeps every topic on one connection, as the Foxglove app does,
-  so cameras, TF and the 3D scene show the same moment. **Prioritize robot motion** (`separate`)
-  gives every heavy topic a lane of its own: TF stays real-time and point clouds are not queued
-  behind camera frames on a slow link, but panels drift apart in time. Robot asset downloads
-  always use a lane of their own.
+  order. **Synchronized** (default) keeps every topic on one connection, so cameras, TF and the
+  3D scene show the same moment. **Prioritize robot motion** (`separate`) gives every heavy topic
+  a lane of its own: TF stays real-time and point clouds are not queued behind camera frames on a
+  slow link, but panels drift apart in time. Robot asset downloads always use a lane of their own.
 - **Rate caps and throttling.** `maxRate` drops messages that arrive sooner than every
   subscriber's cap, and `throttleMs` keeps only the newest message within a window; both act
   before decoding. Subscriptions are never paused to throttle the robot: measured on a real robot,
@@ -387,9 +394,9 @@ like an IDE:
 
 ### 3. Panel system
 
-Panels tile the workspace like Foxglove's layout:
+Panels tile the workspace:
 
-- `react-mosaic-component` renders a binary split tree of panel ids (`lib/layout/mosaic.ts`).
+- `react-mosaic-component` 7 renders an n-ary split tree of panel ids (`lib/layout/mosaic.ts`).
   Drag a panel's header onto an edge of another panel to split it, and drag dividers to resize.
 - Each panel has a tab-style header: icon and title (click to select the panel and open its
   settings), remove, a status slot, expand and lock. Panels fill the slot through
@@ -423,7 +430,7 @@ Panel types live in a registry (`panels/registry.ts`). The seven built-in ones a
 
 #### 3D Scene
 
-`visualization/scene/`, modelled on Foxglove's 3D panel (see [3D Scene](../reference/3d-scene-layers.md)):
+`visualization/scene/` (see [3D Scene](../reference/3d-scene-layers.md)):
 
 - `SceneViewer` reads the panel's `SceneConfig`, runs `useTF`, picks the fixed and display frames
   and hosts the publish tools (point, pose, pose estimate).
@@ -441,7 +448,7 @@ Panel types live in a registry (`panels/registry.ts`). The seven built-in ones a
 
 #### Image panel
 
-`visualization/camera/`, modelled on Foxglove's Image panel:
+`visualization/camera/`:
 
 - `CameraViewer` subscribes to a raw or compressed image (default cap 15 fps), its `CameraInfo`
   and TF, and shows rate, size and lag in the tab bar.
@@ -655,7 +662,7 @@ Details are in the [How-To Guides](../how-to-guides/index.md#install-and-deploy)
   (MITI and the bridge together), `bridge` (the bridge only), `build-bridge` (build miti_bridge
   from MITI-sdk's source into `ros/miti-sdk/`; the two before run it when needed) and
   `build-msgs` (build custom message packages from `ros/overlay/src`). On Windows the bridge tasks
-  run foxglove_bridge from RoboStack, because miti_bridge has no Windows build.
+  run a bridge that pixi installs from RoboStack, because miti_bridge has no Windows build.
 - **apt package**: `miti run --bridge` and the `miti-bridge` service run miti_bridge from
   `/opt/ros` (`ros-<distro>-miti-bridge`, from MITI-sdk's apt repository).
 - **Docker Compose** (`docker-compose.yml`): service `miti`; the `bridge` profile adds a

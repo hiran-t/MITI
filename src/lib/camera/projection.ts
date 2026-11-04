@@ -1,6 +1,6 @@
 /**
  * Camera geometry for the Image panel: intrinsics from sensor_msgs/CameraInfo, the flips and
- * rotations Foxglove's Image panel offers, and a three.js camera that projects like the real one.
+ * rotations the Image panel offers, and a three.js camera that projects like the real one.
  *
  * Pixel coordinates here put the image's top-left corner at (0, 0) and pixel centers at +0.5, so
  * flipping and rotating are exact. ROS (OpenCV) puts pixel centers on integers, so principal
@@ -73,7 +73,7 @@ const finite = (values: ArrayLike<number> | undefined, length: number) =>
   !!values && values.length >= length && Array.from(values).slice(0, length).every(Number.isFinite);
 
 /**
- * Intrinsics for an image of `image` size: K, or P (and R) when rectifying, as in Foxglove.
+ * Intrinsics for an image of `image` size: K, or P (and R) when rectifying.
  * Images scaled from the calibrated resolution (binning, resized streams) scale the intrinsics.
  */
 export function cameraModel(
@@ -117,7 +117,7 @@ export interface ImageTransform {
   height: number;
 }
 
-/** Flip the source image first, then rotate it clockwise, as Foxglove's Image panel does. */
+/** Flip the source image first, then rotate it clockwise. */
 export function imageTransform(
   width: number,
   height: number,

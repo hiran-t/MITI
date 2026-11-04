@@ -9,9 +9,8 @@ All hooks live in `hooks/` and are client-only (`'use client'`).
 
 ### useBridge
 
-Connects to the bridge: miti_bridge over the MITI protocol, or foxglove_bridge over the Foxglove
-WebSocket protocol. A new URL or stream mode
-disconnects the old `BridgeClient` and creates a new one.
+Connects to the bridge (miti_bridge, over the MITI protocol). A new URL or stream mode disconnects
+the old `BridgeClient` and creates a new one.
 
 ```typescript
 // hooks/useBridge.ts
@@ -74,7 +73,7 @@ export interface TopicOptions {
   throttleRate?: number;
   /**
    * Deliver at most this many messages per second (Hz), dropping extras before they are decoded.
-   * miti_bridge sends only these; foxglove_bridge still sends every message.
+   * miti_bridge sends only these.
    */
   maxRate?: number;
   /** Over miti_bridge, transform the messages on the robot (see `SubscribeOptions.transform`). */
@@ -217,9 +216,10 @@ export function useLayoutConfig(): {
 - `toggleLock`: locks or unlocks a panel's position (a locked panel cannot be dragged).
 
 `normalizeLayout` validates a stored layout: it drops unknown or duplicate panels, clamps the
-legacy grid fields, converts MITI 2.x grid layouts to a split tree with `mosaicFromGrid`, and makes
-sure the tree holds every panel exactly once. 3D Scene panels saved without props get the settings
-from the old `miti_urdf_config` key.
+legacy grid fields, converts MITI 2.x grid layouts to a split tree with `mosaicFromGrid` and binary
+trees from MITI 3.4.5 and earlier to the n-ary tree (`syncMosaic`), and makes sure the tree holds
+every panel exactly once. 3D Scene panels saved without props get the settings from the old
+`miti_urdf_config` key.
 
 ---
 
@@ -464,7 +464,7 @@ export function SettingsSection(props: {
 }): JSX.Element;
 ```
 
-`layout/SettingsTree.tsx` has the Foxglove-style field components used inside settings
+`layout/SettingsTree.tsx` has the field components used inside settings
 (`TreeSection`, `TreeField`, `ToggleField`, `SelectField`, `TextField`, `NumberField`,
 `ColorField`, `SliderField`, `OptionalNumberField`, `Vec3Field`, `ActionMenu`).
 
@@ -472,8 +472,8 @@ export function SettingsSection(props: {
 
 ### SceneViewer
 
-`visualization/scene/SceneViewer.tsx`. The 3D Scene panel (widget type `urdf-viewer`). Settings are
-grouped like Foxglove's 3D panel; see [3D Scene](../reference/3d-scene-layers.md).
+`visualization/scene/SceneViewer.tsx`. The 3D Scene panel (widget type `urdf-viewer`). Its settings
+are described in [3D Scene](../reference/3d-scene-layers.md).
 
 ```typescript
 export default function SceneViewer(props: {
@@ -491,10 +491,10 @@ export default function SceneViewer(props: {
 
 ### CameraViewer
 
-`visualization/camera/CameraViewer.tsx`. The Image panel (widget type `camera-viewer`), modelled
-on Foxglove's Image panel: a raw or compressed image, 3D topics drawn over it through the camera's
-calibration and TF, Color mode for depth and mono images, flips, rotation and Rectify. The tab bar
-shows the received frame rate, frame size and lag through `PanelStatusPortal`.
+`visualization/camera/CameraViewer.tsx`. The Image panel (widget type `camera-viewer`): a raw or
+compressed image, 3D topics drawn over it through the camera's calibration and TF, Color mode for
+depth and mono images, flips, rotation and Rectify. The tab bar shows the received frame rate,
+frame size and lag through `PanelStatusPortal`.
 
 ```typescript
 interface CameraViewerProps {
@@ -573,7 +573,7 @@ interface TopicInputProps {
 ### Other panels
 
 ```typescript
-// logs/LogPanel.tsx: ROS 1/2 and Foxglove log messages, by default from /rosout
+// logs/LogPanel.tsx: ROS 1 and ROS 2 log messages, by default from /rosout
 export default function LogPanel(props: {
   client: BridgeClient | null;
   topics?: TopicInfo[];
@@ -690,19 +690,24 @@ export interface LayoutConfig {
 export const DEFAULT_LAYOUT: LayoutConfig; // a 3D Scene and four cameras
 ```
 
-The split tree is defined in `lib/layout/mosaic.ts`:
+The split tree is react-mosaic 7's n-ary tree, defined in `lib/layout/mosaic.ts`:
 
 ```typescript
 export type MosaicDirection = 'row' | 'column';
 export interface MosaicSplit {
+  type: 'split';
   direction: MosaicDirection;
-  first: MosaicTree;
-  second: MosaicTree;
-  /** Share of the first node, 0–100; undefined splits evenly. */
-  splitPercentage?: number;
+  children: MosaicTree[];
+  /** Share of each child, 0–100, summing to 100; undefined splits evenly. MITI always sets it. */
+  splitPercentages?: number[];
 }
 export type MosaicTree = string | MosaicSplit;
 ```
+
+MITI 3.4.5 and earlier saved react-mosaic 6's binary tree (`LegacyMosaicTree`: `direction`, `first`,
+`second`, `splitPercentage`). `syncMosaic` converts it and gives every split explicit shares, so
+react-mosaic keeps their sizes when it flattens nested splits after a drag. MITI has no tabs: a
+react-mosaic tab group (`type: 'tabs'`) in a stored tree opens as its panels side by side.
 
 ---
 
@@ -1085,7 +1090,7 @@ to the same worker, which keeps the channel's decoder.
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `lib/parsers/message-summary.ts` | `summarizeMessage(value: unknown): unknown`: shortens typed arrays, long arrays and strings, and turns BigInt into strings, so a message can be shown as JSON. |
 | `lib/parsers/bytes.ts`           | `decodeBytes(data: string \| ArrayLike<number>): Uint8Array<ArrayBuffer>`: a `uint8[]` field as bytes (base64 strings are accepted).                           |
-| `lib/layout/mosaic.ts`           | `isSplit`, `leaves`, `mosaicFromGrid`, `addToMosaic`, `removeFromMosaic`, `syncMosaic`: split tree helpers.                                                    |
+| `lib/layout/mosaic.ts`           | `isSplit`, `leaves`, `shares`, `mosaicFromGrid`, `addToMosaic`, `removeFromMosaic`, `syncMosaic`: split tree helpers.                                          |
 | `lib/scene/transforms.ts`        | `stampSeconds`, `frameName`, `transformMatrix`, `lookupTransform(tree, target, source, time = 0): Matrix4`.                                                    |
 | `lib/scene/scene-config.ts`      | `normalizeSceneConfig(props: unknown): SceneConfig`, `topicLayerType`, `defaultTopicVisible`, `autoFixedFrame`, `parseParameterName`.                          |
 | `lib/scene/colors.ts`            | Point and map color modes, `COLOR_MAPS` (turbo, rainbow), `pointColors`, `occupancyPalette`, `parseHex`.                                                       |
@@ -1101,11 +1106,11 @@ to the same worker, which keeps the channel's decoder.
 ## BridgeClient API
 
 `BridgeClient` (`lib/bridge/client.ts`) connects to the bridge through `ProtocolClient`
-(`lib/bridge/protocol.ts`), offering the WebSocket subprotocols `miti.bridge.v1`,
-`foxglove.sdk.v1` and `foxglove.websocket.v1`, in that order: miti_bridge selects the first,
-foxglove_bridge one of the others. `miti.*` operations go only to miti_bridge. Messages arrive as
-CDR (or JSON) and are decoded with the schemas the bridge advertises
-(`@foxglove/rosmsg2-serialization`).
+(`lib/bridge/protocol.ts`), offering the WebSocket subprotocol `miti.bridge.v1` first; miti_bridge
+selects it. `miti.*` operations go only to a bridge that selected `miti.bridge.v1` and advertises
+their capability; with any other subprotocol, MITI uses the base protocol alone. Messages arrive
+as CDR (or JSON) and are decoded with the schemas the bridge advertises, by MITI's own CDR code
+(`lib/bridge/codec.ts`).
 
 Subscriptions are shared per topic and survive reconnects and node restarts: they bind to a
 channel whenever the bridge advertises the topic. After a lost connection, each connection retries
@@ -1134,8 +1139,8 @@ constructor(
 
 The bridge queues each client's messages in order, so the stream mode decides what can delay what.
 
-- `synchronized` (default): every topic shares one connection, as in the Foxglove app. Cameras, TF
-  and the 3D scene show the same moment, and on a slow link they are late together.
+- `synchronized` (default): every topic shares one connection. Cameras, TF and the 3D scene show
+  the same moment, and on a slow link they are late together.
 - `separate`: every heavy topic gets its own connection ("lane"). TF and robot motion stay
   real-time and a point cloud is not queued behind camera frames, but panels drift apart in time.
   If a topic's connection fails twice, the topic falls back to the main connection until its own
@@ -1143,9 +1148,9 @@ The bridge queues each client's messages in order, so the stream mode decides wh
 
 Heavy types (`isHeavyType(type: string): boolean`): `sensor_msgs/Image`,
 `sensor_msgs/CompressedImage`, `sensor_msgs/PointCloud2`, `nav_msgs/OccupancyGrid`,
-`nav2_msgs/Costmap`, `map_msgs/OccupancyGridUpdate` and the `foxglove_msgs` `CompressedVideo`,
-`RawImage`, `CompressedImage` and `PointCloud` types. Robot asset downloads always use a
-connection of their own in both modes.
+`nav2_msgs/Costmap`, `map_msgs/OccupancyGridUpdate` and a few more image, video and point cloud
+types (`HEAVY_TYPES` in `lib/bridge/client.ts` lists them all). Robot asset downloads always use
+a connection of their own in both modes.
 
 ### Rate limits and decoding
 
@@ -1158,14 +1163,14 @@ connection of their own in both modes.
   message replaces any waiting one, so a topic that arrives faster than it can be decoded shows
   its newest frames. Where workers are unavailable, or after they fail, decoding happens on the
   main thread.
-- Subscriptions are never paused to throttle the robot. foxglove_bridge has no per-client
-  throttling, so the robot still sends every message. miti_bridge applies the limits itself
-  (`miti.subscriptionOptions`), and the client's own `maxRate` gate is then skipped.
+- Subscriptions are never paused to throttle the robot. miti_bridge applies the limits itself
+  (`miti.subscriptionOptions`), and the client's own `maxRate` gate is then skipped. Over the base
+  protocol alone, the client drops the extra messages after they arrive.
 
 ### Transforms
 
 Over miti_bridge, `options.transform` has the bridge transform a topic's messages on the robot,
-before they cross the network. foxglove_bridge ignores it.
+before they cross the network. Over the base protocol alone, it has no effect.
 
 - **Agreement.** A transform applies only when every subscriber of the topic asks for the same one,
   since they all receive its output. Otherwise the topic stays as it is.
@@ -1214,8 +1219,8 @@ onLinkStats(callback: (stats: LinkStats | null) => void): () => void
 `usesMitiProtocol` is true when the bridge selected `miti.bridge.v1` (miti_bridge).
 `getBridgeName` names the bridge, or returns `null` while disconnected. `getLinkStats` returns
 miti_bridge's latest report on the link (every second, from each connection): what it sends, what
-it drops, and what waits to be sent. It is `null` with foxglove_bridge, while disconnected, and
-before the first report. `onLinkStats` is called with each report and returns an unregister
+it drops, and what waits to be sent. It is `null` over the base protocol alone, while disconnected,
+and before the first report. `onLinkStats` is called with each report and returns an unregister
 function.
 
 ### Topics
@@ -1263,8 +1268,8 @@ survives reconnects.
 `publish` sends a message on an advertised topic. It throws when MITI is not connected, when the
 topic was not advertised, or when the bridge lacks the `clientPublish` capability.
 
-- **foxglove_bridge:** the message is JSON-encoded. `publish` also throws when the bridge does not
-  accept JSON.
+- **Base protocol alone:** the message is JSON-encoded. `publish` also throws when the bridge does
+  not accept JSON.
 - **miti_bridge:** the message is CDR-encoded with the type's schema.
   - The schema comes from the topic's channel, or, for a type no topic advertises, from the bridge
     (`miti.getSchema`).

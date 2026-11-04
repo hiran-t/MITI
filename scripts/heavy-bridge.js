@@ -1,21 +1,26 @@
 #!/usr/bin/env node
 /**
- * A local foxglove_bridge stand-in that streams robot-sized data, to measure MITI under load:
- * raw rgb8 cameras, a Livox-style PointCloud2, TF, a costmap and /rosout.
+ * A local stand-in bridge (base protocol only) that streams robot-sized data, to measure MITI
+ * under load: raw rgb8 cameras, a Livox-style PointCloud2, TF, a costmap and /rosout.
  *
  *   node scripts/heavy-bridge.js [--port 8790] [--cams 3] [--cam-hz 15] [--width 1280]
  *     [--height 720] [--points 100000] [--cloud-hz 10] [--tf-hz 100] [--log-hz 50]
  *
  * Connect MITI to ws://localhost:<port>. http://localhost:<port + 1>/stats reports what was sent
- * and dropped per topic since the start (scripts/perf-run.js reads it). Like foxglove_bridge, a message is dropped for a client
- * whose send buffer is over the limit, so a slow browser gets the newest data instead of an
+ * and dropped per topic since the start (scripts/perf-run.js reads it). A message is dropped for a
+ * client whose send buffer is over the limit, so a slow browser gets the newest data instead of an
  * ever-growing queue.
  */
 const http = require('http');
 const { WebSocketServer } = require('ws');
 const { FoxgloveServer } = require('@foxglove/ws-protocol');
-const { parse } = require('@foxglove/rosmsg');
-const { MessageWriter } = require('@foxglove/rosmsg2-serialization');
+
+// Messages are written with MITI's own CDR code (src/lib/bridge), loaded as TypeScript.
+require('ts-node').register({
+  transpileOnly: true,
+  compilerOptions: { module: 'commonjs', moduleResolution: 'node' },
+});
+const { createEncoder } = require('../src/lib/bridge/codec');
 
 const args = Object.fromEntries(
   process.argv
@@ -36,10 +41,10 @@ const POINTS = opt('points', 100000);
 const CLOUD_HZ = opt('cloud-hz', 10);
 const TF_HZ = opt('tf-hz', 100);
 const LOG_HZ = opt('log-hz', 50);
-/** foxglove_bridge's default send_buffer_limit. */
+/** Send buffer limit per client, in bytes. */
 const SEND_BUFFER_LIMIT = 10e6;
 
-// ── ROS 2 message definitions (as foxglove_bridge advertises them) ──
+// ── ROS 2 message definitions (as a bridge advertises them) ──
 const SEP = '\n================================================================================\n';
 const TIME = 'MSG: builtin_interfaces/Time\nint32 sec\nuint32 nanosec';
 const HEADER = 'MSG: std_msgs/Header\nbuiltin_interfaces/Time stamp\nstring frame_id' + SEP + TIME;
@@ -110,7 +115,7 @@ function add(topic, schemaName) {
       schema,
       schemaEncoding: 'ros2msg',
     }),
-    writer: new MessageWriter(parse(schema, { ros2: true })),
+    encode: createEncoder(schema),
     active: false,
     sent: 0,
     dropped: 0,
@@ -140,7 +145,7 @@ function sendBytes(topic, bytes) {
   channel.total.bytes += bytes.byteLength;
   server.sendMessage(channel.id, BigInt(Date.now()) * 1000000n, bytes);
 }
-const send = (topic, message) => sendBytes(topic, channels[topic].writer.writeMessage(message));
+const send = (topic, message) => sendBytes(topic, channels[topic].encode(message));
 const stamp = () => {
   const ms = Date.now();
   return { sec: Math.floor(ms / 1000), nanosec: (ms % 1000) * 1e6 };
@@ -169,7 +174,7 @@ for (let cam = 0; cam < CAMS; cam++) {
         data[i + 1] = (y + f * 20) & 255;
         data[i + 2] = ((x ^ y) + cam * 60) & 255;
       }
-    return channels[topic].writer.writeMessage({
+    return channels[topic].encode({
       header: { stamp: stamp(), frame_id: `camera${cam}_optical` },
       height: HEIGHT,
       width: WIDTH,
@@ -211,7 +216,7 @@ const clouds = Array.from({ length: CLOUDS }, (_, c) => {
     view.setUint8(o + 17, i % 4);
     view.setFloat64(o + 18, i * 1e-6, true);
   }
-  return channels['/livox/lidar'].writer.writeMessage({
+  return channels['/livox/lidar'].encode({
     header: { stamp: stamp(), frame_id: 'livox_frame' },
     height: 1,
     width: POINTS,

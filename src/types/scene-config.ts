@@ -1,6 +1,6 @@
 import { MITI_CYAN } from '@/lib/theme';
 /**
- * 3D Scene panel settings, grouped like Foxglove's 3D panel so its users find the same controls.
+ * 3D Scene panel settings, grouped the way ROS users expect to find them.
  * Stored as the `urdf-viewer` widget's props (the widget type name predates the scene).
  */
 import type {
@@ -218,8 +218,8 @@ export const newUrdfLayer = (id: string): UrdfLayerConfig => ({
 
 export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   version: 2,
-  // Place each message with TF at its own stamp, as Foxglove's 3D panel does, so data that
-  // arrives late still lines up with the robot.
+  // Place each message with TF at its own stamp, so data that arrives late still lines up with
+  // the robot.
   frame: { fixedFrame: '', displayFrame: '', followMode: 'pose', syncTimestamps: true },
   scene: {
     renderStats: false,

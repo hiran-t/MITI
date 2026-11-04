@@ -4,7 +4,7 @@ import { lookupTransform } from './transforms';
 import type { TFTree } from '@/types/tf-messages';
 
 /**
- * Place links like Foxglove: every link with a TF frame is drawn at that frame, so the model
+ * Place links by TF: every link with a TF frame is drawn at that frame, so the model
  * follows robot_state_publisher. Links without TF keep the pose from URDF joints (and joint
  * states, when published).
  */

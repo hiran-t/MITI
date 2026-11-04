@@ -10,7 +10,7 @@ const BACKLOG_MS = 500;
 /** Topics listed in the source details, the busiest first. */
 const TOPIC_ROWS = 5;
 
-/** miti_bridge's latest report on the link; null with foxglove_bridge or while disconnected. */
+/** miti_bridge's latest report on the link; null with another bridge or while disconnected. */
 export function useLinkStats(client: StatsSource | null): LinkStats | null {
   const [stats, setStats] = useState<LinkStats | null>(null);
   useEffect(() => {

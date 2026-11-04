@@ -6,7 +6,7 @@ import type { GridLayerConfig } from '@/types/scene-config';
 
 const DEG = Math.PI / 180;
 
-/** A finite grid on the XY plane of `frame` (positioned by the caller), like Foxglove's grid layer. */
+/** A finite grid on the XY plane of `frame` (positioned by the caller). */
 export default function GridLayer({
   layer,
   frame,
