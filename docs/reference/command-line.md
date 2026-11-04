@@ -12,7 +12,7 @@ The apt package adds the `miti` command.
 | `miti version`           | Shows the installed version                                                      |
 | `miti --help`            | Shows the options                                                                |
 
-`miti run` reads `/etc/miti/miti.env` and `/etc/miti/bridge.env`; variables set in the shell win (see [Configuration](configuration.md)). If a bridge (miti_bridge, or a foxglove_bridge) already runs on the bridge port, `miti run` uses it instead of starting another.
+`miti run` reads `/etc/miti/miti.env` and `/etc/miti/bridge.env`; variables set in the shell win (see [Configuration](configuration.md)). If a bridge already runs on the bridge port, `miti run` uses it instead of starting another.
 
 ## Services
 
@@ -38,8 +38,8 @@ Run from the MITI folder. `<distro>` is `humble` or `jazzy`.
 | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pixi run miti [port]`                    | Installs and builds what is needed, then serves MITI                                                                                                                                  |
 | `pixi run dev`                            | Development server with hot reload                                                                                                                                                    |
-| `pixi run -e <distro> miti-bridge [port]` | MITI and miti_bridge beside it (on Windows, foxglove_bridge)                                                                                                                          |
-| `pixi run -e <distro> bridge`             | miti_bridge only (on Windows, foxglove_bridge)                                                                                                                                        |
+| `pixi run -e <distro> miti-bridge [port]` | MITI and miti_bridge beside it (on Windows, the bridge that pixi installs there)                                                                                                      |
+| `pixi run -e <distro> bridge`             | miti_bridge only (on Windows, the bridge that pixi installs there)                                                                                                                    |
 | `pixi run -e <distro> build-bridge`       | Builds miti_bridge from the MITI SDK's source into `ros/miti-sdk/`; the two tasks above run it first when needed                                                                      |
 | `pixi run -e <distro> build-msgs`         | Builds the robot's message packages in `ros/overlay/src`                                                                                                                              |
 | `pixi run remove`                         | Deletes `.next`, `node_modules`, the message build in `ros/overlay`, the miti_bridge build in `ros/miti-sdk` and the pixi environments; the source, `.env` and `ros/overlay/src` stay |

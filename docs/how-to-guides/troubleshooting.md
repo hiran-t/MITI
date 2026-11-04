@@ -69,7 +69,7 @@ A layer is drawn in the wrong place over the camera
 
 Raw camera images are large: a 1280 × 720 image is 2.8 MB, and a few cameras can fill a Wi-Fi or VPN link. Then cameras drop to a few frames per second and other topics arrive late. The status bar shows how much the bridge sends per second, and turns amber when messages wait on the robot; **Sources** lists the topics that use the most.
 
-- Check that MITI is connected to miti_bridge (the status bar shows **ROS 2 · miti_bridge**). foxglove_bridge cannot compress images or limit rates on the robot.
+- Check that MITI is connected to miti_bridge (the status bar shows **ROS 2 · miti_bridge**). Compressing images and limiting rates on the robot need miti_bridge.
 - Keep the Image panel's **Compression** at **JPEG on robot**, so color images cross the link as JPEG. Use compressed image topics (`.../compressed`) for depth cameras that offer them.
 - Lower **Max FPS** on camera panels and **Max rate** or **Point limit** on 3D Scene layers: miti_bridge then sends less.
 - Close or hide camera panels you are not watching; MITI only receives topics that a panel shows.
