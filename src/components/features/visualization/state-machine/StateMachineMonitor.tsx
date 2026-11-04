@@ -4,7 +4,7 @@ import { useState } from 'react';
 import WidgetSettingsPortal, { SettingsSection } from '../../layout/WidgetSettingsPortal';
 import { BridgeClient } from '@/lib/bridge/client';
 import { useTopic } from '@/hooks/useTopic';
-import { Activity, GitBranch, Clock, Loader2 } from 'lucide-react';
+import { Activity, GitBranch, Clock, LoaderCircle } from 'lucide-react';
 import { commonStyles } from '@/styles';
 import { STATE_MACHINE_TOPICS } from '@/constants/ros-topics';
 import TopicInput from '../../topic-viewer/TopicInput';
@@ -166,7 +166,7 @@ function SMACC2Tab({ client, topic }: { client: BridgeClient | null; topic: stri
   if (!data) {
     return (
       <EmptyPane
-        icon={<Loader2 className="h-8 w-8 animate-spin opacity-40" />}
+        icon={<LoaderCircle className="h-8 w-8 animate-spin opacity-40" />}
         message="Waiting for data..."
         sub={topic}
       />
@@ -287,7 +287,7 @@ function BehaviorTreeTab({ client, topic }: { client: BridgeClient | null; topic
   if (!data) {
     return (
       <EmptyPane
-        icon={<Loader2 className="h-8 w-8 animate-spin opacity-40" />}
+        icon={<LoaderCircle className="h-8 w-8 animate-spin opacity-40" />}
         message="Waiting for data..."
         sub={topic}
       />

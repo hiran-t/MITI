@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import { Power, Radio, Zap, Loader2 } from 'lucide-react';
+import { Power, Radio, Zap, LoaderCircle } from 'lucide-react';
 import WidgetSettingsPortal, { SettingsSection } from '../layout/WidgetSettingsPortal';
 import type { BridgeClient } from '@/lib/bridge/client';
 import type { ButtonSwitchWidgetProps, ButtonSwitchMode } from '@/types/widget';
@@ -306,7 +306,7 @@ export default function ButtonSwitchWidget({
           )}
         >
           {isSending ? (
-            <Loader2 className="h-7 w-7 animate-spin opacity-70" />
+            <LoaderCircle className="h-7 w-7 animate-spin opacity-70" />
           ) : (
             <Power
               className={cn(

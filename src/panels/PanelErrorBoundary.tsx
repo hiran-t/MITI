@@ -1,7 +1,7 @@
 'use client';
 
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { TriangleAlert } from 'lucide-react';
 import { commonStyles } from '@/styles';
 
 interface Props {
@@ -27,7 +27,7 @@ export default class PanelErrorBoundary extends Component<Props, { error: Error 
     if (!error) return this.props.children;
     return (
       <div role="alert" className="panel-notice is-error">
-        <AlertTriangle size={24} aria-hidden="true" />
+        <TriangleAlert size={24} aria-hidden="true" />
         <strong>This panel stopped working</strong>
         <code>{error.message || String(error)}</code>
         <button
