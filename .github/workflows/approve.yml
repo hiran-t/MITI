@@ -1,0 +1,27 @@
+name: Maintainer approval
+
+# main's ruleset asks for one approving review. The maintainer cannot approve their own pull
+# requests, so this approves the ones they open, and their auto-merge waits only for CI. Pull
+# requests from anyone else, Dependabot included, wait for the maintainer's review.
+#
+# pull_request_target runs this file as it is on main, never a pull request's copy of it, and
+# nothing here checks out or runs the pull request's code. It needs the repository setting that
+# lets GitHub Actions approve pull requests.
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  approve:
+    name: Approve the maintainer's pull request
+    if: github.event.pull_request.user.login == github.repository_owner
+    runs-on: ubuntu-latest
+    steps:
+      - name: Approve
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr review "$PR_URL" --approve --body "Opened by the maintainer; CI still has to pass."
