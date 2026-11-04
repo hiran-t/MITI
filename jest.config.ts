@@ -14,6 +14,8 @@ const config: Config = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    // three.js is ES modules only; its CommonJS entry needs require(esm), which Jest lacks.
+    '^three$': '<rootDir>/node_modules/three/build/three.module.js',
   },
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
@@ -29,13 +31,14 @@ const config: Config = {
 };
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async.
-// These packages ship untranspiled ES modules, so Jest transforms them: urdf-loader and the
-// three.js loaders it imports, and the drag-and-drop backends react-mosaic-component uses. next/jest
-// adds node_modules patterns of its own, which would still skip them, so they are replaced by one
-// pattern that also keeps the exceptions next/jest makes for Next.js's own client code.
+// These packages ship untranspiled ES modules, so Jest transforms them: three.js (and the loaders
+// urdf-loader imports from it), urdf-loader, and the drag-and-drop backends react-mosaic-component
+// uses. next/jest adds node_modules patterns of its own, which would still skip them, so they are
+// replaced by one pattern that also keeps the exceptions next/jest makes for Next.js's own client
+// code.
 const ESM_PACKAGES = [
   'urdf-loader',
-  'three/examples/jsm',
+  'three',
   'react-dnd[^/]*',
   'dnd-core',
   'dnd-multi-backend',
