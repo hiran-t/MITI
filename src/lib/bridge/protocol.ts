@@ -208,8 +208,14 @@ function parseBinary(buffer: ArrayBuffer): [keyof Events, unknown] {
   }
 }
 
-/** Opcode, then each part: numbers as uint32, strings length-prefixed, bytes as they are. */
-function binary(opcode: number, ...parts: (number | string | Uint8Array)[]): Uint8Array {
+/**
+ * Opcode, then each part: numbers as uint32, strings length-prefixed, bytes as they are. The frame
+ * is a new ArrayBuffer of its own, the type WebSocket.send takes.
+ */
+function binary(
+  opcode: number,
+  ...parts: (number | string | Uint8Array)[]
+): Uint8Array<ArrayBuffer> {
   const chunks = parts.map((part) => {
     if (part instanceof Uint8Array) return part;
     const text = typeof part === 'string' ? textEncoder.encode(part) : null;
