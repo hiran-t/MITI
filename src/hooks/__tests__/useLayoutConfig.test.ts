@@ -80,29 +80,69 @@ test('a saved grid layout converts to splits; panels are added beside a panel an
   );
   const { result } = renderHook(() => useLayoutConfig());
   expect(result.current.layout.mosaic).toEqual({
+    type: 'split',
     direction: 'row',
-    first: 'left',
-    second: 'right',
-    splitPercentage: 50,
+    children: ['left', 'right'],
+    splitPercentages: [50, 50],
   });
   act(() => result.current.addWidget('log', 'right'));
   expect(result.current.layout.widgets.at(-1)).toMatchObject({ i: 'log-1', type: 'log' });
   expect(result.current.layout.mosaic).toMatchObject({
-    second: { direction: 'row', first: 'right', second: 'log-1' },
+    children: ['left', { type: 'split', direction: 'row', children: ['right', 'log-1'] }],
   });
   act(() => result.current.removeWidget('left'));
   expect(result.current.layout.mosaic).toEqual({
+    type: 'split',
     direction: 'row',
-    first: 'right',
-    second: 'log-1',
-    splitPercentage: 50,
+    children: ['right', 'log-1'],
+    splitPercentages: [50, 50],
   });
-  act(() => result.current.updateMosaic({ direction: 'column', first: 'log-1', second: 'right' }));
-  expect(JSON.parse(localStorage.getItem(key)!).mosaic).toEqual({
-    direction: 'column',
-    first: 'log-1',
-    second: 'right',
-  });
+  const moved = {
+    type: 'split' as const,
+    direction: 'column' as const,
+    children: ['log-1', 'right'],
+    splitPercentages: [35, 65],
+  };
+  act(() => result.current.updateMosaic(moved));
+  expect(JSON.parse(localStorage.getItem(key)!).mosaic).toEqual(moved);
+});
+
+test('a layout saved by MITI 3.4.5 opens unchanged and is saved back as an n-ary tree', () => {
+  const widgets = ['scene', 'log', 'cam'].map((i) => ({
+    i,
+    type: 'topics',
+    title: i,
+    x: 0,
+    y: 0,
+    w: 4,
+    h: 8,
+    minW: 1,
+    minH: 1,
+  }));
+  localStorage.setItem(
+    key,
+    JSON.stringify({
+      widgets,
+      mosaic: {
+        direction: 'row',
+        first: 'scene',
+        second: { direction: 'column', first: 'log', second: 'cam', splitPercentage: 30 },
+        splitPercentage: 64,
+      },
+    })
+  );
+  const { result } = renderHook(() => useLayoutConfig());
+  const nary = {
+    type: 'split',
+    direction: 'row',
+    children: [
+      'scene',
+      { type: 'split', direction: 'column', children: ['log', 'cam'], splitPercentages: [30, 70] },
+    ],
+    splitPercentages: [64, 36],
+  };
+  expect(result.current.layout).toEqual({ widgets, mosaic: nary });
+  expect(JSON.parse(localStorage.getItem(key)!)).toEqual({ widgets, mosaic: nary });
 });
 
 test('migrates shared URDF settings to independent widgets and keeps later edits isolated', () => {

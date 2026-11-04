@@ -21,21 +21,48 @@ const layout: LayoutConfig = {
       props: { topic: '/det' },
     },
   ],
-  mosaic: { direction: 'row', first: 'log-1', second: 'det-1' },
+  mosaic: {
+    type: 'split',
+    direction: 'row',
+    children: ['log-1', 'det-1'],
+    splitPercentages: [40, 60],
+  },
 };
 
 test('a saved layout reads back the same, listing only the widgets it uses', () => {
-  const read = layoutFromFile(layoutToFile(layout, installed));
+  const text = layoutToFile(layout, installed);
+  expect(JSON.parse(text)).toMatchObject({ miti: 'layout', version: 2 });
+  const read = layoutFromFile(text);
   expect(read.layout).toEqual(layout);
   expect(read.widgets).toEqual([{ id: 'acme.vision', name: 'Acme Vision', version: '1.2.0' }]);
   expect(missingWidgets(read.widgets, [])).toEqual(read.widgets);
   expect(missingWidgets(read.widgets, installed)).toEqual([]);
 });
 
+test('a version 1 file from MITI 3.4.5 opens with its binary tree converted', () => {
+  const file = {
+    miti: 'layout',
+    version: 1,
+    layout: {
+      widgets: layout.widgets,
+      mosaic: { direction: 'row', first: 'log-1', second: 'det-1', splitPercentage: 40 },
+    },
+    widgets: [{ id: 'acme.vision', name: 'Acme Vision', version: '1.2.0' }],
+  };
+  const read = layoutFromFile(JSON.stringify(file, null, 2));
+  expect(read.layout).toEqual(layout);
+  expect(read.widgets).toEqual(file.widgets);
+  // Saved again, it is a version 2 file.
+  expect(JSON.parse(layoutToFile(read.layout, installed))).toMatchObject({
+    version: 2,
+    layout: { mosaic: layout.mosaic },
+  });
+});
+
 test('says what is wrong with a file that is not a layout', () => {
   expect(() => layoutFromFile('{')).toThrow('not JSON');
   expect(() => layoutFromFile(JSON.stringify(DEFAULT_LAYOUT))).toThrow('not a MITI layout');
   expect(() =>
-    layoutFromFile(JSON.stringify({ miti: 'layout', version: 2, layout: DEFAULT_LAYOUT }))
-  ).toThrow('version 2');
+    layoutFromFile(JSON.stringify({ miti: 'layout', version: 3, layout: DEFAULT_LAYOUT }))
+  ).toThrow('The layout is version 3; this MITI reads versions 1 to 2');
 });

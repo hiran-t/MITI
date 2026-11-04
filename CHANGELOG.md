@@ -9,6 +9,7 @@
 ### Changed
 
 - The stand-in bridge's WebSocket server package is a dev dependency: only `scripts/heavy-bridge.js` uses it.
+- The tiled panel layout uses react-mosaic-component 7, which supports React 19 itself, so MITI no longer forces newer drag-and-drop libraries into it. Layouts saved by MITI 3.4.5 and earlier, in the browser and in files, open unchanged. Exported layout files are now format version 2, which stores how panels tile as react-mosaic 7's n-ary tree; MITI still opens version 1 files, but MITI 3.4.5 and earlier cannot open version 2 files.
 - With a bridge that has only the base protocol, the status bar says **WebSocket bridge** and Sources says **Base protocol (WebSocket)**, and the Image panel's help text speaks of "other bridges". The Windows bridge script is `ros/windows-bridge.ps1`; `pixi run -e <distro> bridge` and `miti-bridge` start it as before.
 - MITI decodes and encodes ROS 2 messages with its own code instead of third-party libraries. Messages decode to the same values as before, and in Chrome a camera image or a large point cloud decodes two to three times as fast. Fields of type `wstring`, which MITI could not read before, now decode.
 

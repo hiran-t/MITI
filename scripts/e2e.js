@@ -6,8 +6,9 @@
  *   npm run e2e    (env CHROME_PATH to use another Chrome)
  *
  * It starts MITI twice, plain and with a branding folder, each with an empty state folder, and
- * checks the built-in panels, importing, using and removing a widget, saving and opening a layout,
- * and branding. Prints one line per check and exits 1 when one fails.
+ * checks the built-in panels, importing, using and removing a widget, opening a layout saved by
+ * MITI 3.4.5, resizing and moving panels, saving and opening a layout, and branding. Prints one
+ * line per check and exits 1 when one fails.
  */
 const { spawn } = require('child_process');
 const fs = require('fs');
@@ -184,6 +185,7 @@ const probeValue = (page) =>
   page.evaluate(
     `(() => { const v = document.querySelector('.e2e-probe')?.textContent; return v && v !== 'none' ? v : null; })()`
   );
+/** A layout as MITI 3.4.5 saved it, with react-mosaic 6's binary tree: the log takes 40%. */
 const probeLayout = {
   widgets: [
     { i: 'log-1', type: 'log', title: 'Log', x: 0, y: 0, w: 6, h: 8 },
@@ -198,8 +200,51 @@ const probeLayout = {
       props: { topic: '/tf' },
     },
   ],
-  mosaic: { direction: 'row', first: 'log-1', second: 'probe-1' },
+  mosaic: { direction: 'row', first: 'log-1', second: 'probe-1', splitPercentage: 40 },
 };
+
+/** The log's and the probe's boxes, a point on the log's header and the divider, and the saved tree. */
+const tiles = (page) =>
+  page.evaluate(`(() => {
+    const panel = (id) => document.getElementById('panel-' + id).closest('.mosaic-window');
+    const box = (el) => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; };
+    const centre = (el) => { const r = el.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; };
+    const split = document.querySelector('.miti-mosaic .mosaic-split');
+    return {
+      log: box(panel('log-1')),
+      probe: box(panel('probe-1')),
+      logHeader: centre(panel('log-1').querySelector('.panel-tab-status')),
+      split: split && centre(split),
+      mosaic: JSON.parse(localStorage.getItem('miti_layout_config')).mosaic,
+    };
+  })()`);
+/** The log's share of the width, in percent. */
+const logShare = (t) => (100 * t.log.w) / (t.log.w + t.probe.w);
+
+/** Press the mouse at the first point, move it through the others in steps, and release it. */
+async function drag(page, points, steps = 10) {
+  const mouse = (type, { x, y }) =>
+    page.send('Input.dispatchMouseEvent', {
+      type,
+      x,
+      y,
+      button: 'left',
+      buttons: type === 'mouseReleased' ? 0 : 1,
+      clickCount: 1,
+    });
+  await mouse('mousePressed', points[0]);
+  for (let leg = 1; leg < points.length; leg += 1) {
+    const [from, to] = [points[leg - 1], points[leg]];
+    for (let i = 1; i <= steps; i += 1) {
+      await mouse('mouseMoved', {
+        x: from.x + ((to.x - from.x) * i) / steps,
+        y: from.y + ((to.y - from.y) * i) / steps,
+      });
+      await sleep(30);
+    }
+  }
+  await mouse('mouseReleased', points.at(-1));
+}
 
 async function builtInPanels(page) {
   await load(page);
@@ -260,6 +305,59 @@ async function widgets(page, widget) {
   check("another site's page cannot import a widget", crossSite.status === 403);
 }
 
+/** Opens the MITI 3.4.5 layout the widget checks loaded, then resizes a divider and moves a panel. */
+async function tiling(page) {
+  const before = await tiles(page);
+  check(
+    'a layout saved by MITI 3.4.5 opens unchanged and is saved as an n-ary tree',
+    before.mosaic?.type === 'split' &&
+      before.mosaic.splitPercentages?.join() === '40,60' &&
+      Math.abs(logShare(before) - 40) < 1,
+    `${logShare(before).toFixed(1)}% ${JSON.stringify(before.mosaic)}`
+  );
+
+  const width = before.log.w + before.probe.w;
+  await drag(page, [before.split, { x: before.split.x + width / 10, y: before.split.y }]);
+  const resized = await waitFor(
+    'the resize',
+    async () => {
+      const now = await tiles(page);
+      return now.mosaic.splitPercentages?.[0] > 45 && now;
+    },
+    5000
+  ).catch(() => tiles(page));
+  check(
+    'dragging a divider resizes the panels and saves their shares',
+    Math.abs(resized.mosaic.splitPercentages?.[0] - 50) < 2 && Math.abs(logShare(resized) - 50) < 2,
+    `${logShare(resized).toFixed(1)}% ${JSON.stringify(resized.mosaic)}`
+  );
+
+  // Dropped on the lower edge of the probe, the log moves below it. While a panel is dragged it is
+  // hidden and the probe fills the width. A side zone grows to half the panel once hovered, so the
+  // pointer comes down just right of the middle, clear of the left and right zones.
+  const middle = resized.log.x + width * 0.55;
+  await drag(page, [
+    resized.logHeader,
+    { x: middle, y: resized.logHeader.y },
+    { x: middle, y: resized.probe.y + resized.probe.h * 0.9 },
+  ]);
+  const moved = await waitFor(
+    'the move',
+    async () => {
+      const now = await tiles(page);
+      return now.mosaic.direction === 'column' && now;
+    },
+    5000
+  ).catch(() => tiles(page));
+  check(
+    'dragging a panel onto the edge of another moves it there',
+    moved.mosaic.direction === 'column' &&
+      moved.mosaic.children?.join() === 'probe-1,log-1' &&
+      moved.log.y > moved.probe.y,
+    JSON.stringify(moved.mosaic)
+  );
+}
+
 async function layoutFiles(page) {
   await page.evaluate(`document.querySelector('[aria-label="Export layout"]').click(), true`);
   const file = await waitFor('the layout file', async () => {
@@ -268,14 +366,49 @@ async function layoutFiles(page) {
   });
   const saved = JSON.parse(fs.readFileSync(file, 'utf8'));
   check(
-    'export saves the layout and the widgets it needs',
-    saved.layout.widgets.length === 2 && saved.widgets[0]?.id === 'e2e.probe'
+    'export saves the layout, its format and the widgets it needs',
+    saved.version === 2 &&
+      saved.layout.widgets.length === 2 &&
+      saved.layout.mosaic?.type === 'split' &&
+      saved.widgets[0]?.id === 'e2e.probe'
   );
   await page.evaluate(`document.querySelector('[aria-label="Reset layout"]').click(), true`);
   await waitFor('the default layout', async () => (await text(page)).includes('3D Scene'));
   await page.setFile('input[aria-label="Layout file"]', file);
   await waitFor('the imported layout', async () => !(await text(page)).includes('3D Scene'));
   check('import opens a saved layout', !!(await waitFor('the probe', () => probeValue(page))));
+  const imported = await tiles(page);
+  check(
+    'the imported layout keeps its arrangement',
+    imported.mosaic.direction === 'column' && imported.log.y > imported.probe.y,
+    JSON.stringify(imported.mosaic)
+  );
+
+  // A file MITI 3.4.5 exported: version 1, with a binary tree.
+  const old = path.join(temp('layout'), 'miti-layout-3.4.5.json');
+  fs.writeFileSync(
+    old,
+    JSON.stringify({
+      miti: 'layout',
+      version: 1,
+      layout: probeLayout,
+      widgets: [{ id: 'e2e.probe', name: 'Probe', version: '1.0.0' }],
+    })
+  );
+  await page.setFile('input[aria-label="Layout file"]', old);
+  const opened = await waitFor(
+    'the MITI 3.4.5 layout file',
+    async () => {
+      const now = await tiles(page);
+      return now.mosaic.splitPercentages?.join() === '40,60' && now;
+    },
+    5000
+  ).catch(() => tiles(page));
+  check(
+    'a layout file from MITI 3.4.5 opens unchanged',
+    opened.mosaic.splitPercentages?.join() === '40,60' && Math.abs(logShare(opened) - 40) < 1,
+    `${logShare(opened).toFixed(1)}% ${JSON.stringify(opened.mosaic)}`
+  );
 }
 
 async function branding(page) {
@@ -331,6 +464,7 @@ async function main() {
     processes.push({ kill: page.close });
     await builtInPanels(page);
     await widgets(page, probeWidget());
+    await tiling(page);
     await layoutFiles(page);
     const plain = await branding(page);
     check(

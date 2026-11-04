@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Mosaic, MosaicWindow } from 'react-mosaic-component';
+import { Mosaic, MosaicWindow, type MosaicNode } from 'react-mosaic-component';
 import 'react-mosaic-component/react-mosaic-component.css';
 import { Lock, Maximize2, Minimize2, Unlock, X } from 'lucide-react';
 import type { WidgetConfig } from '@/types/widget';
@@ -30,6 +30,12 @@ interface PanelMosaicProps {
   onCloseSettings: () => void;
   onUpdateWidget: (id: string, updates: Partial<WidgetConfig>) => void;
 }
+
+/**
+ * A tree react-mosaic reports after a drag. MITI gives it no `createNode` and no tab groups, so it
+ * only ever moves panels between splits: the tree has no tab groups either.
+ */
+const asTree = (node: MosaicNode<string> | null) => node as MosaicTree | null;
 
 /**
  * Panels tile the workspace: drag a panel's header onto an edge of another panel to split it
@@ -92,10 +98,10 @@ export default function PanelMosaic({
       <Mosaic<string>
         className="mosaic miti-mosaic"
         value={live}
-        onChange={setLive}
+        onChange={(next) => setLive(asTree(next))}
         onRelease={(next) => {
-          setLive(next);
-          onMosaicChange(next);
+          setLive(asTree(next));
+          onMosaicChange(asTree(next));
         }}
         resize={{ minimumPaneSizePercentage: 3 }}
         zeroStateView={<div />}

@@ -396,7 +396,7 @@ like an IDE:
 
 Panels tile the workspace:
 
-- `react-mosaic-component` renders a binary split tree of panel ids (`lib/layout/mosaic.ts`).
+- `react-mosaic-component` 7 renders an n-ary split tree of panel ids (`lib/layout/mosaic.ts`).
   Drag a panel's header onto an edge of another panel to split it, and drag dividers to resize.
 - Each panel has a tab-style header: icon and title (click to select the panel and open its
   settings), remove, a status slot, expand and lock. Panels fill the slot through
