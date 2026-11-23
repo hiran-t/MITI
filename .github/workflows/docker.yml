@@ -2,7 +2,8 @@ name: Docker Build
 
 # Builds the MITI image on every push and pull request. A release tag (v*) also publishes it to
 # ghcr.io/<owner>/miti for linux/amd64 and linux/arm64, tagged with the version and `latest`;
-# the package page on GitHub then shows how often it is pulled.
+# the package page on GitHub then shows how often it is pulled. To publish a release tag again,
+# for example after a failed run, run this workflow by hand with that tag.
 
 on:
   push:
@@ -10,6 +11,15 @@ on:
     tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to build and publish again, such as v3.4.7
+        required: true
+      latest:
+        description: Also tag it latest (only for the newest release)
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -18,13 +28,20 @@ permissions:
 jobs:
   docker:
     name: Build Docker Image
-    runs-on: ubuntu-latest
+    # Ubuntu 24.04: on 26.04 runners, `npm ci` for linux/arm64 under QEMU dies with "Illegal
+    # instruction" and the build never finishes.
+    runs-on: ubuntu-24.04
     env:
-      PUBLISH: ${{ startsWith(github.ref, 'refs/tags/v') }}
+      PUBLISH: ${{ startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch' }}
+      # The release tag: pushed, or given to a run by hand. Not a version on branches.
+      TAG: ${{ inputs.tag || github.ref_name }}
+      LATEST: ${{ startsWith(github.ref, 'refs/tags/v') || inputs.latest }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
 
       - name: Set up QEMU
         if: env.PUBLISH == 'true'
@@ -39,9 +56,9 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository_owner }}/miti
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable=${{ env.PUBLISH }}
+            type=semver,pattern={{version}},value=${{ env.TAG }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ env.TAG }}
+            type=raw,value=latest,enable=${{ env.PUBLISH == 'true' && env.LATEST == 'true' }}
             type=raw,value=test,enable=${{ env.PUBLISH != 'true' }}
 
       - name: Log in to GitHub Container Registry

@@ -55,7 +55,7 @@ jobs:
       matrix:
         include:
           - arch: amd64
-            runner: ubuntu-latest
+            runner: ubuntu-24.04
           - arch: arm64
             runner: ubuntu-24.04-arm
 
@@ -106,7 +106,9 @@ jobs:
     name: Attach and publish
     needs: build
     if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.tag != '')
-    runs-on: ubuntu-latest
+    # Ubuntu 24.04 has apt-ftparchive (apt-utils), which packaging/build-apt-repo.sh needs; 26.04
+    # runners do not.
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout code
