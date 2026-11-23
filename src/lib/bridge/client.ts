@@ -298,6 +298,8 @@ interface TopicSubscription {
   binding?: { lane: Lane; channelId: number; subscriptionId: number };
   /** When a rate-limited topic last delivered a message. */
   lastDelivered?: number;
+  /** The newest message delivered, for subscribers that join later. */
+  latest?: { message: unknown };
   /** The maxRate the server was asked for (miti.bridge.v1); null for none, undefined if never. */
   serverRate?: number | null;
   /** The transform the server was asked for, by key; '' for none, undefined if never. */
@@ -535,6 +537,7 @@ export class BridgeClient {
       subscription = { callbacks: new Map(), type };
       this.subscriptions.set(topic, subscription);
     }
+    const joining = !subscription.callbacks.has(callback);
     subscription.callbacks.set(callback, {
       maxRate: options?.maxRate && options.maxRate > 0 ? options.maxRate : undefined,
       throttleMs: options?.throttleMs && options.throttleMs > 0 ? options.throttleMs : undefined,
@@ -544,6 +547,9 @@ export class BridgeClient {
     this.sendServerOptions(subscription);
     const cached = this.staticTransformCache.get(topic);
     if (cached?.size) callback({ transforms: Array.from(cached.values()) });
+    // A panel that joins the subscription of others starts from the newest message they have: the
+    // bridge sends a topic once per connection, latched ones such as /robot_description included.
+    else if (joining && subscription.latest) callback(subscription.latest.message);
   }
 
   unsubscribe(topic: string, callback?: MessageCallback): void {
@@ -779,8 +785,13 @@ export class BridgeClient {
     if (!binding || !lane?.client?.isMiti) return;
     const options: SubscriptionOptions = {};
     const rate = this.serverRate(subscription) ?? null;
-    if (subscription.serverRate !== rate && (subscription.serverRate !== undefined || rate))
+    if (subscription.serverRate !== rate && (subscription.serverRate !== undefined || rate)) {
       options.maxRate = rate;
+      // Without it, the limit drops the last message before the topic goes quiet, and panels
+      // keep showing an older one: a paused simulation's clock after a step.
+      if (rate && lane.serverInfo?.capabilities.includes('miti.keepNewest'))
+        options.keepNewest = true;
+    }
     const channel = lane.channels.get(binding.channelId);
     const transform =
       channel && lane.serverInfo?.capabilities.includes('miti.transforms')
@@ -900,6 +911,8 @@ export class BridgeClient {
       if (subscription.binding?.lane !== lane) return;
       subscription.binding = undefined;
       this.clearServerOptions(subscription);
+      // From an earlier connection: a panel that joins waits for the next one instead.
+      subscription.latest = undefined;
     });
     this.statsReports.delete(lane);
     this.updateLinkStats();
@@ -1025,6 +1038,7 @@ export class BridgeClient {
       subscription.imageEncoding = encoding;
       this.sendServerOptions(subscription);
     }
+    subscription.latest = { message };
     subscription.callbacks.forEach((_options, cb) => cb(message));
   }
 
