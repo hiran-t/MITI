@@ -68,8 +68,11 @@ test('only selected camera settings appear in the sidebar; switching and editing
   const originalA = screen.getByTitle('/a');
   fireEvent.click(screen.getByText('Select A'));
   expect(within(inspector).getAllByRole('combobox', { name: 'Image Topic' })).toHaveLength(1);
+  // The settings stay in the sidebar; the viewer has only its quick topic list.
   expect(
-    within(screen.getByRole('region', { name: 'Camera A' })).queryByRole('combobox')
+    within(screen.getByRole('region', { name: 'Camera A' })).queryByRole('combobox', {
+      name: 'Image Topic',
+    })
   ).toBeNull();
   const topicA = within(inspector).getByRole('combobox', { name: 'Image Topic' });
   fireEvent.change(topicA, { target: { value: '/a_new' } });

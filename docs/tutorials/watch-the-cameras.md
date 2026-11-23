@@ -6,7 +6,7 @@ In this tutorial you show the robot's color and depth cameras, then draw the lid
 
 The default layout has a **Camera · Color** and a **Camera · Depth** panel. When the robot does not publish the default topic names, the panels switch by themselves to the robot's own camera topics, for example `/camera/camera/color/image_raw` from an Intel RealSense driver.
 
-To choose another camera, click the panel's tab and pick the topic in **General → Topic**.
+To choose another camera, pick its topic in the list at the top of the panel: it holds the image topics the robot publishes. **General → Topic** in the panel's settings also takes a name the robot does not publish yet.
 
 ```{figure} ../images/camera.webp
 :alt: A camera panel showing a live color image, with its General settings in the sidebar

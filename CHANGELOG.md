@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- The Image panel's topic is a list at the top of the panel, of the image topics the robot publishes: choose a camera without typing its name.
+
 ### Fixed
 
 - Robot models whose visual meshes are COLLADA (`.dae`) files, such as many arms, drew each link turned 90° and apart from the others. OBJ meshes with **Mesh up axis** set to Y-up had the same problem.
