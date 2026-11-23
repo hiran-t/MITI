@@ -48,6 +48,8 @@ Pushing to `main` runs two GitHub Actions workflows:
 
 Pushing the tag (step 5) runs **Docker Build** again and publishes the image to `ghcr.io/hiran-t/miti` for linux/amd64 and linux/arm64, tagged `3.3.0`, `3.3` and `latest`. The first published image is private: on its package page (GitHub profile → Packages → miti → Package settings), set the visibility to public once. No workflow creates the release; step 6 does that.
 
+If that run fails, publish the same tag again by hand: Actions → **Docker Build** → Run workflow, with the tag (for example `v3.3.0`). Leave **latest** on only for the newest release. Both release workflows run on `ubuntu-24.04` runners.
+
 ## Debian packages and the apt repository
 
 **Packages** (`.github/workflows/packages.yml`) builds `miti_<version>_amd64.deb` and `_arm64.deb` (`packaging/build-deb.sh`, with nfpm and the official Node.js 22 build), each on a GitHub runner of its own architecture, and tests each in clean Ubuntu 22.04 and 24.04 containers with `packaging/test-deb.sh` (install, `miti run`, Ctrl+C, ports, `--bridge`, purge). It runs on every push and pull request that touches MITI or the packaging. Publishing the release (step 6) runs it again and then attaches the packages to the release and publishes the apt repository at `https://hiran-t.github.io/MITI` (`packaging/build-apt-repo.sh`, the `gh-pages` branch, with the packages of the last three releases).
