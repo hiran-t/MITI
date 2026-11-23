@@ -18,7 +18,7 @@ sudo systemctl enable --now docker # start Docker at boot, so MITI comes back af
 docker run -d --restart unless-stopped -p 3000:3000 --name miti ghcr.io/hiran-t/miti:latest
 ```
 
-Use a version tag such as `ghcr.io/hiran-t/miti:3.3.6` to stay on one release. To update, pull the new image and start the container again:
+Use a version tag such as `ghcr.io/hiran-t/miti:3.3.6` to stay on one release. `ghcr.io/hiran-t/miti:edge` follows `main`, rebuilt on every change: it is for trying a change before it is released, not for everyday use. To update, pull the new image and start the container again:
 
 ```bash
 docker pull ghcr.io/hiran-t/miti:latest
