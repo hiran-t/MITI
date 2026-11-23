@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- The Docker image `ghcr.io/hiran-t/miti:edge` follows `main`, for trying a change before it is released.
+
 ## [3.4.7] - 2026-11-23
 
 ### Added
