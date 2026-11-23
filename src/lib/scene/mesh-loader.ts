@@ -19,12 +19,30 @@ const Y_UP_TO_Z_UP = new THREE.Euler(Math.PI / 2, 0, 0);
 export const extensionOf = (url: string) =>
   url.split(/[?#]/)[0].split('.').pop()?.toLowerCase() ?? '';
 
-/** A group that converts its child from Y-up to the scene's Z-up convention. */
+/**
+ * `object` inside a group of its own, with no transform: URDFLoader sets the position and rotation
+ * of the object it is given to none, so a conversion must sit below it to survive.
+ */
+function held(object: THREE.Object3D): THREE.Object3D {
+  return new THREE.Group().add(object);
+}
+
+/** Converts its child from Y-up to the scene's Z-up convention. */
 function zUp(object: THREE.Object3D): THREE.Object3D {
   const group = new THREE.Group();
   group.rotation.copy(Y_UP_TO_Z_UP);
   group.add(object);
-  return group;
+  return held(group);
+}
+
+/**
+ * A scene ColladaLoader loaded, in the scene's Z-up convention. ColladaLoader rotates Z_UP assets
+ * into three's Y-up; this undoes that, which also turns Y_UP assets upright.
+ */
+export function colladaZUp(scene: THREE.Object3D, ignoreUpAxis: boolean): THREE.Object3D {
+  if (!ignoreUpAxis) return zUp(scene);
+  scene.rotation.set(0, 0, 0);
+  return held(scene);
 }
 
 /**
@@ -57,12 +75,7 @@ export function loadMesh(url: string, options: MeshLoadOptions): Promise<THREE.O
         url,
         (collada) => {
           if (!collada) return reject(new Error(`Invalid COLLADA file ${url}`));
-          // ColladaLoader rotates Z_UP assets into three's Y-up; undo that for the Z-up scene,
-          // which also turns Y_UP assets upright.
-          if (options.ignoreColladaUpAxis) {
-            collada.scene.rotation.set(0, 0, 0);
-            resolve(collada.scene);
-          } else resolve(zUp(collada.scene));
+          resolve(colladaZUp(collada.scene, options.ignoreColladaUpAxis));
         },
         undefined,
         reject

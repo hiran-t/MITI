@@ -930,8 +930,14 @@ export interface ResourceSources extends ResourceOptions {
   fetchAsset?: (uri: string) => Promise<Uint8Array<ArrayBuffer>>;
 }
 
-/** Load an STL, OBJ or COLLADA mesh into the ROS (Z-up) convention. */
+/**
+ * Load an STL, OBJ or COLLADA mesh into the ROS (Z-up) convention. A conversion sits below the
+ * object returned, whose own position and rotation are none: URDFLoader resets them.
+ */
 export function loadMesh(url: string, options: MeshLoadOptions): Promise<THREE.Object3D>;
+
+/** A scene ColladaLoader loaded, in the Z-up convention (as loadMesh returns it). */
+export function colladaZUp(scene: THREE.Object3D, ignoreUpAxis: boolean): THREE.Object3D;
 
 /** Load a mesh from a mesh server or package mapping, the bridge, or MITI's server. */
 export async function loadMeshResource(
