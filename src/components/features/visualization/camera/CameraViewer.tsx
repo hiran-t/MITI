@@ -8,6 +8,7 @@ import { findTopicType, topicTypeMismatch } from '@/lib/bridge/topics';
 import { useTopic } from '@/hooks/useTopic';
 import { useTF } from '@/hooks/useTF';
 import { Camera } from 'lucide-react';
+import ImageTopicSelect, { imageTopics } from './ImageTopicSelect';
 import { frameName, lookupTransform, stampSeconds } from '@/lib/scene/transforms';
 import {
   cameraModel,
@@ -117,6 +118,7 @@ export default function CameraViewer({
 }: CameraViewerProps) {
   const config = useMemo(() => normalizeImageConfig(props, CAMERA_TOPIC_VALUES.COLOR), [props]);
   const selectedTopic = config.topic;
+  const images = useMemo(() => imageTopics(topics), [topics]);
 
   // A default topic the robot does not publish: show the robot's own camera topic instead.
   useEffect(() => {
@@ -292,12 +294,13 @@ export default function CameraViewer({
       {/* Header with title and settings button */}
       <div className={visualizationStyles.camera.headerBar}>
         <Camera className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-        <span
-          className="min-w-0 flex-1 truncate font-mono text-xs text-gray-400"
-          title={selectedTopic}
-        >
-          {selectedTopic}
-        </span>
+        <div className="flex min-w-0 flex-1">
+          <ImageTopicSelect
+            value={selectedTopic}
+            topics={topics}
+            onChange={(topic) => onPropsChange({ ...config, topic })}
+          />
+        </div>
       </div>
 
       {/* Live stats sit in the panel's tab bar, off the image */}
@@ -365,7 +368,12 @@ export default function CameraViewer({
           <div className={visualizationStyles.camera.emptyState}>
             <Camera className={visualizationStyles.camera.emptyIcon} />
             <p className={visualizationStyles.camera.emptyText}>Waiting for image data...</p>
-            <p className={visualizationStyles.camera.emptySubtext}>{selectedTopic}</p>
+            <p className={visualizationStyles.camera.emptySubtext}>
+              {selectedTopic}
+              {images.length > 0 &&
+                !images.includes(selectedTopic) &&
+                ' is not published: choose an image topic above'}
+            </p>
           </div>
         )}
       </div>

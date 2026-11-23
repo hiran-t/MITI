@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- The Image panel's topic is a list at the top of the panel, of the image topics the robot publishes: choose a camera without typing its name.
+
 ## [3.4.6] - 2026-11-04
 
 ### Added
