@@ -1,0 +1,32 @@
+Architectures: amd64 arm64
+Codename: stable
+Components: main
+Date: Mon, 23 Nov 2026 17:24:03 +0000
+Description: MITI web dashboard for ROS 2
+Label: MITI
+Origin: MITI
+Suite: stable
+MD5Sum:
+ 536c0507aee9a97bab2376bb1b2141bd              180 Release
+ f0f930ec71a66c0a11cf05a848b9cd6c             3132 main/binary-amd64/Packages
+ b14d409d8b85bd647d710242f652873a             1116 main/binary-amd64/Packages.gz
+ 1eb6342e13641b764bc37b3cbf17314e             3132 main/binary-arm64/Packages
+ 238ae1391d53b641ee8d1f545af64717             1119 main/binary-arm64/Packages.gz
+SHA1:
+ 54a8faa843fd43b79147c20c97299d9923cc062d              180 Release
+ 99f3fdb853ee0a110fd3e01a65c18c78269eb271             3132 main/binary-amd64/Packages
+ bfb3890c66690d5edea17366cf9b81598cfe78a5             1116 main/binary-amd64/Packages.gz
+ c159ce876444367f89b41f8a87c39beee34d77fc             3132 main/binary-arm64/Packages
+ 9f0c1cef80900efcfa9dd1c2135a595447a757ac             1119 main/binary-arm64/Packages.gz
+SHA256:
+ 2a44f2a94587109275688c253f35ecca5a490643b08740549b1f12626593a97d              180 Release
+ 764c001e9253248e3be1dc16b943f9a60d7c6559f336b16364f140f4ecafb6fe             3132 main/binary-amd64/Packages
+ 702bbad2c0798e9cf9946526568201dcb20e32a89abea2cac9f2bdac601d7265             1116 main/binary-amd64/Packages.gz
+ e0f3319d39a0c3744bf5e5f47ccfbf27e7dddfe59619557945402c2e9885aa98             3132 main/binary-arm64/Packages
+ f9f288feb65d3dee55542139d9a332bb73cd5a08698aac69bf2768dbd4ac1ad3             1119 main/binary-arm64/Packages.gz
+SHA512:
+ 819d39725149c2e41b81967bef7f5aaa28b46bdab26d23833238c9334d72dfaee2df6ab2421c688c268e2c4be47b4648d03cdebcb199d1fa70882d58630e63ca              180 Release
+ 63ede9de38ebbfb21e84c6d002a7dc830bac0a11c2186036fc0c6a9372480c5006e15d1aa8d077e1082764bd3ddf10abdaed4e568b73de6407946f8a21c87290             3132 main/binary-amd64/Packages
+ 158cc96c3243c89cf29a727b6ea4334256e837a49409b8fd237e3b704872c037d536b6f24fa86696ba987a2735a3f1089ab0977713725ef232f5512f4c2fecdd             1116 main/binary-amd64/Packages.gz
+ 22282693b4e9689c71641ff6685262fc84275ead330298054d1205a5b4f7561597b54e5d1676fc1ed9630b8df886c8541b4a3fdf5b7a1e127539b94dc3bdaa41             3132 main/binary-arm64/Packages
+ 56e20367a016e9b6209b50a2ed1fa98fcd3acf6306ad3aa3bb254de062df6b5e63d632211bda134bbdddaab13a2a3bfbd4580a044db325706ddd69d696da3c63             1119 main/binary-arm64/Packages.gz
