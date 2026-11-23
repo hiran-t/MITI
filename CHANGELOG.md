@@ -5,6 +5,8 @@
 ### Fixed
 
 - Robot models whose visual meshes are COLLADA (`.dae`) files, such as many arms, drew each link turned 90° and apart from the others. OBJ meshes with **Mesh up axis** set to Y-up had the same problem.
+- A panel added while another one already shows the same topic waited for its next message; it now starts from the newest one. A topic published once, such as `/robot_description`, never sent another.
+- A panel that limits how often it updates could keep showing an older message once the topic went quiet, such as a paused simulation's clock after a step. With a bridge that offers `miti.keepNewest`, the last message now arrives.
 
 ## [3.4.6] - 2026-11-04
 

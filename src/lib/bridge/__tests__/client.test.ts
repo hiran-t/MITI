@@ -285,6 +285,64 @@ test('a rate cap drops messages that come too soon, without ever unsubscribing',
   }
 });
 
+test('a panel that joins a shared subscription starts from the newest message', async () => {
+  const { client, control, advertise } = await connect();
+  advertise([jsonChannel(7, '/robot_description', 'std_msgs/msg/String')]);
+  const first = jest.fn();
+  client.subscribe('/robot_description', first);
+  const id = control.lastSubscriptionId();
+  // Latched: the bridge sends it once, to this connection's one subscription.
+  control.binary(jsonFrame(id, { data: '<robot/>' }));
+  expect(first).toHaveBeenCalledTimes(1);
+
+  const later = jest.fn();
+  client.subscribe('/robot_description', later);
+  expect(later).toHaveBeenCalledWith({ data: '<robot/>' });
+  expect(first).toHaveBeenCalledTimes(1);
+  expect(control.subscribedChannels()).toEqual([7]);
+
+  // Subscribing again with other options is not joining: nothing comes twice.
+  client.subscribe('/robot_description', later, undefined, { maxRate: 1 });
+  expect(later).toHaveBeenCalledTimes(1);
+  client.disconnect();
+});
+
+test('a panel that subscribes first waits for a message', async () => {
+  const { client, control, advertise } = await connect();
+  advertise([jsonChannel(7, '/chatter', 'std_msgs/msg/String')]);
+  const callback = jest.fn();
+  client.subscribe('/chatter', callback);
+  expect(callback).not.toHaveBeenCalled();
+  control.binary(jsonFrame(control.lastSubscriptionId(), { data: 'hi' }));
+  expect(callback).toHaveBeenCalledTimes(1);
+  client.disconnect();
+});
+
+test('with miti.keepNewest, a rate limit keeps the last message before a topic goes quiet', async () => {
+  const { client, control, advertise } = await connect(
+    ['miti.keepNewest'],
+    'synchronized',
+    'miti.bridge.v1'
+  );
+  advertise([jsonChannel(3, '/clock', 'rosgraph_msgs/msg/Clock')]);
+  const throttled = jest.fn();
+  client.subscribe('/clock', throttled, undefined, { throttleMs: 200 });
+  const id = control.lastSubscriptionId();
+  const options = () => control.ops('miti.subscriptionOptions');
+  expect(options()).toEqual([
+    { op: 'miti.subscriptionOptions', subscriptionId: id, maxRate: 5, keepNewest: true },
+  ]);
+  // No limit, nothing to keep.
+  const everything = jest.fn();
+  client.subscribe('/clock', everything);
+  expect(options()[1]).toEqual({
+    op: 'miti.subscriptionOptions',
+    subscriptionId: id,
+    maxRate: null,
+  });
+  client.disconnect();
+});
+
 test('over miti.bridge.v1 the bridge applies rate limits, and the client does not drop again', async () => {
   const { client, control, advertise } = await connect([], 'synchronized', 'miti.bridge.v1');
   advertise([jsonChannel(3, '/chatter', 'std_msgs/msg/String')]);
@@ -805,13 +863,13 @@ test('a throttle window drops superseded messages before decoding and delivers t
     expect(throttled.mock.calls.map(([m]) => m.seq)).toEqual([1]);
     jest.advanceTimersByTime(100);
     expect(throttled.mock.calls.map(([m]) => m.seq)).toEqual([1, 3]);
-    // A subscriber without a window gets every message again.
+    // A subscriber without a window starts from the newest message, then gets every one again.
     const everything = jest.fn();
     client.subscribe('/status', everything);
     jest.advanceTimersByTime(10);
     send(4);
     send(5);
-    expect(everything.mock.calls.map(([m]) => m.seq)).toEqual([4, 5]);
+    expect(everything.mock.calls.map(([m]) => m.seq)).toEqual([3, 4, 5]);
   } finally {
     jest.useRealTimers();
     client.disconnect();

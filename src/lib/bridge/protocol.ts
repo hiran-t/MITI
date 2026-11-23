@@ -105,6 +105,11 @@ export type Transform =
 export interface SubscriptionOptions {
   /** Messages per second; null removes the limit. */
   maxRate?: number | null;
+  /**
+   * miti.keepNewest: a message too soon for maxRate waits for its turn instead of being dropped,
+   * so the last one before a topic goes quiet arrives.
+   */
+  keepNewest?: boolean;
   delivery?: 'all' | 'latest';
   priority?: 'high' | 'normal' | 'low';
   /** null removes the transform. */
