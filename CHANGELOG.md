@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Robot models whose visual meshes are COLLADA (`.dae`) files, such as many arms, drew each link turned 90° and apart from the others. OBJ meshes with **Mesh up axis** set to Y-up had the same problem.
+
 ## [3.4.6] - 2026-11-04
 
 ### Added
