@@ -457,6 +457,9 @@
   height: 40px;
   color: var(--miti-text-muted);
 }
+.activity-item.is-first-added {
+  border-top: 1px solid var(--miti-border);
+}
 .activity-item:hover {
   color: var(--miti-text-strong);
 }
