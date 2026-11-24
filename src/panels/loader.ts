@@ -4,6 +4,7 @@ import { useSyncExternalStore } from 'react';
 import { exposeWidgetModules } from '@/sdk/runtime';
 import { parseWidgetManifest, type WidgetManifest } from '@/lib/widgets/manifest';
 import { registerPanels, unregisterPanels } from './registry';
+import { registerViews, unregisterViews, type SidebarViewDefinition } from './views';
 
 /**
  * The widgets installed on the MITI server (src/lib/server/widget-store.ts), loaded into this
@@ -51,13 +52,18 @@ export const widgetFileUrl = (widget: Omit<WidgetState, 'status'>, file: string)
 async function load(widget: WidgetState, importModule: ImportModule) {
   try {
     const exports = await importModule(widgetFileUrl(widget, widget.main));
-    const definition = exports?.default as { panels?: unknown } | undefined;
+    const definition = exports?.default as { panels?: unknown; views?: unknown } | undefined;
     if (!definition || !Array.isArray(definition.panels))
       throw new Error(`${widget.main} must export default defineWidget({ panels: [...] })`);
     registerPanels(widget.id, definition.panels);
+    registerViews(
+      widget.id,
+      Array.isArray(definition.views) ? (definition.views as SidebarViewDefinition[]) : []
+    );
     updateWidget(widget.id, { status: 'loaded', error: undefined });
   } catch (error) {
     unregisterPanels(widget.id);
+    unregisterViews(widget.id);
     updateWidget(widget.id, { status: 'failed', error: messageOf(error) });
   }
 }
@@ -81,7 +87,11 @@ export async function refreshWidgets(importModule: ImportModule = importFromUrl)
   }
   const loaded = new Map(state.widgets.map((widget) => [widget.id, widget]));
   const installed = new Set(listing.widgets.map((widget) => widget.id));
-  loaded.forEach((_widget, id) => installed.has(id) || unregisterPanels(id));
+  loaded.forEach((_widget, id) => {
+    if (installed.has(id)) return;
+    unregisterPanels(id);
+    unregisterViews(id);
+  });
   const widgets = listing.widgets.map((widget): WidgetState => {
     const current = loaded.get(widget.id);
     return current?.installedAt === widget.installedAt && current.status !== 'failed'
@@ -167,6 +177,7 @@ export async function removeWidget(id: string): Promise<void> {
     throw new Error(body.error ?? `The removal failed (HTTP ${response.status})`);
   }
   unregisterPanels(id);
+  unregisterViews(id);
   update({ widgets: state.widgets.filter((widget) => widget.id !== id) });
 }
 

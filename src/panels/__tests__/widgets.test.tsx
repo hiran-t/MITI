@@ -4,6 +4,7 @@ import { strToU8, zipSync } from 'fflate';
 import WidgetContainer from '@/components/features/layout/WidgetContainer';
 import { definePanel, defineWidget, type PanelProps } from '@/sdk';
 import { readWidgetManifest, refreshWidgets, removeWidget } from '../loader';
+import { listViews } from '../views';
 import type { WidgetConfig } from '@/types/widget';
 
 function Layout({ initial }: { initial: WidgetConfig[] }) {
@@ -133,4 +134,31 @@ test('reads the manifest of a package before it is imported', async () => {
   await expect(
     readWidgetManifest(file({ 'manifest.json': JSON.stringify({ ...acme, id: 'A' }) }))
   ).rejects.toThrow('manifest.json: "id" must be lowercase');
+});
+
+test("a widget's sidebar views come and go with the widget", async () => {
+  const Robots = () => null;
+  listing = { importAllowed: true, widgets: [{ ...acme, installedAt: 7 }], problems: [] };
+  await act(() =>
+    refreshWidgets(async () => ({
+      default: defineWidget({
+        panels: [definePanel({ type: 'acme/gauge', label: 'Gauge', component: Gauge })],
+        // A field the public widget API does not declare: only widgets that know it use it.
+        ...{ views: [{ id: 'acme/robots', label: 'Robots', component: Robots }] },
+      }),
+    }))
+  );
+  expect(listViews().map((view) => [view.id, view.source])).toEqual([['acme/robots', 'acme']]);
+
+  listing = { importAllowed: true, widgets: [{ ...acme, installedAt: 8 }], problems: [] };
+  await act(() =>
+    refreshWidgets(async () => ({
+      default: { panels: [], views: [{ id: 'other/robots', label: 'Robots', component: Robots }] },
+    }))
+  );
+  expect(listViews()).toEqual([]);
+
+  listing = { importAllowed: true, widgets: [], problems: [] };
+  await act(() => refreshWidgets(async () => ({ default: { panels: [] } })));
+  expect(listViews()).toEqual([]);
 });

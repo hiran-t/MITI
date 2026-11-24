@@ -26,10 +26,12 @@ import LayoutFileActions from '../layout/LayoutFileActions';
 import ConnectionSettings from '../connection/ConnectionSettings';
 import { LinkStatsRows, LinkStatusItem } from '../connection/LinkStats';
 import { SettingsSearchContext } from '../layout/WidgetSettingsPortal';
-import ActivityBar, { sidebarViewLabel } from './ActivityBar';
+import ActivityBar, { isBuiltinTab, sidebarViewLabel } from './ActivityBar';
 import type { SidebarTab } from './ActivityBar';
 import WidgetManager from '../widgets/WidgetManager';
 import { refreshWidgets, useWidgets } from '@/panels/loader';
+import { useSidebarViews } from '@/panels/views';
+import PanelErrorBoundary from '@/panels/PanelErrorBoundary';
 
 // Drag and drop needs the browser, so the panel layout is not rendered on the server.
 const PanelMosaic = dynamic(() => import('../layout/PanelMosaic'), { ssr: false });
@@ -120,6 +122,12 @@ export default function Dashboard() {
   };
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<SidebarTab>('Topics');
+  const views = useSidebarViews();
+  // A view goes away with its widget: show Topics instead.
+  useEffect(() => {
+    if (!isBuiltinTab(activeTab) && !views.some((view) => view.id === activeTab))
+      setActiveTab('Topics');
+  }, [activeTab, views]);
   const [settingsSearch, setSettingsSearch] = useState('');
   const [settingsTarget, setSettingsTarget] = useState<HTMLDivElement | null>(null);
   const selectedWidget = layout.widgets.find((widget) => widget.i === selectedWidgetId);
@@ -251,6 +259,7 @@ export default function Dashboard() {
             activeTab={activeTab}
             sidebarOpen={sidebarOpen}
             problemCount={problemCount}
+            views={views}
             activeRef={sidebarTrigger}
             onFocusTab={setActiveTab}
             onSelect={(tab) => {
@@ -275,7 +284,7 @@ export default function Dashboard() {
             className={`workspace-sidebar ${sidebarOpen ? 'is-open' : ''}`}
           >
             <div className="sidebar-view-title">
-              {sidebarViewLabel(activeTab)}
+              {sidebarViewLabel(activeTab, views)}
               <button
                 className="workspace-icon sidebar-close"
                 aria-label="Close sidebar"
@@ -436,6 +445,27 @@ export default function Dashboard() {
             >
               <WidgetManager usedTypes={layout.widgets.map((widget) => widget.type)} />
             </div>
+            {views.map(({ id, label, component: View }) => (
+              <div
+                key={id}
+                id={`sidebar-view-${id}`}
+                role="tabpanel"
+                aria-labelledby={`sidebar-tab-${id}`}
+                hidden={activeTab !== id}
+                className="inspector-view"
+              >
+                {activeTab === id && sidebarOpen && (
+                  <PanelErrorBoundary title={label}>
+                    <View
+                      client={connected ? client : null}
+                      topics={topics}
+                      topicsLoading={loading}
+                      refreshTopics={refreshTopics}
+                    />
+                  </PanelErrorBoundary>
+                )}
+              </div>
+            ))}
             <div
               className="sidebar-resizer"
               role="separator"
