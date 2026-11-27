@@ -6,6 +6,10 @@
 
 - The Docker image `ghcr.io/hiran-t/miti:edge` follows `main`, for trying a change before it is released.
 
+### Fixed
+
+- After a simulation restarts, the 3D Scene moves the robot again without reloading the page. Transforms stamped before the restart no longer hold frames at their old pose.
+
 ## [3.4.7] - 2026-11-23
 
 ### Added

@@ -174,7 +174,8 @@ export function useTF(options: {
 
 - `tfTree`: frames by name and the root frame. Each dynamic frame keeps up to 30 seconds (and at
   most 3000 samples) of history, so data stamped in the past can be placed with the transform of
-  its time.
+  its time. A sample more than a second older than its frame's newest starts the history again:
+  the publisher's clock went back.
 - `isLoading`: `true` until the first TF message arrives.
 
 The tree is published at most once per animation frame, and only when it changed. While the panel
