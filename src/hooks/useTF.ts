@@ -9,6 +9,8 @@ const DEFAULT_TOPICS = ['/tf', '/tf_static'];
 const HISTORY_SECONDS = 30;
 const HISTORY_SAMPLES = 3000;
 const TRIM_BATCH = 64;
+/** A sample this much older than its frame's newest means the publisher's clock went back. */
+const CLOCK_JUMP_SECONDS = 1;
 interface UseTFOptions {
   client: Pick<BridgeClient, 'subscribe' | 'unsubscribe'> | null;
   maxAge?: number;
@@ -80,7 +82,12 @@ export function useTF({
               previous?.parent === parent && !previous.isStatic ? (previous.history ?? []) : [];
             if (!isStatic) {
               const last = history[history.length - 1];
-              if (last && time <= last.time) {
+              if (last && time < last.time - CLOCK_JUMP_SECONDS) {
+                // A simulation restarted or a recording looped. Samples from before belong to the
+                // old clock: kept, they would hold the frame at its old pose until the new clock
+                // caught up.
+                history = [{ time, transform: item.transform }];
+              } else if (last && time <= last.time) {
                 // Rare: an out-of-order or repeated stamp.
                 history = history.filter((s) => s.time !== time);
                 history.push({ time, transform: item.transform });

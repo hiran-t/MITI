@@ -133,3 +133,40 @@ test('TF history reaches back far enough to place data that arrives seconds late
   expect(() => x(10)).toThrow('TF history unavailable');
   jest.useRealTimers();
 });
+
+test('a frame follows its publisher when the clock goes back, as when a simulation restarts', () => {
+  jest.useFakeTimers();
+  const callbacks = new Map<string, (message: unknown) => void>();
+  const client = {
+    subscribe: jest.fn((topic: string, cb: (message: unknown) => void) => callbacks.set(topic, cb)),
+    unsubscribe: jest.fn(),
+  } as unknown as BridgeClient;
+  const { result } = renderHook(() => useTF({ client }));
+  const send = (stamp: number, x: number) =>
+    callbacks.get('/tf')!({
+      transforms: [
+        {
+          header: {
+            frame_id: 'base_link',
+            stamp: { sec: Math.floor(stamp), nanosec: Math.round((stamp % 1) * 1e9) },
+          },
+          child_frame_id: 'link_1',
+          transform: { translation: { x, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0, w: 1 } },
+        },
+      ],
+    });
+  const x = (time: number) =>
+    new Vector3().setFromMatrixPosition(
+      lookupTransform(result.current.tfTree, 'base_link', 'link_1', time)
+    ).x;
+  // A run of 200 s at 20 Hz, then the simulation restarts at 0 s with the arm elsewhere.
+  act(() => {
+    for (let i = 0; i <= 4000; i++) send(i * 0.05, 1);
+    for (let i = 0; i <= 100; i++) send(i * 0.05, 2);
+    jest.advanceTimersByTime(20);
+  });
+  expect(result.current.tfTree.frames.get('link_1')!.transform.translation.x).toBe(2);
+  expect(x(4)).toBeCloseTo(2, 5);
+  expect(() => x(190)).toThrow('TF is too old');
+  jest.useRealTimers();
+});
